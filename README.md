@@ -8,3 +8,17 @@ Agent Forge's goal is to enable OSS development of agents without the headaches 
 
 Agent Forge can be used with non-local agent's as well, either utilize an existing API implementation like [OpenAI](./agent_forge/model_providers/openai.py) or implement your own version of the [base client](./agent_forge/model_providers/base.py). If you do feel free to make a PR! Check out our contributing docs for more information: (./CONTRIBUTING.md).
 
+
+## Dev Monitoring UI
+
+- When running dev mode via `forge dev`, a lightweight monitoring UI starts at `http://localhost:8123/`.
+- It shows active agents, chat logs, and basic performance metrics in real time.
+
+### Docker
+
+- To run only the monitoring UI via Docker:
+
+```bash
+docker compose up monitor
+```
+

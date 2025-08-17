@@ -40,7 +40,7 @@ forge list
 # Start full development environment
 forge dev
 # Starts: runtime, memory services, monitoring UI
-# Opens: http://localhost:8080 (monitoring dashboard)
+# Opens: http://localhost:8123 (monitoring dashboard)
 
 # Run specific agent in dev mode
 forge run my-assistant --dev

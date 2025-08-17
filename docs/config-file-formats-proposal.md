@@ -10,7 +10,7 @@ description = "My personal AI agent workspace"
 
 [runtime]
 host = "localhost"
-port = 8080
+port = 8123
 debug = true
 hot_reload = true
 max_concurrent_agents = 5
@@ -327,7 +327,7 @@ services:
   agent-forge:
     build: .
     ports:
-      - "8080:8080"
+      - "8123:8123"
     volumes:
       - .:/workspace
     environment:
