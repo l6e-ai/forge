@@ -14,6 +14,7 @@ from agent_forge.runtime.local import LocalRuntime
 import asyncio
 import time
 from agent_forge.config_managers.toml import TomlConfigManager
+from agent_forge.runtime.monitoring import get_monitoring
 
 
 class DevService:
@@ -50,6 +51,18 @@ class DevService:
         self.reloader.load_all()
         # Register all agents with runtime
         self._register_all_agents()
+        # Best-effort start monitoring web UI in background (dev only)
+        try:
+            asyncio.get_event_loop()
+        except RuntimeError:
+            asyncio.set_event_loop(asyncio.new_event_loop())
+        try:
+            # Spawn a background task to run the server without blocking
+            import threading
+            t = threading.Thread(target=self._run_monitoring_ui, args=(), daemon=True)
+            t.start()
+        except Exception:
+            pass
         handler = DevEventHandler(self.agents_dir, on_agent_changed=self._on_agent_changed)
         self.observer.schedule(handler, str(self.agents_dir), recursive=True)
         self.observer.schedule(handler, str(self.root), recursive=False)
@@ -130,5 +143,27 @@ class DevService:
             return _uuid.UUID(s)
         asyncio.run(_run())
         rprint(f"[bold cyan]Registered agent:[/bold cyan] {agent_name}")
+
+    def _run_monitoring_ui(self) -> None:
+        """Run the FastAPI dev monitoring server on localhost:8123.
+
+        Runs in a background thread so that file watching continues.
+        """
+        try:
+            from agent_forge.web.monitor_app import create_app
+            import uvicorn
+
+            app = create_app(get_monitoring())
+            # If port is busy, uvicorn may call sys.exit(1) which raises SystemExit
+            try:
+                uvicorn.run(app, host="0.0.0.0", port=8321, log_level="warning")
+            except BaseException as exc:  # catch SystemExit as well
+                try:
+                    rprint(f"[yellow]Monitoring UI not started:[/yellow] {exc}")
+                except Exception:
+                    pass
+        except Exception:
+            # Swallow import or other unexpected errors silently in dev background
+            pass
 
 

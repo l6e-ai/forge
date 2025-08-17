@@ -65,7 +65,7 @@ class IRuntime(Protocol):
         ...
     
     # Development support
-    async def start_dev_mode(self, port: int = 8080) -> None:
+    async def start_dev_mode(self, port: int = 8123) -> None:
         """Start development mode with monitoring UI"""
         ...
     

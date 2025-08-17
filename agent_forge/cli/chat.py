@@ -137,10 +137,7 @@ def chat(
                 try:
                     if use_direct_model:
                         manager = get_manager(use_provider, endpoints)
-                        if conversation:
-                            conversation.append(msg)
-                        else:
-                            conversation = [msg]  # type: ignore[assignment]
+                        conversation.append(msg)
                         resp = await manager.chat(await manager.load_model(ModelSpec(model_id=use_model, provider=use_provider, model_name=use_model, memory_requirement_gb=0.0)), conversation)  # type: ignore[arg-type]
                         rprint(resp.message.content)
                         conversation.append(resp.message)

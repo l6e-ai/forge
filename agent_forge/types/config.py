@@ -21,7 +21,7 @@ class WorkspaceInfo:
 class RuntimeConfig:
     """Runtime system configuration"""
     host: str = "localhost"
-    port: int = 8080
+    port: int = 8123
     debug: bool = True
     hot_reload: bool = True
     

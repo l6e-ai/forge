@@ -9,6 +9,7 @@ import os
 
 from agent_forge.types.core import AgentID, AgentResponse, Message
 from agent_forge.types.agent import AgentSpec
+from agent_forge.runtime.monitoring import get_monitoring
 
 # Type-only import to avoid circulars
 from typing import TYPE_CHECKING
@@ -92,6 +93,13 @@ class LocalRuntime:
         self._name_to_id[agent_name] = agent_id
         self._agent_configs[agent_id] = config_data
         self._agent_paths[agent_id] = agent_dir
+        # Update monitoring
+        try:
+            mon = get_monitoring()
+            mon.set_agent_status(str(agent_id), agent_name, status="ready", config=config_data)
+            await mon.record_event("agent.registered", {"agent_id": str(agent_id), "name": agent_name})
+        except Exception:
+            pass
         return agent_id
 
     async def unregister_agent(self, agent_id: AgentID) -> None:
@@ -99,6 +107,12 @@ class LocalRuntime:
         self._id_to_agent.pop(agent_id, None)
         if name:
             self._name_to_id.pop(name, None)
+        try:
+            mon = get_monitoring()
+            mon.remove_agent(str(agent_id))
+            await mon.record_event("agent.unregistered", {"agent_id": str(agent_id), "name": name})
+        except Exception:
+            pass
 
     async def reload_agent(self, agent_id: AgentID) -> None:
         # For MVP, re-register by name
@@ -132,7 +146,26 @@ class LocalRuntime:
         from agent_forge.types.core import AgentContext  # local import to avoid cycles
 
         ctx = AgentContext(conversation_id="local", session_id="local")
-        return await agent.handle_message(message, ctx)
+        # Log request
+        try:
+            mon = get_monitoring()
+            mon.add_chat_log(conversation_id=ctx.conversation_id or "local", role=message.role, content=message.content)
+            await mon.record_event("chat.message", {"direction": "in", "role": message.role})
+        except Exception:
+            pass
+        import time as _time
+        _start = _time.perf_counter()
+        resp = await agent.handle_message(message, ctx)
+        _elapsed_ms = (_time.perf_counter() - _start) * 1000.0
+        # Log response
+        try:
+            mon = get_monitoring()
+            mon.add_chat_log(conversation_id=ctx.conversation_id or "local", role="assistant", content=resp.content, agent_id=resp.agent_id)
+            await mon.record_metric("response_time_ms", _elapsed_ms, tags={"agent": resp.agent_id})
+            await mon.record_event("chat.message", {"direction": "out", "agent": resp.agent_id})
+        except Exception:
+            pass
+        return resp
 
     async def broadcast_message(self, message: Message, filter_fn: Callable | None = None) -> list[AgentResponse]:
         results: list[AgentResponse] = []
@@ -167,7 +200,7 @@ class LocalRuntime:
         raise NotImplementedError
 
     # Development support (stubs)
-    async def start_dev_mode(self, port: int = 8080) -> None:
+    async def start_dev_mode(self, port: int = 8123) -> None:
         return None
 
     async def enable_hot_reload(self, watch_paths: list[Path]) -> None:
