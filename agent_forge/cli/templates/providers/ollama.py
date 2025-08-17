@@ -1,0 +1,23 @@
+from __future__ import annotations
+
+from .base import IProviderTemplate
+
+
+class OllamaProviderTemplate:
+    name = "ollama"
+
+    def get_template_vars(self, model: str, endpoint: str | None) -> dict[str, str]:
+        imports = "from agent_forge.models.managers.ollama import OllamaModelManager"
+        usage = (
+            """
+        manager = self.runtime.get_model_manager() if hasattr(self, 'runtime') and self.runtime else OllamaModelManager()
+        from agent_forge.types.model import ModelSpec
+        spec = ModelSpec(model_id=\"{{ model }}\", provider=\"ollama\", model_name=\"{{ model }}\", memory_requirement_gb=0.0)
+        model_id = await manager.load_model(spec)
+        chat = await manager.chat(model_id, [message])
+        return AgentResponse(content=chat.message.content, agent_id=self.name, response_time=0.0)
+"""
+        )
+        return {"model_imports": imports, "model_usage": usage}
+
+

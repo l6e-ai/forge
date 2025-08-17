@@ -1,0 +1,30 @@
+# Python
+**/__pycache__
+**/.pytest_cache
+**/.smbdelete**
+
+# build output
+dist/
+scripts/dist
+
+# dependencies
+**/node_modules/
+**/.mypy_cache/
+**/.ruff_cache/
+**/.pytest_cache/
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# macOS-specific files
+.DS_Store
+
+# notes folder
+notes/
+
+# Any tmp folders
+# (can be used for dev when testing the CLI)
+tmp-*/
