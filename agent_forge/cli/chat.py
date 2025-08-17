@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import asyncio
 from pathlib import Path
+import time
 
 import typer
 from rich import print as rprint
@@ -15,6 +16,7 @@ from agent_forge.runtime.local import LocalRuntime
 from agent_forge.config_managers.toml import TomlConfigManager
 from agent_forge.models.providers.registry import get_manager
 from agent_forge.types.model import ModelSpec
+from agent_forge.runtime.monitoring import get_monitoring
 
 
 app = typer.Typer(help="Chat with an agent in the current workspace")
@@ -39,6 +41,7 @@ def chat(
     agent: str = typer.Argument(..., help="Agent name"),
     message: str = typer.Option("", "--message", "-m", help="Send a single message and exit"),
     workspace: str | None = typer.Option(None, "--workspace", "-w", help="Workspace root path"),
+    monitor_url: str | None = typer.Option(None, "--monitor-url", help="Monitoring base URL (overrides env/config)"),
 ):
     """Send a message to an agent and print the response."""
     root = _resolve_workspace(workspace)
@@ -67,8 +70,17 @@ def chat(
                 endpoints["ollama"] = ep_ollama
             if isinstance(ep_lmstudio, str):
                 endpoints["lmstudio"] = ep_lmstudio
+            # optional monitor url in config
+            cfg_monitor_url = cfg_mgr.get_config_value("monitor.url")
+            if isinstance(cfg_monitor_url, str) and not os.environ.get("AF_MONITOR_URL") and monitor_url is None:
+                os.environ["AF_MONITOR_URL"] = cfg_monitor_url
     except Exception:
         pass
+
+    # Ensure monitoring is configured for this process if not already
+    if not os.environ.get("AF_MONITOR_URL"):
+        use_url = monitor_url or os.environ.get("AF_MONITOR_URL") or "http://localhost:8321"
+        os.environ["AF_MONITOR_URL"] = use_url
 
     use_provider = (provider_from_cfg or "").lower()
     use_model = model_from_cfg
@@ -93,7 +105,16 @@ def chat(
                 manager = get_manager(use_provider, endpoints)
                 spec = ModelSpec(model_id=use_model, provider=use_provider, model_name=use_model, memory_requirement_gb=0.0)  # type: ignore[arg-type]
                 model_id = await manager.load_model(spec)
+                # Monitoring for direct-model path
+                mon = get_monitoring()
+                mon.add_chat_log(conversation_id=ctx.conversation_id or "local", role=msg.role, content=msg.content)
+                await mon.record_event("chat.message", {"direction": "in", "role": msg.role})
+                _start = time.perf_counter()
                 resp = await manager.chat(model_id, [msg])
+                elapsed_ms = (time.perf_counter() - _start) * 1000.0
+                mon.add_chat_log(conversation_id=ctx.conversation_id or "local", role="assistant", content=resp.message.content, agent_id=None)
+                await mon.record_metric("response_time_ms", elapsed_ms, tags={"agent": "direct"})
+                await mon.record_event("chat.message", {"direction": "out", "agent": "direct"})
                 rprint(resp.message.content)
             else:
                 assert runtime is not None and agent_id is not None
@@ -138,9 +159,18 @@ def chat(
                     if use_direct_model:
                         manager = get_manager(use_provider, endpoints)
                         conversation.append(msg)
+                        # Monitoring for direct-model path
+                        mon = get_monitoring()
+                        mon.add_chat_log(conversation_id=ctx.conversation_id or "local", role=msg.role, content=msg.content)
+                        await mon.record_event("chat.message", {"direction": "in", "role": msg.role})
+                        _start = time.perf_counter()
                         resp = await manager.chat(await manager.load_model(ModelSpec(model_id=use_model, provider=use_provider, model_name=use_model, memory_requirement_gb=0.0)), conversation)  # type: ignore[arg-type]
+                        elapsed_ms = (time.perf_counter() - _start) * 1000.0
                         rprint(resp.message.content)
                         conversation.append(resp.message)
+                        mon.add_chat_log(conversation_id=ctx.conversation_id or "local", role="assistant", content=resp.message.content, agent_id=None)
+                        await mon.record_metric("response_time_ms", elapsed_ms, tags={"agent": "direct"})
+                        await mon.record_event("chat.message", {"direction": "out", "agent": "direct"})
                     else:
                         assert runtime is not None and agent_id is not None
                         resp = await runtime.route_message(msg, target=agent_id)
