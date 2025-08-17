@@ -6,6 +6,8 @@ services:
       dockerfile: infra/docker/Dockerfile.monitor
     ports:
       - "8321:8321"
+    volumes:
+      - ./agent_forge:/app/agent_forge
     environment:
       - MONITOR_PORT=8321
     restart: unless-stopped
