@@ -165,6 +165,9 @@ _INDEX_HTML = """
     .status.offline { background: #2b1414; color: #f85149; border: 1px solid #da3633; }
     .logs { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 12px; }
     .log { border-bottom: 1px dashed #30363d; padding: 6px 0; }
+    .conversation { margin-bottom: 10px; }
+    .conv-header { font-size: 12px; color: #a5b1c2; margin: 8px 0 6px; border-top: 1px dashed #30363d; padding-top: 6px; display: flex; justify-content: space-between; }
+    .conv-title { font-weight: 600; }
     .flex { display: flex; gap: 12px; align-items: center; }
     .muted { color: #8b949e; }
   </style>
@@ -215,12 +218,27 @@ _INDEX_HTML = """
 
     function renderChats(chats) {
       const el = document.getElementById('chats');
-      el.innerHTML = chats.slice().reverse().map(c => `
-        <div class="log">
-          <span class="muted">${new Date(c.timestamp).toLocaleTimeString()}</span>
-          <strong>[${c.role}]</strong> ${c.content}
-        </div>
-      `).join('');
+      const groups = {};
+      for (const c of chats) {
+        const id = c.conversation_id || 'local';
+        if (!groups[id]) groups[id] = [];
+        groups[id].push(c);
+      }
+      const ordered = Object.entries(groups).sort((a, b) => {
+        const at = new Date(a[1][a[1].length - 1].timestamp || 0).getTime();
+        const bt = new Date(b[1][b[1].length - 1].timestamp || 0).getTime();
+        return bt - at; // newest conversation first
+      });
+      el.innerHTML = ordered.map(([id, items]) => {
+        const header = `<div class="conv-header"><span class="conv-title">${id}</span><span class="muted">${items.length} msgs</span></div>`;
+        const body = items.map(c => `
+          <div class="log">
+            <span class="muted">${new Date(c.timestamp).toLocaleTimeString()}</span>
+            <strong>[${c.role}]</strong> ${c.content}
+          </div>
+        `).join('');
+        return `<div class="conversation">${header}${body}</div>`;
+      }).join('');
     }
 
     async function loadInitial() {

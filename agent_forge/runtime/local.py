@@ -134,7 +134,13 @@ class LocalRuntime:
         return []
 
     # Message routing
-    async def route_message(self, message: Message, target: AgentID | None = None) -> AgentResponse:
+    async def route_message(
+        self,
+        message: Message,
+        target: AgentID | None = None,
+        conversation_id: str | None = None,
+        session_id: str | None = None,
+    ) -> AgentResponse:
         agent: "IAgent" | None = None
         if target is not None:
             agent = self._id_to_agent.get(target)
@@ -145,7 +151,7 @@ class LocalRuntime:
         # Minimal context
         from agent_forge.types.core import AgentContext  # local import to avoid cycles
 
-        ctx = AgentContext(conversation_id="local", session_id="local")
+        ctx = AgentContext(conversation_id=conversation_id or "local", session_id=session_id or "local")
         # Log request
         try:
             mon = get_monitoring()

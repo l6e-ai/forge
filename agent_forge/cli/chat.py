@@ -17,6 +17,7 @@ from agent_forge.config_managers.toml import TomlConfigManager
 from agent_forge.models.providers.registry import get_manager
 from agent_forge.types.model import ModelSpec
 from agent_forge.runtime.monitoring import get_monitoring
+import uuid
 
 
 app = typer.Typer(help="Chat with an agent in the current workspace")
@@ -101,10 +102,14 @@ def chat(
         display = f"{agent} ({use_provider}:{use_model})"
         return ident, display
 
+    # One session per invocation
+    session_uuid = str(uuid.uuid4())
+
     async def _run_once() -> int:
         # Minimal context
         msg = Message(content=message, role="user")
-        ctx = AgentContext(conversation_id="local", session_id="local", workspace_path=root)
+        conversation_id = f"{agent}:{session_uuid}"
+        ctx = AgentContext(conversation_id=conversation_id, session_id=session_uuid, workspace_path=root)
         try:
             if use_direct_model:
                 manager = get_manager(use_provider, endpoints)
@@ -126,7 +131,7 @@ def chat(
                 rprint(resp.message.content)
             else:
                 assert runtime is not None and agent_id is not None
-                resp = await runtime.route_message(msg, target=agent_id)
+                resp = await runtime.route_message(msg, target=agent_id, conversation_id=conversation_id, session_id=session_uuid)
                 rprint(resp.content)
         except Exception as exc:  # noqa: BLE001
             rprint(f"[red]Error:[/red] {exc}")
@@ -179,7 +184,8 @@ def chat(
 
             async def _run_one_msg(text: str) -> int:
                 msg = Message(content=text, role="user")
-                ctx = AgentContext(conversation_id="local", session_id="local", workspace_path=root)
+                conversation_id = f"{agent}:{session_uuid}"
+                ctx = AgentContext(conversation_id=conversation_id, session_id=session_uuid, workspace_path=root)
                 try:
                     if use_direct_model:
                         manager = get_manager(use_provider, endpoints)
@@ -200,7 +206,7 @@ def chat(
                         await mon.record_event("chat.message", {"direction": "out", "agent": d_agent_id})
                     else:
                         assert runtime is not None and agent_id is not None
-                        resp = await runtime.route_message(msg, target=agent_id)
+                        resp = await runtime.route_message(msg, target=agent_id, conversation_id=conversation_id, session_id=session_uuid)
                         rprint(resp.content)
                 except Exception as exc:  # noqa: BLE001
                     rprint(f"[red]Error:[/red] {exc}")
