@@ -84,7 +84,10 @@ def create_app(monitor: IMonitoringService) -> FastAPI:
             config = payload.get("config") or {}
             # type: ignore[attr-defined]
             monitor.set_agent_status(agent_id, name, status=status, config=config)  # noqa: SLF001
-            await monitor.record_event("agent.status", {"agent_id": agent_id, "status": status})  # type: ignore[arg-type]
+            await monitor.record_event("agent.status", {"agent_id": agent_id, "status": status, "name": name})  # type: ignore[arg-type]
+            # Trigger UI refresh by emitting agent.registered on ready state
+            if status == "ready":
+                await monitor.record_event("agent.registered", {"agent_id": agent_id, "name": name})  # type: ignore[arg-type]
             return JSONResponse({"ok": True})
         except Exception as exc:  # noqa: BLE001
             return JSONResponse({"ok": False, "error": str(exc)}, status_code=400)

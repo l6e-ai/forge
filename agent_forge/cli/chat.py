@@ -96,6 +96,11 @@ def chat(
             rprint(f"[red]{exc}[/red]")
             raise typer.Exit(code=1)
 
+    def _direct_identifiers() -> tuple[str, str]:
+        ident = f"direct:{use_provider}:{use_model}"
+        display = f"{agent} ({use_provider}:{use_model})"
+        return ident, display
+
     async def _run_once() -> int:
         # Minimal context
         msg = Message(content=message, role="user")
@@ -107,14 +112,17 @@ def chat(
                 model_id = await manager.load_model(spec)
                 # Monitoring for direct-model path
                 mon = get_monitoring()
+                d_agent_id, d_name = _direct_identifiers()
+                # Mark agent as ready so UI shows it
+                mon.set_agent_status(d_agent_id, d_name, status="ready", config={"provider": use_provider, "model": use_model})
                 mon.add_chat_log(conversation_id=ctx.conversation_id or "local", role=msg.role, content=msg.content)
                 await mon.record_event("chat.message", {"direction": "in", "role": msg.role})
                 _start = time.perf_counter()
                 resp = await manager.chat(model_id, [msg])
                 elapsed_ms = (time.perf_counter() - _start) * 1000.0
-                mon.add_chat_log(conversation_id=ctx.conversation_id or "local", role="assistant", content=resp.message.content, agent_id=None)
-                await mon.record_metric("response_time_ms", elapsed_ms, tags={"agent": "direct"})
-                await mon.record_event("chat.message", {"direction": "out", "agent": "direct"})
+                mon.add_chat_log(conversation_id=ctx.conversation_id or "local", role="assistant", content=resp.message.content, agent_id=d_agent_id)
+                await mon.record_metric("response_time_ms", elapsed_ms, tags={"agent": d_agent_id})
+                await mon.record_event("chat.message", {"direction": "out", "agent": d_agent_id})
                 rprint(resp.message.content)
             else:
                 assert runtime is not None and agent_id is not None
@@ -124,6 +132,22 @@ def chat(
             rprint(f"[red]Error:[/red] {exc}")
             return 1
         return 0
+
+    def _cleanup() -> None:
+        try:
+            if use_direct_model:
+                mon = get_monitoring()
+                d_agent_id, _ = _direct_identifiers()
+                # Best-effort removal
+                mon.remove_agent(d_agent_id)  # type: ignore[attr-defined]
+            else:
+                assert runtime is not None and agent_id is not None
+                try:
+                    asyncio.run(runtime.unregister_agent(agent_id))
+                except Exception:
+                    pass
+        except Exception:
+            pass
 
     if not message:
         # Interactive mode
@@ -147,6 +171,7 @@ def chat(
                 continue
             except EOFError:
                 rprint("\n[yellow]Exiting chat.[/yellow]")
+                _cleanup()
                 raise typer.Exit(code=0)
 
             if not user_input.strip():
@@ -161,6 +186,8 @@ def chat(
                         conversation.append(msg)
                         # Monitoring for direct-model path
                         mon = get_monitoring()
+                        d_agent_id, d_name = _direct_identifiers()
+                        mon.set_agent_status(d_agent_id, d_name, status="ready", config={"provider": use_provider, "model": use_model})
                         mon.add_chat_log(conversation_id=ctx.conversation_id or "local", role=msg.role, content=msg.content)
                         await mon.record_event("chat.message", {"direction": "in", "role": msg.role})
                         _start = time.perf_counter()
@@ -168,9 +195,9 @@ def chat(
                         elapsed_ms = (time.perf_counter() - _start) * 1000.0
                         rprint(resp.message.content)
                         conversation.append(resp.message)
-                        mon.add_chat_log(conversation_id=ctx.conversation_id or "local", role="assistant", content=resp.message.content, agent_id=None)
-                        await mon.record_metric("response_time_ms", elapsed_ms, tags={"agent": "direct"})
-                        await mon.record_event("chat.message", {"direction": "out", "agent": "direct"})
+                        mon.add_chat_log(conversation_id=ctx.conversation_id or "local", role="assistant", content=resp.message.content, agent_id=d_agent_id)
+                        await mon.record_metric("response_time_ms", elapsed_ms, tags={"agent": d_agent_id})
+                        await mon.record_event("chat.message", {"direction": "out", "agent": d_agent_id})
                     else:
                         assert runtime is not None and agent_id is not None
                         resp = await runtime.route_message(msg, target=agent_id)
@@ -182,10 +209,12 @@ def chat(
 
             code = asyncio.run(_run_one_msg(user_input))
             if code != 0:
+                _cleanup()
                 raise typer.Exit(code=code)
         # Unreachable
 
     code = asyncio.run(_run_once())
+    _cleanup()
     raise typer.Exit(code=code)
 
 

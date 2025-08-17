@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 from typing import Any, Optional
 
 import httpx
@@ -42,14 +41,14 @@ class RemoteMonitoringService(IMonitoringService):
 
     # --- Extended helpers used by LocalRuntime ---
     def set_agent_status(self, agent_id: str, name: str, status: str, config: dict[str, Any] | None = None) -> None:  # noqa: D401
-        # Fire-and-forget best effort
-        asyncio.create_task(self._post("/ingest/agent/status", {"agent_id": agent_id, "name": name, "status": status, "config": config or {}}))
+        # Execute synchronously to ensure registration updates land even if event loop ends
+        self._post_sync("/ingest/agent/status", {"agent_id": agent_id, "name": name, "status": status, "config": config or {}})
 
     def remove_agent(self, agent_id: str) -> None:  # noqa: D401
-        asyncio.create_task(self._post("/ingest/agent/remove", {"agent_id": agent_id}))
+        self._post_sync("/ingest/agent/remove", {"agent_id": agent_id})
 
     def add_chat_log(self, conversation_id: str, role: str, content: str, agent_id: str | None = None) -> None:  # noqa: D401
-        asyncio.create_task(self._post("/ingest/chat", {"conversation_id": conversation_id, "role": role, "content": content, "agent_id": agent_id}))
+        self._post_sync("/ingest/chat", {"conversation_id": conversation_id, "role": role, "content": content, "agent_id": agent_id})
 
     # --- HTTP helper ---
     async def _post(self, path: str, json: dict[str, Any]) -> Optional[dict[str, Any]]:
@@ -63,6 +62,18 @@ class RemoteMonitoringService(IMonitoringService):
                 return None
         except Exception:
             # Best-effort: swallow errors in MVP
+            return None
+
+    def _post_sync(self, path: str, json: dict[str, Any]) -> Optional[dict[str, Any]]:
+        url = f"{self.base_url}{path}"
+        try:
+            with httpx.Client(timeout=self.timeout_seconds) as client:
+                r = client.post(url, json=json)
+                r.raise_for_status()
+                if r.headers.get("content-type", "").startswith("application/json"):
+                    return r.json()
+                return None
+        except Exception:
             return None
 
 
