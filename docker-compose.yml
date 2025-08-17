@@ -1,1 +1,11 @@
-# TODO: local dev environment
+
+services:
+  monitor:
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile.monitor
+    ports:
+      - "8321:8321"
+    environment:
+      - MONITOR_PORT=8321
+    restart: unless-stopped

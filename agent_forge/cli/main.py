@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 import sys
+import os
+import subprocess
 
 import typer
 from rich import print as rprint
@@ -13,6 +15,7 @@ from agent_forge.cli import dev as dev_cmd
 from agent_forge.cli import chat as chat_cmd
 from agent_forge.cli import template as template_cmd
 from agent_forge.cli import models as models_cmd
+from agent_forge.dev.service import DevService
 
 app = typer.Typer(help="Agent-Forge CLI")
 app.add_typer(create_cmd.app, name="create")
@@ -56,6 +59,105 @@ def list() -> None:  # noqa: A003 - intentional CLI verb
     for name in state.active_agents:
         table.add_row(name)
     rprint(table)
+
+
+def _find_compose_file(provided: str | None) -> Path | None:
+    if provided:
+        p = Path(provided).expanduser().resolve()
+        return p if p.exists() else None
+    env_p = os.environ.get("AF_COMPOSE_FILE")
+    if env_p:
+        p = Path(env_p).expanduser().resolve()
+        if p.exists():
+            return p
+    # Try package root (dev repo scenario)
+    try:
+        pkg_root = Path(__file__).resolve().parents[2]
+        candidate = pkg_root / "docker-compose.yml"
+        if candidate.exists():
+            return candidate
+    except Exception:
+        pass
+    # Try walking up from cwd
+    start = Path.cwd()
+    for d in [start] + list(start.parents):
+        for name in ("docker-compose.yml", "docker-compose.yaml", "compose.yml", "compose.yaml"):
+            c = d / name
+            if c.exists():
+                return c
+    return None
+
+
+def _run_compose(compose_file: Path, args: list[str]) -> int:
+    base = ["docker", "compose", "-f", str(compose_file)]
+    try:
+        proc = subprocess.run(base + args, check=False)
+        return proc.returncode
+    except FileNotFoundError:
+        # Fallback to docker-compose if classic plugin not available
+        base = ["docker-compose", "-f", str(compose_file)]
+        proc = subprocess.run(base + args, check=False)
+        return proc.returncode
+
+
+@app.command()
+def up(
+    workspace: str | None = typer.Option(None, "--workspace", "-w", help="Workspace root path"),
+    compose_file: str | None = typer.Option(None, "--compose-file", "-f", help="Path to docker compose file"),
+    monitor_url: str = typer.Option("http://localhost:8321", "--monitor-url", help="Monitor base URL"),
+    no_dev: bool = typer.Option(False, "--no-dev", help="Do not start dev runtime"),
+    dev_only: bool = typer.Option(False, "--dev-only", help="Only start dev runtime; skip containers"),
+    build: bool = typer.Option(False, "--build", help="Build images before starting containers"),
+) -> None:
+    """Start local stack: containers (monitor) and dev runtime with monitoring wired."""
+    compose_path = _find_compose_file(compose_file)
+    if not dev_only:
+        if compose_path is None:
+            rprint("[red]Compose file not found. Provide --compose-file or set AF_COMPOSE_FILE.[/red]")
+            raise typer.Exit(code=1)
+        rprint(f"[cyan]Using compose file:[/cyan] {compose_path}")
+        args = ["up", "-d"]
+        if build:
+            args.append("--build")
+        code = _run_compose(compose_path, args)
+        if code != 0:
+            raise typer.Exit(code=code)
+        rprint("[green]Containers started.[/green]")
+
+    if not no_dev:
+        # Resolve workspace and start dev mode with AF_MONITOR_URL set
+        path_str = workspace or os.environ.get("PWD") or str(Path.cwd())
+        root = Path(path_str).expanduser().resolve()
+        is_workspace = (root / "forge.toml").exists() and (root / "agents").exists()
+        if not is_workspace:
+            rprint(f"[red]Not a workspace: {root}[/red]")
+            raise typer.Exit(code=1)
+        os.environ["AF_MONITOR_URL"] = monitor_url
+        rprint(f"[cyan]AF_MONITOR_URL=[/cyan] {monitor_url}")
+        service = DevService(root)
+        code = service.start()
+        raise typer.Exit(code=code)
+    else:
+        # If only containers were started, exit 0
+        raise typer.Exit(code=0)
+
+
+@app.command()
+def down(
+    compose_file: str | None = typer.Option(None, "--compose-file", "-f", help="Path to docker compose file"),
+    volumes: bool = typer.Option(False, "--volumes", "-v", help="Remove named volumes"),
+) -> None:
+    """Stop local container stack (monitor, etc)."""
+    compose_path = _find_compose_file(compose_file)
+    if compose_path is None:
+        rprint("[red]Compose file not found. Provide --compose-file or set AF_COMPOSE_FILE.[/red]")
+        raise typer.Exit(code=1)
+    rprint(f"[cyan]Using compose file:[/cyan] {compose_path}")
+    args = ["down"]
+    if volumes:
+        args.append("--volumes")
+    code = _run_compose(compose_path, args)
+    raise typer.Exit(code=code)
 
 
 def main() -> None:

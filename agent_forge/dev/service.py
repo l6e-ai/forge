@@ -52,17 +52,19 @@ class DevService:
         # Register all agents with runtime
         self._register_all_agents()
         # Best-effort start monitoring web UI in background (dev only)
-        try:
-            asyncio.get_event_loop()
-        except RuntimeError:
-            asyncio.set_event_loop(asyncio.new_event_loop())
-        try:
-            # Spawn a background task to run the server without blocking
-            import threading
-            t = threading.Thread(target=self._run_monitoring_ui, args=(), daemon=True)
-            t.start()
-        except Exception:
-            pass
+        # If AF_MONITOR_URL is set, we assume a remote UI is running and skip local UI
+        if not os.environ.get("AF_MONITOR_URL"):
+            try:
+                asyncio.get_event_loop()
+            except RuntimeError:
+                asyncio.set_event_loop(asyncio.new_event_loop())
+            try:
+                # Spawn a background task to run the server without blocking
+                import threading
+                t = threading.Thread(target=self._run_monitoring_ui, args=(), daemon=True)
+                t.start()
+            except Exception:
+                pass
         handler = DevEventHandler(self.agents_dir, on_agent_changed=self._on_agent_changed)
         self.observer.schedule(handler, str(self.agents_dir), recursive=True)
         self.observer.schedule(handler, str(self.root), recursive=False)
