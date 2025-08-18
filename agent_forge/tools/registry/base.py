@@ -33,6 +33,10 @@ class IToolRegistry(Protocol):
         """Get tools available for a specific agent"""
         ...
 
+    def assign_tools_to_agent(self, agent_id: AgentID, tool_ids: list[ToolID]) -> None:
+        """Assign a set of tools to an agent (replaces any previous set)."""
+        ...
+
     # Tool execution
     async def execute_tool(self, tool_id: ToolID, parameters: dict[str, Any], context: ToolContext) -> ToolResult:
         """Execute a tool"""

@@ -36,6 +36,7 @@ class Agent(IAgent):
         return []
 
     def get_tools(self):
+        # Tools are assigned by the runtime's default toolkit; return empty spec for now.
         return {}
 
     async def health_check(self) -> HealthStatus:
