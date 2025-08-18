@@ -55,14 +55,17 @@ class LMStudioModelManager(IModelManager):
         }
         payload.update({k: v for k, v in kwargs.items() if v is not None})
 
+        timeout = kwargs.pop("timeout", 120.0)
         try:
-            async with httpx.AsyncClient(timeout=30.0) as client:
+            async with httpx.AsyncClient(timeout=timeout) as client:
                 resp = await client.post(url, json=payload)
                 resp.raise_for_status()
         except httpx.ConnectError as exc:  # noqa: PERF203
             raise RuntimeError(
                 f"LM Studio server not reachable at {self.endpoint}. Start it and enable the OpenAI-compatible API."
             ) from exc
+        except httpx.ReadTimeout as exc:
+            raise RuntimeError(f"LM Studio request timed out after {timeout}s") from exc
         except httpx.HTTPStatusError as exc:
             raise RuntimeError(f"LM Studio error: HTTP {exc.response.status_code} - {exc.response.text}") from exc
 

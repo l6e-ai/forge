@@ -7,6 +7,8 @@ import time
 
 import typer
 from rich import print as rprint
+from rich.console import Console
+from rich.markdown import Markdown
 
 from agent_forge.types.core import Message, AgentContext
 from prompt_toolkit import PromptSession
@@ -43,9 +45,14 @@ def chat(
     message: str = typer.Option("", "--message", "-m", help="Send a single message and exit"),
     workspace: str | None = typer.Option(None, "--workspace", "-w", help="Workspace root path"),
     monitor_url: str | None = typer.Option(None, "--monitor-url", help="Monitoring base URL (overrides env/config)"),
+    markdown: bool = typer.Option(True, "--markdown/--no-markdown", help="Render responses as Markdown in the terminal"),
+    debug: bool = typer.Option(False, "--debug", help="Print full tracebacks on errors"),
+    timeout: float = typer.Option(90.0, "--timeout", help="Model request timeout in seconds (direct providers)"),
 ):
     """Send a message to an agent and print the response."""
     root = _resolve_workspace(workspace)
+    console = Console()
+
     # Load config defaults (agent-level first, then workspace-level)
     provider_from_cfg: str | None = None
     model_from_cfg: str | None = None
@@ -102,6 +109,39 @@ def chat(
         display = f"{agent} ({use_provider}:{use_model})"
         return ident, display
 
+    def _print_response(text: str) -> None:
+        # Normalize and ensure string
+        try:
+            s = "" if text is None else str(text)
+        except Exception:
+            s = ""  # last resort
+        # Replace CR with LF and ensure terminal-friendly newlines
+        s = s.replace("\r\n", "\n").replace("\r", "\n")
+        # Strip non-printable control chars except tab/newline
+        s = "".join(ch for ch in s if ch == "\n" or ch == "\t" or ord(ch) >= 32)
+        if markdown:
+            try:
+                console.print(Markdown(s), soft_wrap=True)
+                return
+            except Exception:
+                # Fall back to plain text if markdown rendering isn't available
+                pass
+        try:
+            rprint(s)
+        except Exception:
+            # Very defensive: raw write to stdout
+            import sys
+            try:
+                sys.stdout.write(s + "\n")
+                sys.stdout.flush()
+            except Exception:
+                # Last-ditch attempt: encode ignoring errors
+                try:
+                    sys.stdout.buffer.write((s + "\n").encode("utf-8", errors="ignore"))
+                    sys.stdout.flush()
+                except Exception:
+                    pass
+
     # One session per invocation
     session_uuid = str(uuid.uuid4())
 
@@ -123,18 +163,23 @@ def chat(
                 mon.add_chat_log(conversation_id=ctx.conversation_id or "local", role=msg.role, content=msg.content)
                 await mon.record_event("chat.message", {"direction": "in", "role": msg.role})
                 _start = time.perf_counter()
-                resp = await manager.chat(model_id, [msg])
+                resp = await manager.chat(model_id, [msg], timeout=timeout)
                 elapsed_ms = (time.perf_counter() - _start) * 1000.0
+                _print_response(resp.message.content)
                 mon.add_chat_log(conversation_id=ctx.conversation_id or "local", role="assistant", content=resp.message.content, agent_id=d_agent_id)
                 await mon.record_metric("response_time_ms", elapsed_ms, tags={"agent": d_agent_id})
                 await mon.record_event("chat.message", {"direction": "out", "agent": d_agent_id})
-                rprint(resp.message.content)
             else:
                 assert runtime is not None and agent_id is not None
                 resp = await runtime.route_message(msg, target=agent_id, conversation_id=conversation_id, session_id=session_uuid)
-                rprint(resp.content)
+                _print_response(resp.content)
         except Exception as exc:  # noqa: BLE001
-            rprint(f"[red]Error:[/red] {exc}")
+            import traceback
+            err_type = type(exc).__name__
+            msg = str(exc) or repr(exc)
+            rprint(f"[red]Error ({err_type}):[/red] {msg}")
+            if debug:
+                rprint(traceback.format_exc())
             return 1
         return 0
 
@@ -197,9 +242,9 @@ def chat(
                         mon.add_chat_log(conversation_id=ctx.conversation_id or "local", role=msg.role, content=msg.content)
                         await mon.record_event("chat.message", {"direction": "in", "role": msg.role})
                         _start = time.perf_counter()
-                        resp = await manager.chat(await manager.load_model(ModelSpec(model_id=use_model, provider=use_provider, model_name=use_model, memory_requirement_gb=0.0)), conversation)  # type: ignore[arg-type]
+                        resp = await manager.chat(await manager.load_model(ModelSpec(model_id=use_model, provider=use_provider, model_name=use_model, memory_requirement_gb=0.0)), conversation, timeout=timeout)  # type: ignore[arg-type]
                         elapsed_ms = (time.perf_counter() - _start) * 1000.0
-                        rprint(resp.message.content)
+                        _print_response(resp.message.content)
                         conversation.append(resp.message)
                         mon.add_chat_log(conversation_id=ctx.conversation_id or "local", role="assistant", content=resp.message.content, agent_id=d_agent_id)
                         await mon.record_metric("response_time_ms", elapsed_ms, tags={"agent": d_agent_id})
@@ -207,16 +252,22 @@ def chat(
                     else:
                         assert runtime is not None and agent_id is not None
                         resp = await runtime.route_message(msg, target=agent_id, conversation_id=conversation_id, session_id=session_uuid)
-                        rprint(resp.content)
+                        _print_response(resp.content)
                 except Exception as exc:  # noqa: BLE001
-                    rprint(f"[red]Error:[/red] {exc}")
+                    import traceback
+                    err_type = type(exc).__name__
+                    msg = str(exc) or repr(exc)
+                    rprint(f"[red]Error ({err_type}):[/red] {msg}")
+                    if debug:
+                        rprint(traceback.format_exc())
                     return 1
                 return 0
 
             code = asyncio.run(_run_one_msg(user_input))
             if code != 0:
-                _cleanup()
-                raise typer.Exit(code=code)
+                if debug:
+                    rprint("[yellow]Continuing after error. Type another message or Ctrl+D to exit.[/yellow]")
+                continue
         # Unreachable
 
     code = asyncio.run(_run_once())
