@@ -13,6 +13,7 @@ import base64
 
 import typer
 from rich import print as rprint
+from agent_forge.infra.compose import ComposeTemplateService, ComposeServiceSpec
 
 
 app = typer.Typer(help="Package (.l6e) commands")
@@ -67,7 +68,14 @@ def _emit_toml_from_dict(root_table: str, data: dict) -> str:
     return "\n".join(lines) + ("\n" if lines else "")
 
 
-def _write_manifest(name: str, version: str, description: str | None, agent_cfg: dict | None) -> str:
+def _write_manifest(
+    name: str,
+    version: str,
+    description: str | None,
+    agent_cfg: dict | None,
+    artifacts: dict | None = None,
+    compose_meta: dict | None = None,
+) -> str:
     created = datetime.now(timezone.utc).isoformat() + "Z"
     desc = description or ""
     parts: list[str] = []
@@ -84,6 +92,12 @@ def _write_manifest(name: str, version: str, description: str | None, agent_cfg:
     if agent_cfg:
         parts.append(_emit_toml_from_dict("agent_config", agent_cfg).rstrip())
         parts.append("")
+    if artifacts:
+        parts.append(_emit_toml_from_dict("artifacts", artifacts).rstrip())
+        parts.append("")
+    if compose_meta:
+        parts.append(_emit_toml_from_dict("compose", compose_meta).rstrip())
+        parts.append("")
     return "\n".join(parts)
 
 
@@ -91,7 +105,11 @@ def _sha256_hex(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
-def _compute_checksums(manifest_bytes: bytes, agent_dir: Path) -> tuple[str, list[tuple[str, str]]]:
+def _compute_checksums(
+    manifest_bytes: bytes,
+    agent_dir: Path,
+    extra_files: list[tuple[str, bytes]] | None = None,
+) -> tuple[str, list[tuple[str, str]]]:
     """Return (checksums_text, entries) where entries are (path, sha256hex)."""
     entries: list[tuple[str, str]] = []
     entries.append(("package.toml", _sha256_hex(manifest_bytes)))
@@ -101,8 +119,18 @@ def _compute_checksums(manifest_bytes: bytes, agent_dir: Path) -> tuple[str, lis
             data = f.read()
         arcname = os.path.join("agent", str(file_path)[base_len:])
         entries.append((arcname, _sha256_hex(data)))
+    # Include extra artifacts (e.g., compose, requirements, wheels placeholder)
+    if extra_files:
+        for arcname, content in extra_files:
+            entries.append((arcname, _sha256_hex(content)))
     lines = [f"sha256 {path} {digest}" for path, digest in entries]
     return "\n".join(lines) + "\n", entries
+
+
+async def _generate_compose_yaml(services: list[str]) -> str:
+    svc = ComposeTemplateService()
+    specs = [ComposeServiceSpec(name=s, context={}) for s in services]
+    return await svc.generate(specs)
 
 
 # ==============================
@@ -175,6 +203,10 @@ def build(
     version: str = typer.Option("0.1.0", "--version", "-v", help="Package version"),
     description: str | None = typer.Option(None, "--description", "-d", help="Description for manifest"),
     sign_key: str | None = typer.Option(None, "--sign-key", help="Path to Ed25519 private key to sign checksums"),
+    profile: str = typer.Option("thin", "--profile", help="Package profile: thin | medium | fat"),
+    include_compose: bool = typer.Option(False, "--include-compose", help="Include a minimal compose overlay in package"),
+    compose_services: str = typer.Option("auto", "--compose-services", help="Comma-separated services to include in compose or 'auto' to infer"),
+    requirements: str | None = typer.Option(None, "--requirements", help="Path to requirements.txt to include (for fat)"),
 ) -> None:
     """Create a minimal public .l6e from an agent directory."""
     agent_dir = Path(agent_path).expanduser().resolve()
@@ -209,17 +241,70 @@ def build(
         except Exception:
             agent_cfg = None
 
-    manifest_text = _write_manifest(pkg_name, version, description, agent_cfg)
+    artifacts_meta: dict | None = None
+    compose_meta: dict | None = None
+    extras: list[tuple[str, bytes]] = []
+
+    # Optional compose overlay
+    if include_compose:
+        def _infer_services_from_config(cfg: dict | None) -> list[str]:
+            inferred: list[str] = []
+            if not cfg:
+                return ["monitor"]
+            try:
+                # Memory provider
+                mem = cfg.get("memory", {})
+                mem_provider = (mem or {}).get("provider")
+                if isinstance(mem_provider, str):
+                    if mem_provider.lower() == "qdrant":
+                        inferred.append("qdrant")
+                    elif mem_provider.lower() == "redis":
+                        inferred.append("redis")
+                # Model provider
+                model = cfg.get("model", {})
+                mod_provider = (model or {}).get("provider")
+                if isinstance(mod_provider, str) and mod_provider.lower() == "ollama":
+                    inferred.append("ollama")
+            except Exception:
+                pass
+            # Always include monitor for local dev stacks
+            if "monitor" not in inferred:
+                inferred.append("monitor")
+            return inferred
+
+        if compose_services.strip().lower() == "auto":
+            svcs = _infer_services_from_config(agent_cfg)
+        else:
+            svcs = [s.strip() for s in compose_services.split(",") if s.strip()]
+        # Render asynchronously
+        import asyncio as _asyncio
+
+        compose_yaml = _asyncio.run(_generate_compose_yaml(svcs))
+        extras.append(("compose/stack.yaml", compose_yaml.encode("utf-8")))
+        compose_meta = {"file": "compose/stack.yaml", "services": svcs}
+
+    # Optional artifacts metadata
+    artifacts_meta = {"profile": profile}
+    if requirements:
+        req_path = Path(requirements).expanduser().resolve()
+        if req_path.exists():
+            extras.append(("artifacts/requirements.txt", req_path.read_bytes()))
+            artifacts_meta["requirements"] = "artifacts/requirements.txt"
+
+    manifest_text = _write_manifest(pkg_name, version, description, agent_cfg, artifacts_meta, compose_meta)
     manifest_bytes = manifest_text.encode("utf-8")
 
     try:
         # First compute checksums with manifest and agent files
-        checksums_text, _ = _compute_checksums(manifest_bytes, agent_dir)
+        checksums_text, _ = _compute_checksums(manifest_bytes, agent_dir, extras)
         with zipfile.ZipFile(pkg_file, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
             # Write manifest
             zf.writestr("package.toml", manifest_bytes)
             # Write checksums
             zf.writestr("checksums.txt", checksums_text)
+            # Write extras
+            for arcname, content in extras:
+                zf.writestr(arcname, content)
             # Optional signature of checksums.txt
             if sign_key:
                 try:

@@ -1,8 +1,5 @@
 from __future__ import annotations
 
-AGENT_ASSISTANT_MODEL_PY = """
-from __future__ import annotations
-
 from agent_forge.types.config import AgentConfig
 from agent_forge.types.core import AgentContext, AgentResponse, Message
 from agent_forge.types.error import HealthStatus
@@ -12,7 +9,7 @@ from agent_forge.types.model import ModelSpec
 
 
 class Agent(IAgent):
-    name = "{{ name }}"
+    name = "test-auto-2"
     description = "Assistant agent using auto-bootstrap models"
     version = "0.1.0"
 
@@ -57,6 +54,3 @@ class Agent(IAgent):
 
     def get_metrics(self):
         return {}
-"""
-
-

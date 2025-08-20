@@ -1,0 +1,4 @@
+[agent]
+name = "test-bootstrap"
+provider = "lmstudio"
+model = "l3-unrestricted"

@@ -234,6 +234,185 @@ def test_pkg_checksums_present_and_inspect_counts(tmp_path: Path) -> None:
     assert "(2 entries)" in result_inspect.output
 
 
+def test_pkg_profiles_with_compose_and_requirements(tmp_path: Path) -> None:
+    runner = CliRunner()
+    agent_dir = _write_min_agent(tmp_path / "src", name="layered")
+    dist_dir = tmp_path / "dist"
+    req = tmp_path / "req.txt"
+    req.write_text("requests==2.32.3\n", encoding="utf-8")
+
+    # Build medium with compose overlay
+    result_build_medium = runner.invoke(
+        main_app,
+        [
+            "pkg",
+            "build",
+            str(agent_dir),
+            "--out",
+            str(dist_dir),
+            "--version",
+            "0.0.2",
+            "--profile",
+            "medium",
+            "--include-compose",
+            "--compose-services",
+            "monitor,redis",
+        ],
+        catch_exceptions=False,
+    )
+    assert result_build_medium.exit_code == 0, result_build_medium.output
+    pkg_medium = dist_dir / "layered-0.0.2.l6e"
+    assert pkg_medium.exists()
+    # Verify compose exists
+    import zipfile
+    with zipfile.ZipFile(pkg_medium, "r") as zf:
+        assert "compose/stack.yaml" in zf.namelist()
+        with zf.open("package.toml") as f:
+            import tomllib as _toml
+
+            data = _toml.load(f)
+            assert data.get("artifacts", {}).get("profile") == "medium"
+            assert data.get("compose", {}).get("file") == "compose/stack.yaml"
+
+    # Build fat with requirements
+    result_build_fat = runner.invoke(
+        main_app,
+        [
+            "pkg",
+            "build",
+            str(agent_dir),
+            "--out",
+            str(dist_dir),
+            "--version",
+            "0.0.3",
+            "--profile",
+            "fat",
+            "--requirements",
+            str(req),
+        ],
+        catch_exceptions=False,
+    )
+    assert result_build_fat.exit_code == 0, result_build_fat.output
+    pkg_fat = dist_dir / "layered-0.0.3.l6e"
+    assert pkg_fat.exists()
+    with zipfile.ZipFile(pkg_fat, "r") as zf:
+        assert "artifacts/requirements.txt" in zf.namelist()
+        with zf.open("package.toml") as f:
+            import tomllib as _toml
+
+            data = _toml.load(f)
+            assert data.get("artifacts", {}).get("profile") == "fat"
+            assert data.get("artifacts", {}).get("requirements") == "artifacts/requirements.txt"
+
+
+def test_pkg_compose_auto_infers_qdrant_and_ollama(tmp_path: Path) -> None:
+    runner = CliRunner()
+    agent_dir = _write_min_agent(tmp_path / "src", name="auto1")
+    # config: qdrant + ollama
+    (agent_dir / "config.toml").write_text(
+        (
+            """
+[agent]
+name = "auto1"
+
+[memory]
+provider = "qdrant"
+
+[model]
+provider = "ollama"
+model = "llama3.2:3b"
+"""
+        ).strip(),
+        encoding="utf-8",
+    )
+    dist_dir = tmp_path / "dist"
+    result_build = runner.invoke(
+        main_app,
+        [
+            "pkg",
+            "build",
+            str(agent_dir),
+            "--out",
+            str(dist_dir),
+            "--version",
+            "0.0.4",
+            "--include-compose",
+            "--compose-services",
+            "auto",
+        ],
+        catch_exceptions=False,
+    )
+    assert result_build.exit_code == 0, result_build.output
+    pkg_path = dist_dir / "auto1-0.0.4.l6e"
+    import zipfile
+    with zipfile.ZipFile(pkg_path, "r") as zf:
+        with zf.open("package.toml") as f:
+            import tomllib as _toml
+
+            data = _toml.load(f)
+            svcs = data.get("compose", {}).get("services", [])
+            assert "monitor" in svcs
+            assert "qdrant" in svcs
+            assert "ollama" in svcs
+            assert "redis" not in svcs
+        text = zf.read("compose/stack.yaml").decode("utf-8")
+        assert "qdrant:" in text
+        assert "ollama:" in text
+        assert "redis:" not in text
+
+
+def test_pkg_compose_auto_infers_redis_only(tmp_path: Path) -> None:
+    runner = CliRunner()
+    agent_dir = _write_min_agent(tmp_path / "src", name="auto2")
+    # config: redis memory only
+    (agent_dir / "config.toml").write_text(
+        (
+            """
+[agent]
+name = "auto2"
+
+[memory]
+provider = "redis"
+"""
+        ).strip(),
+        encoding="utf-8",
+    )
+    dist_dir = tmp_path / "dist"
+    result_build = runner.invoke(
+        main_app,
+        [
+            "pkg",
+            "build",
+            str(agent_dir),
+            "--out",
+            str(dist_dir),
+            "--version",
+            "0.0.5",
+            "--include-compose",
+            "--compose-services",
+            "auto",
+        ],
+        catch_exceptions=False,
+    )
+    assert result_build.exit_code == 0, result_build.output
+    pkg_path = dist_dir / "auto2-0.0.5.l6e"
+    import zipfile
+    with zipfile.ZipFile(pkg_path, "r") as zf:
+        with zf.open("package.toml") as f:
+            import tomllib as _toml
+
+            data = _toml.load(f)
+            svcs = data.get("compose", {}).get("services", [])
+            assert "monitor" in svcs
+            assert "redis" in svcs
+            assert "qdrant" not in svcs
+            assert "ollama" not in svcs
+        text = zf.read("compose/stack.yaml").decode("utf-8")
+        assert "redis:" in text
+        assert "qdrant:" not in text
+        assert "ollama:" not in text
+
+
 def test_pkg_install_verifies_checksums_and_detects_mismatch(tmp_path: Path) -> None:
     runner = CliRunner()
     agent_dir = _write_min_agent(tmp_path / "src", name="tamper")

@@ -1,0 +1,13 @@
+[root.agent]
+name = "test-auto"
+version = "0.1.0"
+[root.model]
+provider = "ollama"
+model = "llama3.1:8b-instruct"
+
+[root.model.auto]
+enabled = true
+providers = ["ollama"]
+quality = "balanced"
+[root.memory]
+embedding_model = "nomic-embed-text:latest"
