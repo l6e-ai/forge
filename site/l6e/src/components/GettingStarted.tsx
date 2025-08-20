@@ -6,18 +6,18 @@ const steps = `# Install l6e AI
 $ pip install l6e-forge
 
 # Create and customize your agent
-$ l6e create my-agent --template=assistant
+$ forge create agent my-agent --template=assistant
 $ # Edit my-agent/agent.py with your logic
 
 # Test locally
-$ l6e chat my-agent
+$ forge chat my-agent
 
 # Package for deployment
-$ l6e package my-agent
+$ forge package my-agent
 📦 Created my-agent.l6e (portable agent)
 
 # Deploy anywhere
-$ l6e deploy my-agent.l6e
+$ forge deploy my-agent.l6e
 🚀 Agent running locally`;
 
 export default function GettingStarted() {
@@ -27,7 +27,7 @@ export default function GettingStarted() {
       <p className="text-white/70 max-w-2xl mb-6">
         l6e/forge helps you build portable AI agents with a local-first workflow.
       </p>
-      <CodeBlock code={steps} mode="bash" />
+      <CodeBlock code={steps} mode="bash" highlight language="bash" themeName="dracula" />
     </Section>
   );
 }

@@ -26,6 +26,14 @@ const features = [
     title: "🔒 Enterprise Ready",
     body: "Secure packaging, audit trails, and compliance friendly.",
   },
+  {
+    title: "🧩 Pluggable Runners",
+    body: "Use multiple local LLM providers (LM Studio, Ollama). Easily extend with custom runners like llama.cpp (coming soon).",
+  },
+  {
+    title: "🔌 Interfaces, not rewrites",
+    body: "Type-safe interfaces let you adapt existing agents or frameworks (e.g., LangChain) without rebuilding from scratch.",
+  },
 ];
 
 export default function Features() {

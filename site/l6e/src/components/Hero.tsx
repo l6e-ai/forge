@@ -5,10 +5,10 @@ import CodeBlock from "./CodeBlock";
 
 const terminalText = [
   "$ pip install l6e-forge",
-  "$ l6e create assistant --template=personal",
-  "$ l6e package assistant",
+  "$ forge create agent assistant --template=personal",
+  "$ forge package assistant",
   "📦 Packaged assistant.l6e (ready to deploy)",
-  "$ l6e deploy assistant.l6e --target=production",
+  "$ forge deploy assistant.l6e --target=production",
   "🚀 Agent deployed locally",
   "✨ Your AI runs where you need it.",
 ].join("\n");
@@ -19,15 +19,15 @@ export default function Hero() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
         <div>
           <div className="inline-flex items-center gap-2 rounded-full border border-white/10 px-3 py-1 text-xs text-white/70 mb-4">
-            <span className="h-2 w-2 rounded-full bg-[#00ff88]" /> Open Source • Local-first
+            <span className="h-2 w-2 rounded-full bg-[var(--accent)]" /> Open Source • Local-first
           </div>
           <h1 className="text-4xl sm:text-5xl font-bold tracking-tight">
             l6e AI
             <br />
-            <span className="text-white/90">Localizing AI for everyone</span>
+            <span className="text-white/90">Localize AI for everyone</span>
           </h1>
           <p className="mt-4 text-lg text-white/70 max-w-xl">
-            Create portable AI agents that run anywhere. Build once, deploy everywhere. No cloud required.
+            Create portable AI agents that run anywhere. Plug into local LLM runners like LM Studio and Ollama. Bring your current stack, or start fresh in minutes.
           </p>
           <div className="mt-6 flex items-center gap-3">
             <Button href="https://github.com/l6e-ai/agent-forge" variant="primary">Create Your First Agent</Button>
@@ -35,7 +35,7 @@ export default function Hero() {
           </div>
         </div>
         <div>
-          <CodeBlock code={terminalText} mode="bash" />
+          <CodeBlock code={terminalText} mode="bash" highlight language="bash" themeName="dracula" />
         </div>
       </div>
     </Section>

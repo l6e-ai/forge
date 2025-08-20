@@ -2,6 +2,8 @@
 
 import React from "react";
 import clsx from "clsx";
+import { Highlight, themes } from "prism-react-renderer";
+import type { Language, PrismTheme } from "prism-react-renderer";
 
 type CodeBlockProps = {
   code: string;
@@ -9,6 +11,20 @@ type CodeBlockProps = {
   copy?: boolean;
   mode?: "text" | "bash";
   copyTransform?: (displayed: string) => string;
+  highlight?: boolean;
+  language?: Language;
+  themeName?:
+    | "dracula"
+    | "duotoneDark"
+    | "duotoneLight"
+    | "github"
+    | "nightOwl"
+    | "nightOwlLight"
+    | "oceanicNext"
+    | "palenight"
+    | "shadesOfPurple"
+    | "synthwave84"
+    | "ultramin";
 };
 
 function defaultBashCopyTransform(displayed: string): string {
@@ -27,7 +43,7 @@ function defaultBashCopyTransform(displayed: string): string {
     .join("\n");
 }
 
-export default function CodeBlock({ code, className, copy = true, mode = "text", copyTransform }: CodeBlockProps) {
+export default function CodeBlock({ code, className, copy = true, mode = "text", copyTransform, highlight = false, language = "tsx", themeName = "dracula" }: CodeBlockProps) {
   const [copied, setCopied] = React.useState(false);
 
   const onCopy = async () => {
@@ -45,8 +61,11 @@ export default function CodeBlock({ code, className, copy = true, mode = "text",
     }
   };
 
+  const themeMap = themes as Record<string, PrismTheme>;
+  const selectedTheme: PrismTheme = themeMap[themeName] || themes.dracula;
+
   return (
-    <div className={clsx("relative bg-black/60 border border-white/10 rounded-lg p-4 font-mono text-sm text-white/90", className)}>
+    <div className={clsx("relative bg-[#0c0c0c] border border-white/10 rounded-lg p-4 font-mono text-[13px] leading-relaxed text-white/90", className)}>
       {copy && (
         <button
           onClick={onCopy}
@@ -59,7 +78,32 @@ export default function CodeBlock({ code, className, copy = true, mode = "text",
           {copied ? "Copied" : "Copy"}
         </button>
       )}
-      <pre className="whitespace-pre-wrap leading-relaxed">{code}</pre>
+      {highlight ? (
+        <Highlight theme={selectedTheme} code={code} language={language}>
+          {({ className: cl, style, tokens, getLineProps, getTokenProps }) => (
+            <pre
+              className={cl}
+              style={{
+                ...style,
+                background: "transparent",
+                whiteSpace: "pre-wrap",
+                overflowWrap: "anywhere",
+                wordBreak: "break-word",
+              }}
+            >
+              {tokens.map((line, i) => (
+                <div key={i} {...getLineProps({ line })}>
+                  {line.map((token, key) => (
+                    <span key={key} {...getTokenProps({ token })} />
+                  ))}
+                </div>
+              ))}
+            </pre>
+          )}
+        </Highlight>
+      ) : (
+        <pre className="whitespace-pre-wrap leading-relaxed">{code}</pre>
+      )}
     </div>
   );
 }
