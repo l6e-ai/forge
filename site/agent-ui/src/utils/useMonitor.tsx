@@ -24,6 +24,8 @@ export const MonitorProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [chats, setChats] = useState<ChatLog[] | null>(null)
   const wsRef = useRef<WebSocket | null>(null)
 
+  const didInitialRefreshRef = useRef(false)
+
   const refresh = useCallback(async () => {
     const [a, p, c] = await Promise.all([
       fetch('/monitor/api/agents').then(r => r.json()),
@@ -36,44 +38,71 @@ export const MonitorProvider: React.FC<{ children: React.ReactNode }> = ({ child
   }, [])
 
   useEffect(() => {
+    // Guard against React.StrictMode double-invocation in dev
+    if (didInitialRefreshRef.current) return
+    didInitialRefreshRef.current = true
     refresh()
   }, [refresh])
 
   useEffect(() => {
-    const proto = location.protocol === 'https:' ? 'wss' : 'ws'
-    const ws = new WebSocket(`${proto}://${location.host}/monitor/ws`)
-    wsRef.current = ws
-    ws.onmessage = (ev) => {
-      try {
-        const msg = JSON.parse(ev.data)
-        if (msg.type === 'snapshot') {
-          setAgents(msg.agents)
-          setPerf(msg.perf)
-          return
-        }
-        if (msg.type === 'metric' && msg.data?.name === 'response_time_ms') {
-          fetch('/monitor/api/perf').then(r => r.json()).then(setPerf)
-        }
-        if (msg.type === 'event') {
-          const et = msg.data?.event_type
-          if (et === 'chat.message') {
-            fetch('/monitor/api/chats').then(r => r.json()).then(setChats)
+    let shouldReconnect = true
+    let reconnectDelayMs = 500
+
+    const connect = () => {
+      if (!shouldReconnect) return
+      // Avoid opening a second connection
+      if (wsRef.current && wsRef.current.readyState < 2) return
+
+      const proto = location.protocol === 'https:' ? 'wss' : 'ws'
+      const ws = new WebSocket(`${proto}://${location.host}/monitor/ws`)
+      wsRef.current = ws
+
+      ws.onopen = () => {
+        // reset backoff on successful connect
+        reconnectDelayMs = 500
+      }
+
+      ws.onmessage = (ev) => {
+        try {
+          const msg = JSON.parse(ev.data)
+          if (msg.type === 'snapshot') {
+            setAgents(msg.agents)
+            setPerf(msg.perf)
+            return
           }
-          if (et === 'agent.registered' || et === 'agent.unregistered') {
-            fetch('/monitor/api/agents').then(r => r.json()).then(setAgents)
+          if (msg.type === 'metric' && msg.data?.name === 'response_time_ms') {
+            fetch('/monitor/api/perf').then(r => r.json()).then(setPerf)
           }
+          if (msg.type === 'event') {
+            const et = msg.data?.event_type
+            if (et === 'chat.message') {
+              fetch('/monitor/api/chats').then(r => r.json()).then(setChats)
+            }
+            if (et === 'agent.registered' || et === 'agent.unregistered') {
+              fetch('/monitor/api/agents').then(r => r.json()).then(setAgents)
+            }
+          }
+        } catch {
+          // ignore
         }
-      } catch (e) {
-        // ignore
+      }
+
+      ws.onclose = () => {
+        if (!shouldReconnect) return
+        setTimeout(() => {
+          // Exponential backoff up to 10s
+          reconnectDelayMs = Math.min(reconnectDelayMs * 2, 10_000)
+          connect()
+        }, reconnectDelayMs)
       }
     }
-    ws.onclose = () => {
-      setTimeout(() => {
-        // force reload to reconnect
-        location.reload()
-      }, 1000)
+
+    connect()
+    return () => {
+      shouldReconnect = false
+      try { wsRef.current?.close() } catch {}
+      wsRef.current = null
     }
-    return () => ws.close()
   }, [])
 
   const sendChat = useCallback(async (text: string) => {

@@ -30,6 +30,7 @@ app.add_typer(package_cmd.app, name="pkg")
 @app.command()
 def init(
     workspace: str = typer.Argument(..., help="Path to create the workspace in"),
+    with_example: bool = typer.Option(False, "--with-example", help="Also scaffold a sample agent 'demo'"),
 ):
     """Create a new Agent-Forge workspace at the given path."""
     manager = LocalWorkspaceManager()
@@ -39,6 +40,22 @@ def init(
         import asyncio
 
         asyncio.run(manager.create_workspace(path))
+        # Optionally scaffold an example agent to get started quickly
+        if with_example:
+            try:
+                from agent_forge.cli.create import agent as create_agent
+                create_agent.callback  # type: ignore[attr-defined]
+                # run the command function directly
+                create_agent(
+                    name="demo",
+                    workspace=str(path),
+                    provider="ollama",
+                    model="llama3.2:3b",
+                    provider_endpoint=None,
+                    template="assistant",
+                )
+            except Exception:
+                rprint("[yellow]Failed to scaffold example agent. You can create one later with 'forge create <name>'.[/yellow]")
         rprint("[green]Workspace created successfully.[/green]")
     except Exception as exc:  # noqa: BLE001
         rprint(f"[red]Failed to create workspace:[/red] {exc}")
@@ -110,6 +127,7 @@ def up(
     no_dev: bool = typer.Option(False, "--no-dev", help="Do not start dev runtime"),
     dev_only: bool = typer.Option(False, "--dev-only", help="Only start dev runtime; skip containers"),
     build: bool = typer.Option(False, "--build", help="Build images before starting containers"),
+    open_ui: bool = typer.Option(True, "--open-ui/--no-open-ui", help="Open the UI in your browser after start"),
 ) -> None:
     """Start local stack: containers (monitor) and dev runtime with monitoring wired."""
     compose_path = _find_compose_file(compose_file)
@@ -125,6 +143,12 @@ def up(
         if code != 0:
             raise typer.Exit(code=code)
         rprint("[green]Containers started.[/green]")
+        if open_ui:
+            try:
+                import webbrowser
+                webbrowser.open("http://localhost:5173", new=2)
+            except Exception:
+                pass
 
     if not no_dev:
         # Resolve workspace and start dev mode with AF_MONITOR_URL set

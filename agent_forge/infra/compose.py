@@ -53,6 +53,27 @@ class ComposeTemplateService:
       - "{{ port | default('8321') }}:{{ port | default('8321') }}"
             """
         ).strip("\n"),
+        "api": (
+            """
+  api:
+    image: agent-forge/api:{{ tag | default('latest') }}
+    environment:
+      - AF_MONITOR_URL=http://monitor:8321
+      - AF_WORKSPACE=/workspace
+    ports:
+      - "{{ port | default('8000') }}:{{ port | default('8000') }}"
+            """
+        ).strip("\n"),
+        "ui": (
+            """
+  ui:
+    image: node:22-alpine
+    working_dir: /app/site/agent-ui
+    command: sh -c "npm ci && npm run dev -- --host 0.0.0.0"
+    ports:
+      - "{{ port | default('5173') }}:{{ port | default('5173') }}"
+            """
+        ).strip("\n"),
     }
 
     def __init__(self) -> None:
