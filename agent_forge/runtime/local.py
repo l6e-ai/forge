@@ -41,6 +41,7 @@ class LocalRuntime:
         self._model_manager = None
         self._agent_configs: dict[AgentID, dict[str, Any]] = {}
         self._agent_paths: dict[AgentID, Path] = {}
+        self._tool_registry = None
 
     # Agent management
     async def register_agent(self, agent_path: Path) -> AgentID:
@@ -93,6 +94,22 @@ class LocalRuntime:
         self._name_to_id[agent_name] = agent_id
         self._agent_configs[agent_id] = config_data
         self._agent_paths[agent_id] = agent_dir
+        # Assign default toolkit on first use
+        try:
+            _ = self.get_tool_registry()
+            from agent_forge.tools.filesystem import FilesystemTool
+            from agent_forge.tools.terminal import TerminalTool
+            from agent_forge.tools.web import WebFetchTool
+            from agent_forge.tools.code import CodeUtilsTool
+
+            fs_id = self._tool_registry.register_tool(FilesystemTool())
+            term_id = self._tool_registry.register_tool(TerminalTool())
+            web_id = self._tool_registry.register_tool(WebFetchTool())
+            code_id = self._tool_registry.register_tool(CodeUtilsTool())
+            self._tool_registry.assign_tools_to_agent(agent_id, [fs_id, term_id, web_id, code_id])
+        except Exception:
+            # Best-effort only in MVP
+            pass
         # Update monitoring
         try:
             mon = get_monitoring()
@@ -200,7 +217,11 @@ class LocalRuntime:
         return self._model_manager
 
     def get_tool_registry(self):  # -> IToolRegistry
-        raise NotImplementedError
+        if self._tool_registry is None:
+            from agent_forge.tools.registry.inmemory import InMemoryToolRegistry
+
+            self._tool_registry = InMemoryToolRegistry()
+        return self._tool_registry
 
     def get_event_bus(self):  # -> IEventBus
         raise NotImplementedError

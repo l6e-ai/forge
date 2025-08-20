@@ -16,6 +16,7 @@ from agent_forge.cli import chat as chat_cmd
 from agent_forge.cli import template as template_cmd
 from agent_forge.cli import models as models_cmd
 from agent_forge.dev.service import DevService
+from agent_forge.cli import package as package_cmd
 
 app = typer.Typer(help="Agent-Forge CLI")
 app.add_typer(create_cmd.app, name="create")
@@ -23,6 +24,7 @@ app.add_typer(dev_cmd.app, name="dev")
 app.add_typer(chat_cmd.app, name="chat")
 app.add_typer(template_cmd.app, name="template")
 app.add_typer(models_cmd.app, name="models")
+app.add_typer(package_cmd.app, name="pkg")
 
 
 @app.command()

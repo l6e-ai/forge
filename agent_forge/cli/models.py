@@ -2,10 +2,18 @@ from __future__ import annotations
 
 import typer
 from rich import print as rprint
+from pathlib import Path
 from rich.table import Table
 
 from agent_forge.models.managers.ollama import OllamaModelManager
 from agent_forge.models.managers.lmstudio import LMStudioModelManager
+from agent_forge.models.auto import (
+    get_system_profile,
+    AutoHints,
+    recommend_models,
+    ensure_ollama_models,
+    apply_recommendations_to_agent_config,
+)
 
 
 app = typer.Typer(help="Model utilities")
@@ -51,6 +59,52 @@ def list(
         raise typer.Exit(code=0)
 
     rprint(table)
+
+
+@app.command()
+def doctor() -> None:
+    """Show system profile relevant to local model selection."""
+    sys = get_system_profile()
+    rprint("[cyan]System Profile[/cyan]")
+    rprint(f"  OS: {sys.os}")
+    rprint(f"  CPU cores: {sys.cpu_cores}")
+    rprint(f"  RAM: {sys.ram_gb} GB")
+    rprint(f"  GPU: {'yes' if sys.has_gpu else 'no'}  VRAM: {sys.vram_gb} GB")
+    rprint(f"  Internet: {'yes' if sys.has_internet else 'no'}")
+    rprint(f"  Ollama CLI: {'yes' if sys.has_ollama else 'no'}")
+
+
+@app.command()
+def bootstrap(
+    agent: str = typer.Argument(..., help="Agent directory (contains config.toml)"),
+    provider: str = typer.Option("ollama", "--provider", help="Provider to bootstrap (ollama only for now)"),
+    dry_run: bool = typer.Option(False, "--dry-run", help="Only print recommendations"),
+) -> None:
+    """Auto-select and (optionally) pull recommended local models for an agent."""
+    sys = get_system_profile()
+    hints = AutoHints(provider_order=[provider])
+    recs = recommend_models(sys, hints)
+    rprint("[cyan]Recommended Models[/cyan]")
+    for k, v in recs.items():
+        rprint(f"  {k}: {v}")
+    if dry_run:
+        return
+    if provider == "ollama":
+        recs = ensure_ollama_models(recs)
+        apply_recommendations_to_agent_config(Path(agent), provider, recs)
+        # Show a concise confirmation of config
+        rprint("[green]Models ready and agent config updated.[/green]")
+        try:
+            cfg_path = Path(agent) / "config.toml"
+            text = cfg_path.read_text(encoding="utf-8")
+            # Print only the model and memory sections for clarity
+            snippet = "\n".join([ln for ln in text.splitlines() if ln.strip().startswith("[model]") or ln.strip().startswith("provider =") or ln.strip().startswith("model =") or ln.strip().startswith("[memory]") or ln.strip().startswith("embedding_model")])
+            if snippet:
+                rprint("\n[cyan]Updated config[/cyan]\n" + snippet)
+        except Exception:
+            pass
+    else:
+        rprint(f"[yellow]Provider not supported yet: {provider}[/yellow]")
 
 
 def main() -> None:

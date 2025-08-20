@@ -15,13 +15,22 @@ def load_endpoints_from_config(workspace_root: Path) -> Tuple[str | None, dict[s
     if not cfg_path.exists():
         return default_provider, endpoints
     try:
-        import asyncio
+        import tomllib
 
-        mgr = TomlConfigManager()
-        _ = asyncio.run(mgr.load_config(cfg_path))
-        default_provider = mgr.get_config_value("models.default_provider")
-        ollama_ep = mgr.get_config_value("models.endpoints.ollama")
-        lmstudio_ep = mgr.get_config_value("models.endpoints.lmstudio")
+        with cfg_path.open("rb") as f:
+            data = tomllib.load(f) or {}
+        # Read simple keys synchronously to avoid un-awaited coroutine warnings in CLI
+        def _get(d: dict, path: str):
+            cur: Any = d
+            for part in path.split("."):
+                if not isinstance(cur, dict) or part not in cur:
+                    return None
+                cur = cur[part]
+            return cur
+
+        default_provider = _get(data, "models.default_provider")
+        ollama_ep = _get(data, "models.endpoints.ollama")
+        lmstudio_ep = _get(data, "models.endpoints.lmstudio")
         if isinstance(ollama_ep, str):
             endpoints["ollama"] = ollama_ep
         if isinstance(lmstudio_ep, str):
