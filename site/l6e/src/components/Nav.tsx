@@ -17,11 +17,11 @@ export default function Nav() {
           <Link href="/#integrations" className="hover:text-white">Integrations</Link>
           <Link href="/#getting-started" className="hover:text-white">Getting Started</Link>
           <Link href="/docs" className="hover:text-white">Docs</Link>
-          <Link href="https://github.com/l6e-ai/agent-forge" target="_blank" rel="noopener noreferrer" className="hover:text-white">GitHub</Link>
-          <Button href="https://github.com/l6e-ai/agent-forge" variant="primary">Get Started</Button>
+          <Link href="https://github.com/l6e-ai/forge" target="_blank" rel="noopener noreferrer" className="hover:text-white">GitHub</Link>
+          <Button href="https://github.com/l6e-ai/forge" variant="primary">Get Started</Button>
         </nav>
         <div className="md:hidden">
-          <Button href="https://github.com/l6e-ai/agent-forge" variant="primary">Get Started</Button>
+          <Button href="https://github.com/l6e-ai/forge" variant="primary">Get Started</Button>
         </div>
       </div>
     </header>

@@ -7,7 +7,7 @@ services:
     ports:
       - "8321:8321"
     volumes:
-      - ./agent_forge:/app/agent_forge
+      - ./l6e_forge:/app/l6e_forge
     environment:
       - MONITOR_PORT=8321
     restart: unless-stopped
@@ -20,7 +20,7 @@ services:
       - AF_MONITOR_URL=http://monitor:8321
       - AF_WORKSPACE=/workspace
     volumes:
-      - ./agent_forge:/app/agent_forge
+      - ./l6e_forge:/app/l6e_forge
       - ./tmp-workspace:/workspace
     depends_on:
       - monitor

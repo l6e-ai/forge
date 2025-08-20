@@ -37,8 +37,8 @@ export default function Hero() {
             Create portable AI agents that run anywhere. Plug into local LLM runners like LM Studio and Ollama. Our Auto Model selector can choose and install optimized OSS model(s) for any system your agent runs on.
           </p>
           <div className="mt-6 flex items-center gap-3">
-            <Button href="https://github.com/l6e-ai/agent-forge" variant="primary">Create Your First Agent</Button>
-            <Button href="https://github.com/l6e-ai/agent-forge" variant="outline">View on GitHub</Button>
+            <Button href="https://github.com/l6e-ai/forge" variant="primary">Create Your First Agent</Button>
+            <Button href="https://github.com/l6e-ai/forge" variant="outline">View on GitHub</Button>
           </div>
         </div>
         <div>

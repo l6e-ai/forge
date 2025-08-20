@@ -16,7 +16,7 @@ export default function DocsPage() {
           <div className="mt-6">
             <a
               className="underline underline-offset-4 hover:text-white"
-              href="https://github.com/l6e-ai/agent-forge"
+              href="https://github.com/l6e-ai/forge"
               target="_blank"
               rel="noreferrer"
             >
