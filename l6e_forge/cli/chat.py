@@ -158,6 +158,14 @@ def chat(
     except Exception:
         pass
 
+    # Environment overrides for endpoints (useful in Docker: host.docker.internal)
+    env_ollama = os.environ.get("OLLAMA_HOST")
+    env_lmstudio = os.environ.get("LMSTUDIO_HOST")
+    if env_ollama:
+        endpoints["ollama"] = env_ollama
+    if env_lmstudio:
+        endpoints["lmstudio"] = env_lmstudio
+
     # Ensure monitoring is configured for this process if not already
     if not os.environ.get("AF_MONITOR_URL"):
         use_url = monitor_url or os.environ.get("AF_MONITOR_URL") or "http://localhost:8321"
@@ -226,18 +234,18 @@ def chat(
             if use_direct_model:
                 if stream:
                     if use_provider == "ollama":
-                        endpoint = endpoints.get("ollama", "http://localhost:11434")
+                        endpoint = endpoints.get("ollama", os.environ.get("OLLAMA_HOST", "http://localhost:11434"))
                         await _stream_ollama_chat(endpoint, str(use_model), [msg])  # type: ignore[arg-type]
                     else:
-                        endpoint = endpoints.get("lmstudio", "http://localhost:1234/v1")
+                        endpoint = endpoints.get("lmstudio", os.environ.get("LMSTUDIO_HOST", "http://localhost:1234/v1"))
                         await _stream_lmstudio_chat(endpoint, str(use_model), [msg])  # type: ignore[arg-type]
                 else:
                     if use_provider == "ollama":
-                        endpoint = endpoints.get("ollama", "http://localhost:11434")
+                        endpoint = endpoints.get("ollama", os.environ.get("OLLAMA_HOST", "http://localhost:11434"))
                         rprint(f"[cyan]Using provider:[/cyan] ollama at {endpoint}")
                         manager = OllamaModelManager(endpoint=endpoint)
                     else:
-                        endpoint = endpoints.get("lmstudio", "http://localhost:1234/v1")
+                        endpoint = endpoints.get("lmstudio", os.environ.get("LMSTUDIO_HOST", "http://localhost:1234/v1"))
                         rprint(f"[cyan]Using provider:[/cyan] lmstudio at {endpoint}")
                         manager = LMStudioModelManager(endpoint=endpoint)
                     spec = ModelSpec(model_id=use_model, provider=use_provider, model_name=use_model, memory_requirement_gb=0.0)  # type: ignore[arg-type]
@@ -326,18 +334,18 @@ def chat(
                         conversation.append(msg)
                         if stream:
                             if use_provider == "ollama":
-                                endpoint = endpoints.get("ollama", "http://localhost:11434")
+                                endpoint = endpoints.get("ollama", os.environ.get("OLLAMA_HOST", "http://localhost:11434"))
                                 await _stream_ollama_chat(endpoint, str(use_model), conversation)  # type: ignore[arg-type]
                             else:
-                                endpoint = endpoints.get("lmstudio", "http://localhost:1234/v1")
+                                endpoint = endpoints.get("lmstudio", os.environ.get("LMSTUDIO_HOST", "http://localhost:1234/v1"))
                                 await _stream_lmstudio_chat(endpoint, str(use_model), conversation)  # type: ignore[arg-type]
                         else:
                             if use_provider == "ollama":
-                                endpoint = endpoints.get("ollama", "http://localhost:11434")
+                                endpoint = endpoints.get("ollama", os.environ.get("OLLAMA_HOST", "http://localhost:11434"))
                                 rprint(f"[cyan]Using provider:[/cyan] ollama at {endpoint}")
                                 manager = OllamaModelManager(endpoint=endpoint)
                             else:
-                                endpoint = endpoints.get("lmstudio", "http://localhost:1234/v1")
+                                endpoint = endpoints.get("lmstudio", os.environ.get("LMSTUDIO_HOST", "http://localhost:1234/v1"))
                                 rprint(f"[cyan]Using provider:[/cyan] lmstudio at {endpoint}")
                                 manager = LMStudioModelManager(endpoint=endpoint)
                             resp = await manager.chat(await manager.load_model(ModelSpec(model_id=use_model, provider=use_provider, model_name=use_model, memory_requirement_gb=0.0)), conversation, timeout=timeout)  # type: ignore[arg-type]

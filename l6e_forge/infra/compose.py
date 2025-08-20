@@ -60,6 +60,8 @@ class ComposeTemplateService:
     environment:
       - AF_MONITOR_URL=http://monitor:8321
       - AF_WORKSPACE=/workspace
+      - OLLAMA_HOST=http://host.docker.internal:11434
+      - LMSTUDIO_HOST=http://host.docker.internal:1234/v1
     ports:
       - "{{ port | default('8000') }}:{{ port | default('8000') }}"
             """

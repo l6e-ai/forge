@@ -1,6 +1,13 @@
 [agent]
 name = "demo"
-description = "Demo echo agent"
-version = "0.0.1"
+version = "0.1.0"
+[model]
+provider = "ollama"
+model = "llama3.1:8b"
 
-
+[model.auto]
+enabled = true
+providers = ["ollama"]
+quality = "balanced"
+[memory]
+embedding_model = "nomic-embed-text:latest"

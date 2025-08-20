@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import typer
 from rich import print as rprint
 from pathlib import Path
@@ -37,9 +38,11 @@ def list(
     any_rows = False
     for p in providers:
         if p == "ollama":
-            mgr = OllamaModelManager(endpoint=endpoint or "http://localhost:11434") if len(providers) == 1 else OllamaModelManager("http://localhost:11434")
+            default_ep = os.environ.get("OLLAMA_HOST", "http://localhost:11434")
+            mgr = OllamaModelManager(endpoint=endpoint or default_ep) if len(providers) == 1 else OllamaModelManager(default_ep)
         elif p == "lmstudio":
-            mgr = LMStudioModelManager(endpoint=endpoint or "http://localhost:1234/v1") if len(providers) == 1 else LMStudioModelManager("http://localhost:1234/v1")
+            default_ep = os.environ.get("LMSTUDIO_HOST", "http://localhost:1234/v1")
+            mgr = LMStudioModelManager(endpoint=endpoint or default_ep) if len(providers) == 1 else LMStudioModelManager(default_ep)
         else:
             rprint(f"[yellow]Skipping unsupported provider: {p}[/yellow]")
             continue
@@ -90,7 +93,7 @@ def bootstrap(
     if dry_run:
         return
     if provider == "ollama":
-        recs = ensure_ollama_models(recs)
+        recs = ensure_ollama_models(recs, endpoint=os.environ.get("OLLAMA_HOST"))
         apply_recommendations_to_agent_config(Path(agent), provider, recs)
         # Show a concise confirmation of config
         rprint("[green]Models ready and agent config updated.[/green]")

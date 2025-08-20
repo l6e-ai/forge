@@ -143,7 +143,9 @@ def recommend_models(sys: SystemProfile, hints: AutoHints) -> dict[str, str]:
     return {"chat": chat, "embedding": embed}
 
 
-def _ollama_list_models(endpoint: str = "http://localhost:11434") -> list[str]:
+def _ollama_list_models(endpoint: str = None) -> list[str]:
+    if not endpoint:
+        endpoint = os.environ.get("OLLAMA_HOST", "http://localhost:11434")
     try:
         import httpx
 
@@ -167,13 +169,15 @@ def _maybe_pull_model(name: str) -> None:
         pass
 
 
-def ensure_ollama_models(models: dict[str, str], endpoint: str = "http://localhost:11434") -> dict[str, str]:
+def ensure_ollama_models(models: dict[str, str], endpoint: str = None) -> dict[str, str]:
     """Ensure models exist; return possibly adjusted names that actually exist.
 
     For example, if "llama3.1:8b-instruct" is unavailable but "llama3.1:8b" exists,
     this returns {"chat": "llama3.1:8b", ...} and pulls that tag.
     """
     resolved: dict[str, str] = {}
+    if not endpoint:
+        endpoint = os.environ.get("OLLAMA_HOST", "http://localhost:11434")
     existing = set(_ollama_list_models(endpoint))
 
     def candidates(name: str) -> list[str]:
