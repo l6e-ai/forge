@@ -180,8 +180,8 @@ environment_variables = ["SEARCH_API_KEY"]
 
 ```python
 # agents/personal-assistant/agent.py
-from agent_forge import Agent, tool, config
-from agent_forge.types import Message, AgentContext, AgentResponse
+from l6e_forge import Agent, tool, config
+from l6e_forge.types import Message, AgentContext, AgentResponse
 from typing import Dict, List, Any
 
 @config.load_from_file("config.toml")
@@ -324,7 +324,7 @@ services:
     volumes:
       - ./data/postgres:/var/lib/postgresql/data
 
-  agent-forge:
+  l6e-forge:
     build: .
     ports:
       - "8123:8123"

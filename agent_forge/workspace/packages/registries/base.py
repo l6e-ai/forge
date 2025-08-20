@@ -1,7 +1,7 @@
 
 from typing import Protocol
 
-from agent_forge.types.ecosystem import AgentPackage, AgentPackageMetadata, PackageSearchResult, PublishingResult
+from l6e_forge.types.ecosystem import AgentPackage, AgentPackageMetadata, PackageSearchResult, PublishingResult
 
 
 class IPackageRegistry(Protocol):

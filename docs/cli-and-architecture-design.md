@@ -1,4 +1,4 @@
-# Agent-Forge CLI Specification & Architecture
+# l6e-forge CLI Specification & Architecture
 
 ## Core Concepts
 
@@ -80,7 +80,7 @@ forge install github.com/user/awesome-agent
 forge deploy my-assistant --env=production
 ```
 
-## How Agent-Forge Works
+## How l6e-forge Works
 
 ### 1. Workspace Structure
 ```
@@ -106,7 +106,7 @@ my-workspace/
 ### 2. Agent Implementation
 ```python
 # agents/my-assistant/agent.py
-from agent_forge import Agent, tool
+from l6e_forge import Agent, tool
 
 class MyAssistant(Agent):
     def __init__(self):

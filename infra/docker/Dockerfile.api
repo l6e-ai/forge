@@ -1,3 +1,10 @@
+FROM node:22-alpine AS ui-build
+WORKDIR /app/site/agent-ui
+COPY site/agent-ui/package*.json ./
+RUN npm ci
+COPY site/agent-ui/ ./
+RUN npm run build
+
 FROM python:3.13-slim
 
 WORKDIR /app
@@ -11,13 +18,17 @@ RUN poetry config virtualenvs.create false \
 
 RUN pip install --no-cache-dir "uvicorn[standard]"
 
-COPY agent_forge/ /app/agent_forge/
+COPY l6e_forge/ /app/l6e_forge/
+
+# Copy built UI into image
+COPY --from=ui-build /app/site/agent-ui/dist/ /app/static/ui/
 
 ENV PYTHONUNBUFFERED=1 \
-    AF_MONITOR_URL=http://monitor:8321
+    AF_MONITOR_URL=http://monitor:8321 \
+    AF_UI_DIR=/app/static/ui
 
 EXPOSE 8000
 
-CMD ["uvicorn", "agent_forge.web.api_main:app", "--host", "0.0.0.0", "--port", "8000", "--log-level", "info", "--access-log"]
+CMD ["uvicorn", "l6e_forge.web.api_main:app", "--host", "0.0.0.0", "--port", "8000", "--log-level", "info", "--access-log"]
 
 

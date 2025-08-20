@@ -4,7 +4,7 @@ from pathlib import Path
 import textwrap
 import pytest
 
-from agent_forge.config_managers.toml import TomlConfigManager
+from l6e_forge.config_managers.toml import TomlConfigManager
 
 
 @pytest.mark.asyncio

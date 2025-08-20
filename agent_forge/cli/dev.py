@@ -7,8 +7,8 @@ from pathlib import Path
 import typer
 from rich import print as rprint
 
-from agent_forge.workspace.manager.local import LocalWorkspaceManager
-from agent_forge.dev.service import DevService
+from l6e_forge.workspace.manager.local import LocalWorkspaceManager
+from l6e_forge.dev.service import DevService
 
 
 app = typer.Typer(help="Development server and hot reload")

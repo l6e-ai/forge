@@ -3,7 +3,7 @@
 This type documentation is a work in progress.
 
 ```
-agent_forge/types/
+l6e_forge/types/
 ├── __init__.py          # Main exports
 ├── core.py              # Core data types (Message, Context, Response)
 ├── config.py            # All configuration types  

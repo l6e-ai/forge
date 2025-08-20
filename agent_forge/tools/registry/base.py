@@ -1,8 +1,8 @@
 from typing import Any, Protocol
 
-from agent_forge.types.tool import ToolContext, ToolResult, ToolSpec
-from agent_forge.tools.base import ITool
-from agent_forge.types.core import AgentID, ToolID
+from l6e_forge.types.tool import ToolContext, ToolResult, ToolSpec
+from l6e_forge.tools.base import ITool
+from l6e_forge.types.core import AgentID, ToolID
 
 class IToolRegistry(Protocol):
     """Tool registry interface protocol"""

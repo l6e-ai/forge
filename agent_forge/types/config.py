@@ -1,5 +1,5 @@
-# agent_forge/types/config.py
-"""Configuration types for Agent-Forge system"""
+# l6e_forge/types/config.py
+"""Configuration types for l6e-forge system"""
 
 from dataclasses import dataclass, field
 from typing import Dict, List, Any, Optional, Literal

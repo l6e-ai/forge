@@ -23,8 +23,27 @@ export const MonitorProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [perf, setPerf] = useState<Perf | null>(null)
   const [chats, setChats] = useState<ChatLog[] | null>(null)
   const wsRef = useRef<WebSocket | null>(null)
-
   const didInitialRefreshRef = useRef(false)
+
+  // Debounce/throttle helpers
+  const agentsTimerRef = useRef<number | null>(null)
+  const perfTimerRef = useRef<number | null>(null)
+  const chatsTimerRef = useRef<number | null>(null)
+  const lastAgentsFetchRef = useRef<number>(0)
+  const lastPerfFetchRef = useRef<number>(0)
+  const lastChatsFetchRef = useRef<number>(0)
+  const MIN_INTERVAL_MS = 500
+
+  const setIfChanged = <T,>(prev: T | null, next: T, setter: (v: T) => void) => {
+    try {
+      if (prev == null) { setter(next); return }
+      const a = JSON.stringify(prev)
+      const b = JSON.stringify(next)
+      if (a !== b) setter(next)
+    } catch {
+      setter(next)
+    }
+  }
 
   const refresh = useCallback(async () => {
     const [a, p, c] = await Promise.all([
@@ -32,10 +51,10 @@ export const MonitorProvider: React.FC<{ children: React.ReactNode }> = ({ child
       fetch('/monitor/api/perf').then(r => r.json()),
       fetch('/monitor/api/chats').then(r => r.json()),
     ])
-    setAgents(a)
-    setPerf(p)
-    setChats(c)
-  }, [])
+    setIfChanged(agents, a, setAgents)
+    setIfChanged(perf, p, setPerf)
+    setIfChanged(chats, c, setChats)
+  }, [agents, perf, chats])
 
   useEffect(() => {
     // Guard against React.StrictMode double-invocation in dev
@@ -66,20 +85,38 @@ export const MonitorProvider: React.FC<{ children: React.ReactNode }> = ({ child
         try {
           const msg = JSON.parse(ev.data)
           if (msg.type === 'snapshot') {
-            setAgents(msg.agents)
-            setPerf(msg.perf)
+            setIfChanged(agents, msg.agents, setAgents)
+            setIfChanged(perf, msg.perf, setPerf)
             return
           }
           if (msg.type === 'metric' && msg.data?.name === 'response_time_ms') {
-            fetch('/monitor/api/perf').then(r => r.json()).then(setPerf)
+            const now = Date.now()
+            if (now - lastPerfFetchRef.current < MIN_INTERVAL_MS) return
+            lastPerfFetchRef.current = now
+            if (perfTimerRef.current) window.clearTimeout(perfTimerRef.current)
+            perfTimerRef.current = window.setTimeout(() => {
+              fetch('/monitor/api/perf').then(r => r.json()).then((p) => setIfChanged(perf, p, setPerf))
+            }, 200)
           }
           if (msg.type === 'event') {
             const et = msg.data?.event_type
             if (et === 'chat.message') {
-              fetch('/monitor/api/chats').then(r => r.json()).then(setChats)
+              const now = Date.now()
+              if (now - lastChatsFetchRef.current < MIN_INTERVAL_MS) return
+              lastChatsFetchRef.current = now
+              if (chatsTimerRef.current) window.clearTimeout(chatsTimerRef.current)
+              chatsTimerRef.current = window.setTimeout(() => {
+                fetch('/monitor/api/chats').then(r => r.json()).then((c) => setIfChanged(chats, c, setChats))
+              }, 200)
             }
             if (et === 'agent.registered' || et === 'agent.unregistered') {
-              fetch('/monitor/api/agents').then(r => r.json()).then(setAgents)
+              const now = Date.now()
+              if (now - lastAgentsFetchRef.current < MIN_INTERVAL_MS) return
+              lastAgentsFetchRef.current = now
+              if (agentsTimerRef.current) window.clearTimeout(agentsTimerRef.current)
+              agentsTimerRef.current = window.setTimeout(() => {
+                fetch('/monitor/api/agents').then(r => r.json()).then((a) => setIfChanged(agents, a, setAgents))
+              }, 200)
             }
           }
         } catch {

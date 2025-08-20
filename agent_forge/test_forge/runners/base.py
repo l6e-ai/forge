@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Protocol
 
-from agent_forge.types.testing import TestCase, TestEnvironment, TestResult, TestRun, TestSuite
+from l6e_forge.types.testing import TestCase, TestEnvironment, TestResult, TestRun, TestSuite
 
 
 class ITestRunner(Protocol):

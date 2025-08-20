@@ -6,10 +6,10 @@ from typing import Any
 
 import httpx
 
-from agent_forge.types.core import Message
-from agent_forge.types.model import ChatResponse, ModelInstance, ModelSpec
-from agent_forge.types.error import HealthStatus
-from agent_forge.models.managers.base import IModelManager
+from l6e_forge.types.core import Message
+from l6e_forge.types.model import ChatResponse, ModelInstance, ModelSpec
+from l6e_forge.types.error import HealthStatus
+from l6e_forge.models.managers.base import IModelManager
 
 
 @dataclass

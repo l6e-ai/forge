@@ -5,7 +5,7 @@ from typing import Any
 
 import tomllib
 
-from agent_forge.config_managers.base import IConfigManager
+from l6e_forge.config_managers.base import IConfigManager
 
 
 class TomlConfigManager(IConfigManager):

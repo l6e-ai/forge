@@ -1,6 +1,6 @@
 from typing import Protocol
 
-from agent_forge.core.agents.base import IAgent
+from l6e_forge.core.agents.base import IAgent
 
 
 class ITestEnvironment(Protocol):

@@ -7,8 +7,8 @@ import asyncio
 import urllib.request
 import urllib.error
 
-from agent_forge.tools.base import ITool
-from agent_forge.types.tool import ToolContext, ToolResult
+from l6e_forge.tools.base import ITool
+from l6e_forge.types.tool import ToolContext, ToolResult
 
 
 @dataclass
@@ -74,7 +74,7 @@ class WebFetchTool(ITool):
                 return ToolResult(success=False, error_message="Domain not allowed by policy")
 
         def _fetch() -> tuple[int, str, str]:
-            req = urllib.request.Request(url, headers=headers or {"User-Agent": "agent-forge/0.1"})
+            req = urllib.request.Request(url, headers=headers or {"User-Agent": "l6e-forge/0.1"})
             try:
                 with urllib.request.urlopen(req, timeout=timeout) as resp:
                     status = resp.getcode() or 0

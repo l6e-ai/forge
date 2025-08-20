@@ -1,5 +1,5 @@
-# agent_forge/types/agent.py
-"""Agent-specific types for Agent-Forge system"""
+# l6e_forge/types/agent.py
+"""Agent-specific types for l6e-forge system"""
 
 from dataclasses import dataclass, field
 from typing import Dict, List, Any, Optional
@@ -7,7 +7,7 @@ from datetime import datetime
 from pathlib import Path
 from enum import Enum
 
-from agent_forge.types.core import AgentID
+from l6e_forge.types.core import AgentID
 
 from .config import AgentConfig
 

@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Dict, List
 
-from agent_forge.workspace.template_engine.jinja import JinjaTemplateEngine
+from l6e_forge.workspace.template_engine.jinja import JinjaTemplateEngine
 
 
 @dataclass
@@ -48,7 +48,7 @@ class ComposeTemplateService:
         "monitor": (
             """
   monitor:
-    image: agent-forge/monitor:{{ tag | default('latest') }}
+    image: l6e-forge/monitor:{{ tag | default('latest') }}
     ports:
       - "{{ port | default('8321') }}:{{ port | default('8321') }}"
             """
@@ -56,7 +56,7 @@ class ComposeTemplateService:
         "api": (
             """
   api:
-    image: agent-forge/api:{{ tag | default('latest') }}
+    image: l6e-forge/api:{{ tag | default('latest') }}
     environment:
       - AF_MONITOR_URL=http://monitor:8321
       - AF_WORKSPACE=/workspace

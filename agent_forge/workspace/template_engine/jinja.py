@@ -6,8 +6,8 @@ from typing import Any
 
 from jinja2 import Environment, StrictUndefined
 
-from agent_forge.workspace.template_engine.base import IWorkspaceTemplateEngine
-from agent_forge.types.workspace import TemplateContext, TemplateGenerationResult, TemplateSpec
+from l6e_forge.workspace.template_engine.base import IWorkspaceTemplateEngine
+from l6e_forge.types.workspace import TemplateContext, TemplateGenerationResult, TemplateSpec
 
 
 @dataclass

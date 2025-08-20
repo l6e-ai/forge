@@ -2,7 +2,7 @@
 from pathlib import Path
 from typing import Protocol
 
-from agent_forge.types.workspace import WorkspaceState, WorkspaceValidation
+from l6e_forge.types.workspace import WorkspaceState, WorkspaceValidation
 
 
 class IWorkspaceManager(Protocol):

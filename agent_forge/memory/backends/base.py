@@ -1,7 +1,7 @@
 
 from typing import Protocol
 
-from agent_forge.types.error import HealthStatus
+from l6e_forge.types.error import HealthStatus
 
 
 class IMemoryBackend(Protocol):

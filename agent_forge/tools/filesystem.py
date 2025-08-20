@@ -5,8 +5,8 @@ from pathlib import Path
 from typing import Any
 import asyncio
 
-from agent_forge.tools.base import ITool
-from agent_forge.types.tool import ToolContext, ToolResult
+from l6e_forge.tools.base import ITool
+from l6e_forge.types.tool import ToolContext, ToolResult
 
 
 @dataclass

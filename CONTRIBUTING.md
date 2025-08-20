@@ -1,6 +1,6 @@
 # Contributing
 
-This document outlines how to contribute to `agent-forge`.
+This document outlines how to contribute to `l6e-forge`.
 
 TODO: write this doc; chicken and the egg for this one.
 

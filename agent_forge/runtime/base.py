@@ -3,16 +3,16 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Callable, Protocol, TYPE_CHECKING
 
-from agent_forge.events.bus.base import IEventBus
-from agent_forge.memory.managers.base import IMemoryManager
-from agent_forge.tools.registry.base import IToolRegistry
-from agent_forge.models.managers.base import IModelManager
+from l6e_forge.events.bus.base import IEventBus
+from l6e_forge.memory.managers.base import IMemoryManager
+from l6e_forge.tools.registry.base import IToolRegistry
+from l6e_forge.models.managers.base import IModelManager
 
-from agent_forge.types.agent import AgentSpec
-from agent_forge.types.core import AgentID, AgentResponse, Message
+from l6e_forge.types.agent import AgentSpec
+from l6e_forge.types.core import AgentID, AgentResponse, Message
 
 if TYPE_CHECKING:
-    from agent_forge.core.agents.base import IAgent
+    from l6e_forge.core.agents.base import IAgent
 
 class IRuntime(Protocol):
     """Runtime interface protocol"""

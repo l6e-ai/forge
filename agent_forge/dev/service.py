@@ -8,13 +8,13 @@ from typing import Iterable
 from rich import print as rprint
 from watchdog.observers import Observer
 
-from agent_forge.dev.reloader import AgentReloader
-from agent_forge.dev.handler import DevEventHandler
-from agent_forge.runtime.local import LocalRuntime
+from l6e_forge.dev.reloader import AgentReloader
+from l6e_forge.dev.handler import DevEventHandler
+from l6e_forge.runtime.local import LocalRuntime
 import asyncio
 import time
-from agent_forge.config_managers.toml import TomlConfigManager
-from agent_forge.runtime.monitoring import get_monitoring
+from l6e_forge.config_managers.toml import TomlConfigManager
+from l6e_forge.runtime.monitoring import get_monitoring
 
 
 class DevService:
@@ -131,7 +131,7 @@ class DevService:
         agent_dir = self.agents_dir / agent_name
         async def _run():
             # Unregister previous if exists
-            from agent_forge.types.core import AgentID
+            from l6e_forge.types.core import AgentID
             prev = self._agent_ids.get(agent_name)
             if prev:
                 try:
@@ -152,7 +152,7 @@ class DevService:
         Runs in a background thread so that file watching continues.
         """
         try:
-            from agent_forge.web.monitor_app import create_app
+            from l6e_forge.web.monitor_app import create_app
             import uvicorn
 
             app = create_app(get_monitoring())

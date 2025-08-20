@@ -4,9 +4,9 @@ from pathlib import Path
 
 from typer.testing import CliRunner
 
-from agent_forge.cli.main import app as main_app
-from agent_forge.runtime.local import LocalRuntime
-from agent_forge.types.core import Message
+from l6e_forge.cli.main import app as main_app
+from l6e_forge.runtime.local import LocalRuntime
+from l6e_forge.types.core import Message
 
 
 def test_cli_init_and_list(tmp_path: Path) -> None:
@@ -149,7 +149,7 @@ def test_cli_dev_registers_agents(tmp_path: Path) -> None:
     (demo_dir / "agent.py").write_text(
         (
             """
-from agent_forge.types.core import AgentContext, AgentResponse, Message
+from l6e_forge.types.core import AgentContext, AgentResponse, Message
 
 class Agent:
     name = "demo"
@@ -185,7 +185,7 @@ def test_cli_chat_message_roundtrip(tmp_path: Path) -> None:
     (demo_dir / "agent.py").write_text(
         (
             """
-from agent_forge.types.core import AgentContext, AgentResponse, Message
+from l6e_forge.types.core import AgentContext, AgentResponse, Message
 
 class Agent:
     name = "demo"
@@ -220,7 +220,7 @@ def test_cli_chat_uses_agent_config_defaults(tmp_path: Path) -> None:
     (agents_dir / "agent.py").write_text(
         (
             """
-from agent_forge.types.core import AgentContext, AgentResponse, Message
+from l6e_forge.types.core import AgentContext, AgentResponse, Message
 
 class Agent:
     name = "demo"
@@ -249,7 +249,7 @@ lmstudio = "http://127.0.0.1:9"
 
     # Without lmstudio server running, expect a helpful error (not a crash)
     from typer.testing import CliRunner
-    from agent_forge.cli.main import app as main_app
+    from l6e_forge.cli.main import app as main_app
 
     runner = CliRunner()
     result = runner.invoke(main_app, ["chat", "chat", "demo", "--workspace", str(ws_path), "--message", "hi"], catch_exceptions=False)
@@ -266,7 +266,7 @@ def test_local_runtime_register_and_route(tmp_path: Path) -> None:
     (agent_dir / "agent.py").write_text(
         (
             """
-from agent_forge.types.core import AgentContext, AgentResponse, Message
+from l6e_forge.types.core import AgentContext, AgentResponse, Message
 
 class Agent:
     name = "demo"

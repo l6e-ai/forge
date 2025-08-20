@@ -1,7 +1,7 @@
 
 from typing import Any, Protocol
 
-from agent_forge.types.workspace import TemplateSpec, TemplateContext, TemplateGenerationResult
+from l6e_forge.types.workspace import TemplateSpec, TemplateContext, TemplateGenerationResult
 
 class IWorkspaceTemplateEngine(Protocol):
     """Template engine interface"""

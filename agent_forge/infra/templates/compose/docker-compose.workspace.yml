@@ -1,4 +1,3 @@
-version: "3.8"
 services:
   monitor:
     image: python:3.13-slim
@@ -6,8 +5,8 @@ services:
       - MONITOR_PORT=8321
       - PYTHONUNBUFFERED=1
     command: >
-      sh -c "pip install --no-cache-dir agent-forge 'uvicorn[standard]' &&
-             uvicorn agent_forge.web.monitor_main:app --host 0.0.0.0 --port 8321 --log-level info --access-log"
+      sh -c "pip install --no-cache-dir l6e-forge 'uvicorn[standard]' &&
+             uvicorn l6e_forge.web.monitor_main:app --host 0.0.0.0 --port 8321 --log-level info --access-log"
     ports:
       - "8321:8321"
     restart: unless-stopped
@@ -18,11 +17,14 @@ services:
       - PYTHONUNBUFFERED=1
       - AF_MONITOR_URL=http://monitor:8321
       - AF_WORKSPACE=/workspace
+      - AF_UI_DIR=/app/static/ui
     command: >
-      sh -c "pip install --no-cache-dir agent-forge 'uvicorn[standard]' &&
-             uvicorn agent_forge.web.api_main:app --host 0.0.0.0 --port 8000 --log-level info --access-log"
+      sh -c "pip install --no-cache-dir l6e-forge 'uvicorn[standard]' &&
+             python -c 'import os, subprocess; p=os.getcwd(); subprocess.run(["bash","-lc",f"test -d site/agent-ui && cd site/agent-ui && npm ci && npm run build || true"], check=False);' &&
+             uvicorn l6e_forge.web.api_main:app --host 0.0.0.0 --port 8000 --log-level info --access-log"
     volumes:
       - ./:/workspace
+      - ./site/agent-ui/dist:/app/static/ui:ro
     ports:
       - "8000:8000"
     depends_on:

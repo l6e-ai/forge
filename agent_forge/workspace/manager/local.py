@@ -4,8 +4,8 @@ from dataclasses import asdict
 from pathlib import Path
 from typing import List
 
-from agent_forge.workspace.manager.base import IWorkspaceManager
-from agent_forge.types.workspace import (
+from l6e_forge.workspace.manager.base import IWorkspaceManager
+from l6e_forge.types.workspace import (
     WorkspaceState,
     WorkspaceValidation,
 )
@@ -26,10 +26,11 @@ class LocalWorkspaceManager(IWorkspaceManager):
         internal_dir = root / ".forge"
         logs_dir = internal_dir / "logs"
         data_dir = internal_dir / "data"
+        ui_dir = internal_dir / "ui"
         shared_dir = root / "shared"
         tools_dir = root / "tools"
 
-        for d in (agents_dir, logs_dir, data_dir, shared_dir, tools_dir):
+        for d in (agents_dir, logs_dir, data_dir, shared_dir, tools_dir, ui_dir):
             d.mkdir(parents=True, exist_ok=True)
 
         # Create default forge.toml if it doesn't exist
@@ -37,7 +38,7 @@ class LocalWorkspaceManager(IWorkspaceManager):
         if not config_file.exists():
             config_file.write_text(
                 """
-# Agent-Forge Workspace Configuration
+# l6e-forge Workspace Configuration
 
 [workspace]
 name = "{name}"
@@ -53,7 +54,7 @@ hot_reload = true
         if with_compose:
             try:
                 from importlib import resources
-                with resources.as_file(resources.files("agent_forge.infra.templates.compose").joinpath("docker-compose.workspace.yml")) as cp:
+                with resources.as_file(resources.files("l6e_forge.infra.templates.compose").joinpath("docker-compose.workspace.yml")) as cp:
                     target_cp = root / "docker-compose.yml"
                     if not target_cp.exists():
                         target_cp.write_text(cp.read_text(encoding="utf-8"), encoding="utf-8")

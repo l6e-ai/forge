@@ -1,8 +1,0 @@
-# Agent-Forge Workspace Configuration
-
-[workspace]
-name = "my-workspace"
-version = "0.1.0"
-
-[runtime]
-hot_reload = true

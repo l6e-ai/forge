@@ -3,8 +3,8 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any, Tuple
 
-from agent_forge.models.managers.base import IModelManager
-from agent_forge.config_managers.toml import TomlConfigManager
+from l6e_forge.models.managers.base import IModelManager
+from l6e_forge.config_managers.toml import TomlConfigManager
 
 
 def load_endpoints_from_config(workspace_root: Path) -> Tuple[str | None, dict[str, str]]:
@@ -45,11 +45,11 @@ def get_manager(provider: str, endpoints: dict[str, str] | None = None) -> IMode
     p = provider.lower()
     eps = endpoints or {}
     if p == "ollama":
-        from agent_forge.models.managers.ollama import OllamaModelManager
+        from l6e_forge.models.managers.ollama import OllamaModelManager
 
         return OllamaModelManager(endpoint=eps.get("ollama", "http://localhost:11434"))
     if p == "lmstudio":
-        from agent_forge.models.managers.lmstudio import LMStudioModelManager
+        from l6e_forge.models.managers.lmstudio import LMStudioModelManager
 
         return LMStudioModelManager(endpoint=eps.get("lmstudio", "http://localhost:1234/v1"))
     raise ValueError(f"Unsupported provider: {provider}")

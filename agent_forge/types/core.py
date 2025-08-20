@@ -1,5 +1,5 @@
-# agent_forge/types/core.py
-"""Core data types for Agent-Forge system"""
+# l6e_forge/types/core.py
+"""Core data types for l6e-forge system"""
 
 from dataclasses import dataclass, field
 from typing import Any, Literal
@@ -7,8 +7,8 @@ from datetime import datetime
 from pathlib import Path
 import uuid
 
-from agent_forge.types.error import AgentError
-from agent_forge.types.tool import ToolCall
+from l6e_forge.types.error import AgentError
+from l6e_forge.types.tool import ToolCall
 
 # ============================================================================
 # ID Types

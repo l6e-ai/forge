@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from agent_forge.models.providers.registry import load_endpoints_from_config, get_manager
+from l6e_forge.models.providers.registry import load_endpoints_from_config, get_manager
 
 
 def test_load_endpoints_from_config(tmp_path: Path) -> None:

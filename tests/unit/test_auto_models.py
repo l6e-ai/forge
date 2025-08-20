@@ -3,8 +3,8 @@ from __future__ import annotations
 from pathlib import Path
 from typer.testing import CliRunner
 
-from agent_forge.models.auto import ensure_ollama_models, apply_recommendations_to_agent_config
-from agent_forge.cli.main import app as main_app
+from l6e_forge.models.auto import ensure_ollama_models, apply_recommendations_to_agent_config
+from l6e_forge.cli.main import app as main_app
 
 
 def test_ensure_ollama_models_pulls_and_adjusts_when_none_available(monkeypatch) -> None:
@@ -21,8 +21,8 @@ def test_ensure_ollama_models_pulls_and_adjusts_when_none_available(monkeypatch)
         # When a model is "pulled", add it to the available set
         current.add(name)
 
-    monkeypatch.setattr("agent_forge.models.auto._ollama_list_models", fake_list)
-    monkeypatch.setattr("agent_forge.models.auto._maybe_pull_model", fake_pull)
+    monkeypatch.setattr("l6e_forge.models.auto._ollama_list_models", fake_list)
+    monkeypatch.setattr("l6e_forge.models.auto._maybe_pull_model", fake_pull)
 
     # Request a tag that likely needs alias adjustment (":8b-instruct" -> ":8b")
     recs = {"chat": "llama3.1:8b-instruct", "embedding": "nomic-embed-text:latest"}
@@ -62,8 +62,8 @@ providers = ["ollama"]
     def fake_pull(name: str) -> None:
         current.add(name)
 
-    monkeypatch.setattr("agent_forge.models.auto._ollama_list_models", fake_list)
-    monkeypatch.setattr("agent_forge.models.auto._maybe_pull_model", fake_pull)
+    monkeypatch.setattr("l6e_forge.models.auto._ollama_list_models", fake_list)
+    monkeypatch.setattr("l6e_forge.models.auto._maybe_pull_model", fake_pull)
 
     # Run CLI bootstrap
     runner = CliRunner()

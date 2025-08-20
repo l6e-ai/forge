@@ -1,6 +1,6 @@
-## Agent-Forge: System Context Prompt
+## l6e-forge: System Context Prompt
 
-Use this document as the top-level context for contributors and assistants working on the Agent-Forge repository. It describes what the project is, our north stars, scope, constraints, and how to make changes that move us forward. Paste this as a system/development prompt when engaging an LLM.
+Use this document as the top-level context for contributors and assistants working on the l6e-forge repository. It describes what the project is, our north stars, scope, constraints, and how to make changes that move us forward. Paste this as a system/development prompt when engaging an LLM.
 
 ### Mission
 Build the fastest, most developer-friendly way to create, run, and share local AI agents. Deliver an app‑store‑like experience for agents that run entirely on the developer's machine.
@@ -12,7 +12,7 @@ Build the fastest, most developer-friendly way to create, run, and share local A
 - **Template-driven onboarding**: From install to working agent in under 5 minutes.
 
 ### Current Status (Repo Snapshot)
-- Types and interfaces are in place: `agent_forge/types/*`, `agent_forge/core/agents/base.py`, `agent_forge/runtime/base.py`.
+- Types and interfaces are in place: `l6e_forge/types/*`, `l6e_forge/core/agents/base.py`, `l6e_forge/runtime/base.py`.
 - CLI foundation implemented: `forge init`, `forge create`, `forge dev`, `forge chat`, `forge template list`, `forge models list`.
 - Minimal runtime working: `LocalRuntime` registers agents, passes runtime into agents, and dev hot‑reload re‑registers agents with debounce.
 - Templates: Jinja2 engine with provider‑pluggable assistant templates (Ollama, LM Studio) and basic echo.
@@ -51,14 +51,14 @@ Build the fastest, most developer-friendly way to create, run, and share local A
 - **forge models list [--provider]**: List models from local providers (Ollama, LM Studio).
 
 ### Architecture Overview
-- **CLI** (`agent_forge/cli/`): Typer-based commands (`create`, `dev`, `chat`, `template`, `models`).
-- **Core/Agents** (`agent_forge/core/agents/`): `IAgent` protocol; base agent contract.
-- **Runtime** (`agent_forge/runtime/`): `IRuntime` protocol; `local.py` implementation with hot reload + registration.
-- **Models** (`agent_forge/models/managers/`): Model managers; implemented: `ollama.py`, `lmstudio.py`.
-- **Templates** (`agent_forge/cli/templates/*`, `agent_forge/workspace/template_engine/`): Jinja2 engine; provider-pluggable assistant/echo templates.
-- **Tools** (`agent_forge/tools/`): Filesystem, web, terminal + `registry` for discovery/permissions.
-- **Memory** (`agent_forge/memory/`): In-memory + SQLite managers.
-- **Events/Monitoring** (`agent_forge/events/*`, `agent_forge/runtime/monitoring.py`): Event bus hooks; UI arrives post‑MVP.
+- **CLI** (`l6e_forge/cli/`): Typer-based commands (`create`, `dev`, `chat`, `template`, `models`).
+- **Core/Agents** (`l6e_forge/core/agents/`): `IAgent` protocol; base agent contract.
+- **Runtime** (`l6e_forge/runtime/`): `IRuntime` protocol; `local.py` implementation with hot reload + registration.
+- **Models** (`l6e_forge/models/managers/`): Model managers; implemented: `ollama.py`, `lmstudio.py`.
+- **Templates** (`l6e_forge/cli/templates/*`, `l6e_forge/workspace/template_engine/`): Jinja2 engine; provider-pluggable assistant/echo templates.
+- **Tools** (`l6e_forge/tools/`): Filesystem, web, terminal + `registry` for discovery/permissions.
+- **Memory** (`l6e_forge/memory/`): In-memory + SQLite managers.
+- **Events/Monitoring** (`l6e_forge/events/*`, `l6e_forge/runtime/monitoring.py`): Event bus hooks; UI arrives post‑MVP.
 
 ### Design Principles
 - **Convention over configuration**: Standard workspace layout; sensible defaults.

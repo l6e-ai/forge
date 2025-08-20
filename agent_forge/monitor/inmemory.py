@@ -7,7 +7,7 @@ from dataclasses import asdict
 from datetime import datetime, timedelta
 from typing import Any, Deque
 
-from agent_forge.monitor.base import IMonitoringService
+from l6e_forge.monitor.base import IMonitoringService
 
 
 class InMemoryMonitoringService(IMonitoringService):

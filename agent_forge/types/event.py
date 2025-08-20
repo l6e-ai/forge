@@ -1,5 +1,5 @@
-# agent_forge/types/event.py
-"""Event system types for Agent-Forge"""
+# l6e_forge/types/event.py
+"""Event system types for l6e-forge"""
 
 from dataclasses import dataclass, field
 from typing import Dict, List, Any, Optional, Literal, Callable, Union

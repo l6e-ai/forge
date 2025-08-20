@@ -3,9 +3,9 @@ from __future__ import annotations
 from typing import Optional
 import os
 
-from agent_forge.monitor.base import IMonitoringService
-from agent_forge.monitor.inmemory import InMemoryMonitoringService
-from agent_forge.monitor.remote import RemoteMonitoringService
+from l6e_forge.monitor.base import IMonitoringService
+from l6e_forge.monitor.inmemory import InMemoryMonitoringService
+from l6e_forge.monitor.remote import RemoteMonitoringService
 
 
 _monitoring_singleton: Optional[IMonitoringService] = None

@@ -3,13 +3,13 @@ from __future__ import annotations
 AGENT_OLLAMA_PY = """
 from __future__ import annotations
 
-from agent_forge.types.config import AgentConfig
-from agent_forge.types.core import AgentContext, AgentResponse, Message
-from agent_forge.types.error import HealthStatus
-from agent_forge.runtime.base import IRuntime
-from agent_forge.models.managers.ollama import IModelManager, OllamaModelManager
-from agent_forge.types.model import ModelSpec
-from agent_forge.core.agents.base import IAgent
+from l6e_forge.types.config import AgentConfig
+from l6e_forge.types.core import AgentContext, AgentResponse, Message
+from l6e_forge.types.error import HealthStatus
+from l6e_forge.runtime.base import IRuntime
+from l6e_forge.models.managers.ollama import IModelManager, OllamaModelManager
+from l6e_forge.types.model import ModelSpec
+from l6e_forge.core.agents.base import IAgent
 
 
 class Agent(IAgent):

@@ -1,5 +1,5 @@
-# agent_forge/types/error.py
-"""Error and status types for Agent-Forge"""
+# l6e_forge/types/error.py
+"""Error and status types for l6e-forge"""
 
 from dataclasses import dataclass, field
 from typing import Dict, List, Any, Optional, Literal

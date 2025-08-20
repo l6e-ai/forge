@@ -15,7 +15,7 @@ RUN poetry config virtualenvs.create false \
 # Ensure WebSocket support for uvicorn
 RUN pip install --no-cache-dir "uvicorn[standard]"
 # Copy package source
-COPY agent_forge/ /app/agent_forge/
+COPY l6e_forge/ /app/l6e_forge/
 
 ENV PYTHONUNBUFFERED=1 \
     MONITOR_PORT=8321
@@ -23,6 +23,6 @@ ENV PYTHONUNBUFFERED=1 \
 EXPOSE 8321
 
 # Run the app via uvicorn
-CMD ["uvicorn", "agent_forge.web.monitor_main:app", "--host", "0.0.0.0", "--port", "8321", "--log-level", "info", "--access-log"]
+CMD ["uvicorn", "l6e_forge.web.monitor_main:app", "--host", "0.0.0.0", "--port", "8321", "--log-level", "info", "--access-log"]
 
 

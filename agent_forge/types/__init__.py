@@ -1,9 +1,9 @@
-# agent_forge/types/__init__.py
+# l6e_forge/types/__init__.py
 """
-Agent-Forge Type System
+l6e-forge Type System
 
 This module provides comprehensive type definitions for all components
-of the Agent-Forge system, organized into logical modules.
+of the l6e-forge system, organized into logical modules.
 """
 
 # ============================================================================
@@ -326,7 +326,7 @@ def is_error_type(type_name: str) -> bool:
 # ============================================================================
 
 __version__ = "0.1.0"
-__author__ = "Agent-Forge Team"
+__author__ = "l6e-forge Team"
 __license__ = "MIT"
 
 # Type system metadata

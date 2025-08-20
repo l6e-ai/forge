@@ -1,8 +1,8 @@
 
 from typing import Any, Protocol
 
-from agent_forge.types.core import Message
-from agent_forge.types.memory import MemoryResult
+from l6e_forge.types.core import Message
+from l6e_forge.types.memory import MemoryResult
 
 
 class IMemoryManager(Protocol):

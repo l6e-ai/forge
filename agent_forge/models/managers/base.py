@@ -1,9 +1,9 @@
 
 from typing import AsyncIterator, Protocol
 
-from agent_forge.types.core import ModelID, Message
-from agent_forge.types.model import ChatResponse, CompletionResponse, ModelInstance, ModelSpec
-from agent_forge.types.error import HealthStatus
+from l6e_forge.types.core import ModelID, Message
+from l6e_forge.types.model import ChatResponse, CompletionResponse, ModelInstance, ModelSpec
+from l6e_forge.types.error import HealthStatus
 
 
 class IModelManager(Protocol):

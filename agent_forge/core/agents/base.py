@@ -2,14 +2,14 @@ from __future__ import annotations
 
 from typing import Any, Protocol, TYPE_CHECKING
 
-from agent_forge.types.agent import Capability
-from agent_forge.types.config import AgentConfig
-from agent_forge.types.core import AgentContext, AgentResponse, Message
-from agent_forge.types.error import HealthStatus
-from agent_forge.types.tool import ToolSpec
+from l6e_forge.types.agent import Capability
+from l6e_forge.types.config import AgentConfig
+from l6e_forge.types.core import AgentContext, AgentResponse, Message
+from l6e_forge.types.error import HealthStatus
+from l6e_forge.types.tool import ToolSpec
 
 if TYPE_CHECKING:
-    from agent_forge.runtime.base import IRuntime
+    from l6e_forge.runtime.base import IRuntime
 
 
 class IAgent(Protocol):

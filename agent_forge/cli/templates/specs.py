@@ -1,15 +1,15 @@
 from __future__ import annotations
 
-from agent_forge.cli.templates import (
+from l6e_forge.cli.templates import (
     AGENT_ECHO_PY,
     AGENT_OLLAMA_PY,
     AGENT_ASSISTANT_BASIC_PY,
     AGENT_ASSISTANT_MODEL_PY,
     CONFIG_TOML,
 )
-from agent_forge.cli.templates.providers.ollama import OllamaProviderTemplate
-from agent_forge.cli.templates.providers.lmstudio import LMStudioProviderTemplate
-from agent_forge.types.workspace import TemplateFile, TemplateSpec
+from l6e_forge.cli.templates.providers.ollama import OllamaProviderTemplate
+from l6e_forge.cli.templates.providers.lmstudio import LMStudioProviderTemplate
+from l6e_forge.types.workspace import TemplateFile, TemplateSpec
 
 
 def build_echo_spec() -> TemplateSpec:
@@ -21,7 +21,7 @@ def build_echo_spec() -> TemplateSpec:
             TemplateFile(path="config.toml", content=CONFIG_TOML, file_type="toml"),
         ],
         variables={},
-        author="agent-forge",
+        author="l6e-forge",
         tags=["echo", "basic"],
     )
 
@@ -35,7 +35,7 @@ def build_ollama_spec() -> TemplateSpec:
             TemplateFile(path="config.toml", content=CONFIG_TOML, file_type="toml"),
         ],
         variables={},
-        author="agent-forge",
+        author="l6e-forge",
         tags=["assistant", "ollama"],
     )
 
@@ -55,7 +55,7 @@ def get_template_spec(template: str, provider: str) -> TemplateSpec:
                 TemplateFile(path="config.toml", content=CONFIG_TOML, file_type="toml"),
             ],
             variables={},
-            author="agent-forge",
+            author="l6e-forge",
             tags=["assistant", "auto"],
         )
     # Direct provider-qualified names

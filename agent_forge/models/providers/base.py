@@ -1,7 +1,7 @@
 
 from typing import Protocol
 
-from agent_forge.types.model import ModelInstance, ModelSpec
+from l6e_forge.types.model import ModelInstance, ModelSpec
 
 
 class IModelProvider(Protocol):

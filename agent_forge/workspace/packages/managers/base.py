@@ -1,7 +1,7 @@
 
 from typing import Protocol
 
-from agent_forge.types.ecosystem import InstallationResult, InstalledPackage, PackageSearchResult
+from l6e_forge.types.ecosystem import InstallationResult, InstalledPackage, PackageSearchResult
 
 
 class IPackageManager(Protocol):

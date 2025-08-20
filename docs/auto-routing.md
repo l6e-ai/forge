@@ -45,7 +45,7 @@ min_vram_gb = 6
 - Filter by constraints + agent hints, pick best by heuristic: quality tier→context→speed score for hardware.
 
 ### Implementation plan (thin slice)
-- New module `agent_forge/models/auto.py`:
+- New module `l6e_forge/models/auto.py`:
   - get_system_profile() → SystemProfile
   - recommend_models(profile, hints) → {chat, embedding}
   - bootstrap_models(provider, recommendations) for ollama:

@@ -3,11 +3,11 @@ from __future__ import annotations
 AGENT_ASSISTANT_BASIC_PY = """
 from __future__ import annotations
 
-from agent_forge.types.config import AgentConfig
-from agent_forge.types.core import AgentContext, AgentResponse, Message
-from agent_forge.types.error import HealthStatus
-from agent_forge.runtime.base import IRuntime
-from agent_forge.core.agents.base import IAgent
+from l6e_forge.types.config import AgentConfig
+from l6e_forge.types.core import AgentContext, AgentResponse, Message
+from l6e_forge.types.error import HealthStatus
+from l6e_forge.runtime.base import IRuntime
+from l6e_forge.core.agents.base import IAgent
 
 
 class Agent(IAgent):

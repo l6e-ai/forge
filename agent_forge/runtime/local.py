@@ -7,19 +7,19 @@ import uuid
 from typing import Callable, Any
 import os
 
-from agent_forge.types.core import AgentID, AgentResponse, Message
-from agent_forge.types.agent import AgentSpec
-from agent_forge.runtime.monitoring import get_monitoring
+from l6e_forge.types.core import AgentID, AgentResponse, Message
+from l6e_forge.types.agent import AgentSpec
+from l6e_forge.runtime.monitoring import get_monitoring
 
 # Type-only import to avoid circulars
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:  # pragma: no cover
-    from agent_forge.core.agents.base import IAgent
-    from agent_forge.events.bus.base import IEventBus
-    from agent_forge.memory.managers.base import IMemoryManager
-    from agent_forge.models.managers.base import IModelManager
-    from agent_forge.tools.registry.base import IToolRegistry
+    from l6e_forge.core.agents.base import IAgent
+    from l6e_forge.events.bus.base import IEventBus
+    from l6e_forge.memory.managers.base import IMemoryManager
+    from l6e_forge.models.managers.base import IModelManager
+    from l6e_forge.tools.registry.base import IToolRegistry
 
 
 class LocalRuntime:
@@ -51,7 +51,7 @@ class LocalRuntime:
             raise FileNotFoundError(f"agent.py not found at {agent_py}")
 
         agent_name = agent_dir.name
-        module_name = f"agent_forge_runtime.{agent_name}"
+        module_name = f"l6e_forge_runtime.{agent_name}"
         spec = importlib.util.spec_from_file_location(module_name, agent_py)
         if not spec or not spec.loader:
             raise RuntimeError(f"Unable to load module for agent: {agent_name}")
@@ -67,7 +67,7 @@ class LocalRuntime:
         # Load agent config if present
         config_data: dict[str, Any] = {}
         try:
-            from agent_forge.config_managers.toml import TomlConfigManager
+            from l6e_forge.config_managers.toml import TomlConfigManager
 
             cfg_mgr = TomlConfigManager()
             cfg_path = agent_dir / "config.toml"
@@ -97,10 +97,10 @@ class LocalRuntime:
         # Assign default toolkit on first use
         try:
             _ = self.get_tool_registry()
-            from agent_forge.tools.filesystem import FilesystemTool
-            from agent_forge.tools.terminal import TerminalTool
-            from agent_forge.tools.web import WebFetchTool
-            from agent_forge.tools.code import CodeUtilsTool
+            from l6e_forge.tools.filesystem import FilesystemTool
+            from l6e_forge.tools.terminal import TerminalTool
+            from l6e_forge.tools.web import WebFetchTool
+            from l6e_forge.tools.code import CodeUtilsTool
 
             fs_id = self._tool_registry.register_tool(FilesystemTool())
             term_id = self._tool_registry.register_tool(TerminalTool())
@@ -166,7 +166,7 @@ class LocalRuntime:
         if agent is None:
             raise RuntimeError("No registered agents to route message to")
         # Minimal context
-        from agent_forge.types.core import AgentContext  # local import to avoid cycles
+        from l6e_forge.types.core import AgentContext  # local import to avoid cycles
 
         ctx = AgentContext(conversation_id=conversation_id or "local", session_id=session_id or "local")
         # Log request
@@ -195,7 +195,7 @@ class LocalRuntime:
         for agent in self._id_to_agent.values():
             if filter_fn and not filter_fn(agent):  # type: ignore[arg-type]
                 continue
-            from agent_forge.types.core import AgentContext  # local import to avoid cycles
+            from l6e_forge.types.core import AgentContext  # local import to avoid cycles
 
             ctx = AgentContext(conversation_id="local", session_id="local")
             results.append(await agent.handle_message(message, ctx))
@@ -208,7 +208,7 @@ class LocalRuntime:
     def get_model_manager(self):  # -> IModelManager
         if self._model_manager is None:
             # Use provider registry with endpoints from forge.toml (workspace root is parent of agents dir)
-            from agent_forge.models.providers.registry import load_endpoints_from_config, get_manager
+            from l6e_forge.models.providers.registry import load_endpoints_from_config, get_manager
 
             workspace_root = Path.cwd()
             _default_provider, endpoints = load_endpoints_from_config(workspace_root)
@@ -218,7 +218,7 @@ class LocalRuntime:
 
     def get_tool_registry(self):  # -> IToolRegistry
         if self._tool_registry is None:
-            from agent_forge.tools.registry.inmemory import InMemoryToolRegistry
+            from l6e_forge.tools.registry.inmemory import InMemoryToolRegistry
 
             self._tool_registry = InMemoryToolRegistry()
         return self._tool_registry
@@ -232,5 +232,16 @@ class LocalRuntime:
 
     async def enable_hot_reload(self, watch_paths: list[Path]) -> None:
         return None
+
+    # Convenience: registered agent views
+    def list_registered(self) -> list[dict[str, str]]:
+        items: list[dict[str, str]] = []
+        for aid, name in self._id_to_name.items():
+            items.append({"agent_id": str(aid), "name": name})
+        return items
+
+    def get_agent_id_by_name(self, name: str) -> AgentID | None:
+        return self._name_to_id.get(name)
+
 
 

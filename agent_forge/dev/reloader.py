@@ -13,7 +13,7 @@ class AgentReloader:
         self.agent_modules: dict[str, ModuleType] = {}
 
     def _module_name(self, agent_name: str) -> str:
-        return f"agent_forge_dev.{agent_name}"
+        return f"l6e_forge_dev.{agent_name}"
 
     def load_all(self) -> None:
         if not self.base_dir.exists():

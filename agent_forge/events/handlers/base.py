@@ -1,5 +1,5 @@
 from typing import Protocol
-from agent_forge.types.event import Event
+from l6e_forge.types.event import Event
 
 
 class IEventHandler(Protocol):

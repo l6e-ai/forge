@@ -1,5 +1,5 @@
-# agent_forge/types/model.py
-"""Model and LLM types for Agent-Forge system"""
+# l6e_forge/types/model.py
+"""Model and LLM types for l6e-forge system"""
 
 from dataclasses import dataclass, field
 from typing import Dict, List, Any, Optional, Literal, AsyncIterator

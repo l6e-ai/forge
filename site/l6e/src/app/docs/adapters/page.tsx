@@ -24,7 +24,7 @@ class _LoadedModel:
 
 
 class MySDKModelManager(IModelManager):
-    """Adapter that wraps your existing SDK/client into Agent-Forge's interface.
+    """Adapter that wraps your existing SDK/client into l6e-forge's interface.
 
     Required methods shown below; keep semantics consistent with your SDK.
     """

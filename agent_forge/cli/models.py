@@ -5,9 +5,9 @@ from rich import print as rprint
 from pathlib import Path
 from rich.table import Table
 
-from agent_forge.models.managers.ollama import OllamaModelManager
-from agent_forge.models.managers.lmstudio import LMStudioModelManager
-from agent_forge.models.auto import (
+from l6e_forge.models.managers.ollama import OllamaModelManager
+from l6e_forge.models.managers.lmstudio import LMStudioModelManager
+from l6e_forge.models.auto import (
     get_system_profile,
     AutoHints,
     recommend_models,

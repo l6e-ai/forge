@@ -1,0 +1,6 @@
+[agent]
+name = "demo"
+description = "Demo echo agent"
+version = "0.0.1"
+
+

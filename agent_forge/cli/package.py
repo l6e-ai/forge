@@ -13,7 +13,7 @@ import base64
 
 import typer
 from rich import print as rprint
-from agent_forge.infra.compose import ComposeTemplateService, ComposeServiceSpec
+from l6e_forge.infra.compose import ComposeTemplateService, ComposeServiceSpec
 
 
 app = typer.Typer(help="Package (.l6e) commands")

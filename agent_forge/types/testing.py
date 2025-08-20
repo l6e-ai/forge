@@ -1,5 +1,5 @@
-# agent_forge/types/testing.py
-"""Testing framework types for Agent-Forge"""
+# l6e_forge/types/testing.py
+"""Testing framework types for l6e-forge"""
 
 from dataclasses import dataclass, field
 from typing import Any, Literal

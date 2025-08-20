@@ -4,10 +4,10 @@ from dataclasses import dataclass
 from typing import Any
 import uuid
 
-from agent_forge.types.core import AgentID, ToolID
-from agent_forge.types.tool import ToolContext, ToolResult, ToolSpec
-from agent_forge.tools.base import ITool
-from agent_forge.tools.registry.base import IToolRegistry
+from l6e_forge.types.core import AgentID, ToolID
+from l6e_forge.types.tool import ToolContext, ToolResult, ToolSpec
+from l6e_forge.tools.base import ITool
+from l6e_forge.tools.registry.base import IToolRegistry
 
 
 @dataclass

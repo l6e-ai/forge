@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 
-from agent_forge.infra.compose import ComposeTemplateService, ComposeServiceSpec
+from l6e_forge.infra.compose import ComposeTemplateService, ComposeServiceSpec
 
 
 def test_compose_template_renders_selected_services() -> None:

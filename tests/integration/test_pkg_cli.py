@@ -4,7 +4,7 @@ from pathlib import Path
 
 from typer.testing import CliRunner
 
-from agent_forge.cli.main import app as main_app
+from l6e_forge.cli.main import app as main_app
 
 
 def _write_min_agent(dir_path: Path, name: str = "demo") -> Path:
@@ -13,7 +13,7 @@ def _write_min_agent(dir_path: Path, name: str = "demo") -> Path:
     (agent_dir / "agent.py").write_text(
         (
             """
-from agent_forge.types.core import AgentContext, AgentResponse, Message
+from l6e_forge.types.core import AgentContext, AgentResponse, Message
 
 class Agent:
     name = "{name}"

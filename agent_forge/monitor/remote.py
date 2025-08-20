@@ -4,7 +4,7 @@ from typing import Any, Optional
 
 import httpx
 
-from agent_forge.monitor.base import IMonitoringService
+from l6e_forge.monitor.base import IMonitoringService
 
 
 class RemoteMonitoringService(IMonitoringService):

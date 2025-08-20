@@ -1,7 +1,7 @@
 
 from typing import Any, Protocol
 
-from agent_forge.types.tool import ToolContext, ToolResult
+from l6e_forge.types.tool import ToolContext, ToolResult
 
 
 class ITool(Protocol):

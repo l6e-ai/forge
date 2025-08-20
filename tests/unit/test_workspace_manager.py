@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from agent_forge.workspace.manager.local import LocalWorkspaceManager
+from l6e_forge.workspace.manager.local import LocalWorkspaceManager
 
 
 @pytest.mark.asyncio

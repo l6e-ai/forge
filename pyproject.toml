@@ -1,5 +1,5 @@
 [project]
-name = "agent-forge"
+name = "l6e-forge"
 version = "0.1.0"
 description = "Build & Deploy local agents with ease - alpha"
 authors = [
@@ -12,12 +12,12 @@ dependencies = [
 ]
 
 [tool.poetry]
-name = "agent-forge"
+name = "l6e-forge"
 version = "0.1.0"
 description = "Build & Deploy local agents with ease - alpha"
 authors = ["Bennett Dixon <bennettdixon16@gmail.com>"]
 packages = [
-    { include = "agent_forge" }
+    { include = "l6e_forge" }
 ]
 
 [tool.poetry.group.cli.dependencies]
@@ -46,4 +46,4 @@ requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [project.scripts]
-forge = "agent_forge.cli.main:main"
+forge = "l6e_forge.cli.main:main"

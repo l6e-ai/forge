@@ -9,16 +9,16 @@ import typer
 from rich import print as rprint
 from rich.table import Table
 
-from agent_forge.workspace.manager.local import LocalWorkspaceManager
-from agent_forge.cli import create as create_cmd
-from agent_forge.cli import dev as dev_cmd
-from agent_forge.cli import chat as chat_cmd
-from agent_forge.cli import template as template_cmd
-from agent_forge.cli import models as models_cmd
-from agent_forge.dev.service import DevService
-from agent_forge.cli import package as package_cmd
+from l6e_forge.workspace.manager.local import LocalWorkspaceManager
+from l6e_forge.cli import create as create_cmd
+from l6e_forge.cli import dev as dev_cmd
+from l6e_forge.cli import chat as chat_cmd
+from l6e_forge.cli import template as template_cmd
+from l6e_forge.cli import models as models_cmd
+from l6e_forge.dev.service import DevService
+from l6e_forge.cli import package as package_cmd
 
-app = typer.Typer(help="Agent-Forge CLI")
+app = typer.Typer(help="l6e-forge CLI")
 app.add_typer(create_cmd.app, name="create")
 app.add_typer(dev_cmd.app, name="dev")
 app.add_typer(chat_cmd.app, name="chat")
@@ -33,7 +33,7 @@ def init(
     with_example: bool = typer.Option(False, "--with-example", help="Also scaffold a sample agent 'demo'"),
     with_compose: bool = typer.Option(True, "--with-compose/--no-with-compose", help="Include a production docker-compose.yml in the workspace"),
 ):
-    """Create a new Agent-Forge workspace at the given path."""
+    """Create a new l6e-forge workspace at the given path."""
     manager = LocalWorkspaceManager()
     path = Path(workspace)
     try:
@@ -44,7 +44,7 @@ def init(
         # Optionally scaffold an example agent to get started quickly
         if with_example:
             try:
-                from agent_forge.cli.create import agent as create_agent
+                from l6e_forge.cli.create import agent as create_agent
                 create_agent.callback  # type: ignore[attr-defined]
                 # run the command function directly
                 create_agent(

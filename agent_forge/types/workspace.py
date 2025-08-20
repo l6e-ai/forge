@@ -1,5 +1,5 @@
-# agent_forge/types/workspace.py
-"""Workspace and template types for Agent-Forge"""
+# l6e_forge/types/workspace.py
+"""Workspace and template types for l6e-forge"""
 
 from dataclasses import dataclass, field
 from typing import Dict, List, Any, Optional, Literal, Union

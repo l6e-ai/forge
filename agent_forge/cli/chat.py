@@ -11,16 +11,16 @@ from rich import print as rprint
 from rich.console import Console
 from rich.markdown import Markdown
 
-from agent_forge.types.core import Message, AgentContext
+from l6e_forge.types.core import Message, AgentContext
 from prompt_toolkit import PromptSession
 from prompt_toolkit.history import FileHistory
 from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
-from agent_forge.runtime.local import LocalRuntime
-from agent_forge.config_managers.toml import TomlConfigManager
-from agent_forge.models.managers.ollama import OllamaModelManager
-from agent_forge.models.managers.lmstudio import LMStudioModelManager
-from agent_forge.types.model import ModelSpec
-from agent_forge.runtime.monitoring import get_monitoring
+from l6e_forge.runtime.local import LocalRuntime
+from l6e_forge.config_managers.toml import TomlConfigManager
+from l6e_forge.models.managers.ollama import OllamaModelManager
+from l6e_forge.models.managers.lmstudio import LMStudioModelManager
+from l6e_forge.types.model import ModelSpec
+from l6e_forge.runtime.monitoring import get_monitoring
 import uuid
 
 

@@ -7,7 +7,7 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from agent_forge.monitor.base import IMonitoringService
+from l6e_forge.monitor.base import IMonitoringService
 
 
 def create_app(monitor: IMonitoringService) -> FastAPI:
