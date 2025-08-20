@@ -3,9 +3,6 @@
 - One-command local stack + UI
   - forge up --agents demo opens a browser chat UI wired to the agent with hot reload, traces, and tool call visualization. Auto-infers compose services, boots models (or falls back to echo), and shows live logs.
 
-- Seamless model bootstrap
-  - Auto-detect Ollama/LM Studio; if missing, offer to install or switch to echo. Pull a small chat + embedding model with progress bars and readiness checks, so the scaffolded agent responds instantly.
-
 - Per‑agent environment bootstrap
   - forge pkg install --venv creates a per‑agent venv and installs deps (from wheelhouse when present), with health checks and “ready to run” summary.
 
