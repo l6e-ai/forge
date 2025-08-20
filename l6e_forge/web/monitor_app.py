@@ -11,7 +11,7 @@ from l6e_forge.monitor.base import IMonitoringService
 
 
 def create_app(monitor: IMonitoringService) -> FastAPI:
-    app = FastAPI(title="Agent Forge Monitor", version="0.1")
+    app = FastAPI(title="l6e forge Monitor", version="0.1")
 
     # Static UI
     @app.get("/")
@@ -149,7 +149,7 @@ _INDEX_HTML = """
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Agent Forge Monitor</title>
+  <title>l6e forge Monitor</title>
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; background: #0b0f14; color: #e6edf3; }
     header { position: sticky; top: 0; background: #0d1117; padding: 12px 16px; border-bottom: 1px solid #30363d; display: flex; align-items: center; justify-content: space-between; }
@@ -257,7 +257,7 @@ _INDEX_HTML = """
 </head>
 <body>
   <header>
-    <h1>Agent Forge Monitor</h1>
+    <h1>l6e forge Monitor</h1>
     <div id="perf" class="muted"></div>
   </header>
   <div class="grid">

@@ -1,4 +1,4 @@
-# Agent forge types
+# l6e forge types
 
 This type documentation is a work in progress.
 

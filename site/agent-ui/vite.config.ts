@@ -15,6 +15,11 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/monitor\/api/, '/api')
       },
+      '/monitor/ingest': {
+        target: monitorUrl,
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/monitor\/ingest/, '/ingest')
+      },
       '/monitor/ws': {
         target: monitorUrl.replace('http', 'ws'),
         ws: true,

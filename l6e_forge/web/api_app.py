@@ -24,7 +24,7 @@ def _runtime() -> LocalRuntime:
 
 
 def create_app() -> FastAPI:
-    app = FastAPI(title="Agent Forge API", version="0.1")
+    app = FastAPI(title="l6e forge API", version="0.1")
 
     # CORS for local dev and compose usage
     app.add_middleware(
@@ -44,6 +44,7 @@ def create_app() -> FastAPI:
     async def list_agents(workspace: str | None = None) -> dict[str, Any]:
         # Active: registered in runtime
         active = _runtime().list_registered()
+        print(f"active: {active}")
         # Discover: list directories in workspace/agents
         discovered: list[str] = []
         try:
@@ -52,6 +53,7 @@ def create_app() -> FastAPI:
             agents_dir = ws / "agents"
             if agents_dir.exists():
                 for p in agents_dir.iterdir():
+                    print(f"p: {p}")
                     if p.is_dir():
                         discovered.append(p.name)
         except Exception:
@@ -89,6 +91,7 @@ def create_app() -> FastAPI:
     async def chat(payload: dict[str, Any]) -> dict[str, Any]:
         agent_name = str(payload.get("agent", "default"))
         text = str(payload.get("message", "")).strip()
+        print(f"/api/chat start agent={agent_name} text={text!r}")
         workspace = str(payload.get("workspace", os.environ.get("AF_WORKSPACE", "/workspace")))
         if not text:
             return {"error": "empty message"}
@@ -111,6 +114,7 @@ def create_app() -> FastAPI:
         mon.add_chat_log(conversation_id=conversation_id, role="user", content=text)
         await mon.record_event("chat.message", {"direction": "in", "role": "user"})
         resp = await runtime.route_message(Message(role="user", content=text), target=aid, conversation_id=conversation_id, session_id=session_uuid)
+        print(f"/api/chat end agent_id={aid} content={resp.content!r}")
         mon.add_chat_log(conversation_id=conversation_id, role="assistant", content=resp.content, agent_id=str(aid))
         await mon.record_event("chat.message", {"direction": "out", "agent": str(aid)})
         return {"content": resp.content, "conversation_id": conversation_id, "agent_id": str(aid)}
@@ -132,6 +136,20 @@ def create_app() -> FastAPI:
                 return Response(content=resp.content, status_code=resp.status_code, headers={k: v for k, v in resp.headers.items() if k.lower() not in {"content-encoding", "transfer-encoding", "connection"}})
 
         app.add_api_route("/monitor/api/{path:path}", _proxy_monitor, methods=["GET", "POST", "PUT", "PATCH", "DELETE"])  # type: ignore[arg-type]
+
+        async def _proxy_monitor_ingest(request: Request) -> Response:
+            monitor = os.environ.get("AF_MONITOR_URL", "http://localhost:8321").rstrip("/")
+            path = request.path_params.get("path", "")
+            target = f"{monitor}/ingest/{path}"
+            method = request.method.upper()
+            headers = dict(request.headers)
+            headers.pop("host", None)
+            body = await request.body()
+            async with httpx.AsyncClient(timeout=None) as client:
+                resp = await client.request(method, target, headers=headers, content=body)
+                return Response(content=resp.content, status_code=resp.status_code, headers={k: v for k, v in resp.headers.items() if k.lower() not in {"content-encoding", "transfer-encoding", "connection"}})
+
+        app.add_api_route("/monitor/ingest/{path:path}", _proxy_monitor_ingest, methods=["GET", "POST", "PUT", "PATCH", "DELETE"])  # type: ignore[arg-type]
     except Exception:
         pass
 

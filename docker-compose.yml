@@ -28,9 +28,9 @@ services:
       - "8000:8000"
 
   ui:
-    image: node:22-alpine
-    working_dir: /app/site/agent-ui
-    command: sh -c "npm ci && npm run dev -- --host 0.0.0.0"
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile.ui
     ports:
       - "5173:5173"
     environment:

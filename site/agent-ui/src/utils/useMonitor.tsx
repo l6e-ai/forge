@@ -143,7 +143,7 @@ export const MonitorProvider: React.FC<{ children: React.ReactNode }> = ({ child
   }, [])
 
   const sendChat = useCallback(async (text: string) => {
-    await fetch('/monitor/api/ingest/chat', {
+    await fetch('/monitor/ingest/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ role: 'user', content: text, conversation_id: 'local' })

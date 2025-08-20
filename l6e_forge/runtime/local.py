@@ -179,6 +179,14 @@ class LocalRuntime:
         import time as _time
         _start = _time.perf_counter()
         resp = await agent.handle_message(message, ctx)
+        # Ensure response object integrity for UI
+        try:
+            if not getattr(resp, "agent_id", None):
+                resp.agent_id = self._id_to_name.get(target or next(iter(self._id_to_name.keys()), uuid.uuid4()), "unknown")  # type: ignore[attr-defined]
+            if not getattr(resp, "content", None):
+                resp.content = ""  # type: ignore[attr-defined]
+        except Exception:
+            pass
         _elapsed_ms = (_time.perf_counter() - _start) * 1000.0
         # Log response
         try:

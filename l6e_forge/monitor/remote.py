@@ -10,7 +10,7 @@ from l6e_forge.monitor.base import IMonitoringService
 class RemoteMonitoringService(IMonitoringService):
     """HTTP client that forwards monitoring calls to a remote monitor server.
 
-    The server is expected to be an instance of the Agent Forge monitor app
+    The server is expected to be an instance of the l6e forge monitor app
     exposing the ingestion endpoints under /ingest/*.
     """
 

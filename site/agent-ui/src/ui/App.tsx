@@ -9,7 +9,7 @@ export const App: React.FC = () => {
     <AppProviders>
       <div className="app">
         <header className="header">
-          <h1>Agent Forge UI</h1>
+          <h1>l6e forge UI</h1>
           <PerfPanel />
         </header>
         <main className="grid">
