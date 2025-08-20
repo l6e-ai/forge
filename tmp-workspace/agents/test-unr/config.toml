@@ -1,4 +1,0 @@
-[agent]
-name = "test-unr"
-provider = "lmstudio"
-model = "l3-unrestricted"
