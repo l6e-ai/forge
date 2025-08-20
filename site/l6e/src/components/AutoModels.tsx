@@ -1,6 +1,7 @@
 import React from "react";
 import Section from "./Section";
 import CodeBlock from "./CodeBlock";
+import AutoModelsDiagram from "./AutoModelsDiagram";
 
 const steps = `# Auto Models (alpha)
 $ forge models doctor
@@ -39,6 +40,9 @@ export default function AutoModels() {
           <CodeBlock code={steps} mode="bash" highlight language="bash" themeName="dracula" />
           <div className="text-xs text-white/50 mt-3">Commands and UX may evolve during alpha.</div>
         </div>
+      </div>
+      <div className="mt-10">
+        <AutoModelsDiagram />
       </div>
     </Section>
   );
