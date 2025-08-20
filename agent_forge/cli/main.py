@@ -31,6 +31,7 @@ app.add_typer(package_cmd.app, name="pkg")
 def init(
     workspace: str = typer.Argument(..., help="Path to create the workspace in"),
     with_example: bool = typer.Option(False, "--with-example", help="Also scaffold a sample agent 'demo'"),
+    with_compose: bool = typer.Option(True, "--with-compose/--no-with-compose", help="Include a production docker-compose.yml in the workspace"),
 ):
     """Create a new Agent-Forge workspace at the given path."""
     manager = LocalWorkspaceManager()
@@ -39,7 +40,7 @@ def init(
         typer.echo(f"Creating workspace at: {path}")
         import asyncio
 
-        asyncio.run(manager.create_workspace(path))
+        asyncio.run(manager.create_workspace(path, with_compose=with_compose))
         # Optionally scaffold an example agent to get started quickly
         if with_example:
             try:

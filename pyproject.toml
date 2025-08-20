@@ -16,6 +16,9 @@ name = "agent-forge"
 version = "0.1.0"
 description = "Build & Deploy local agents with ease - alpha"
 authors = ["Bennett Dixon <bennettdixon16@gmail.com>"]
+packages = [
+    { include = "agent_forge" }
+]
 
 [tool.poetry.group.cli.dependencies]
 rich = ">=14.1.0,<15.0.0"

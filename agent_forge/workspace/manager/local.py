@@ -17,7 +17,7 @@ class LocalWorkspaceManager(IWorkspaceManager):
     Keeps behavior minimal to support MVP commands: `forge init` and `forge list`.
     """
 
-    async def create_workspace(self, path: Path, template: str | None = None) -> None:
+    async def create_workspace(self, path: Path, template: str | None = None, with_compose: bool = True) -> None:
         root = Path(path).expanduser().resolve()
         root.mkdir(parents=True, exist_ok=True)
 
@@ -48,6 +48,18 @@ hot_reload = true
 """.strip().format(name=root.name),
                 encoding="utf-8",
             )
+
+        # Include a packaged docker-compose file for production use
+        if with_compose:
+            try:
+                from importlib import resources
+                with resources.as_file(resources.files("agent_forge.infra.templates.compose").joinpath("docker-compose.workspace.yml")) as cp:
+                    target_cp = root / "docker-compose.yml"
+                    if not target_cp.exists():
+                        target_cp.write_text(cp.read_text(encoding="utf-8"), encoding="utf-8")
+            except Exception:
+                # Non-fatal if packaging or path fails
+                pass
 
         # Optionally scaffold a basic example agent if a template is requested later
         _ = template  # not used in MVP

@@ -1,0 +1,17 @@
+[agent]
+name = "demo"
+version = "0.1.0"
+
+[model]
+provider = "ollama"
+model = "llama3.2:3b"
+
+[model.auto]
+# Opt-in to automatic local model selection & bootstrap
+enabled = true
+providers = ["ollama"]
+quality = "balanced"
+
+[memory]
+# Embedding model will be filled by bootstrapper if not set
+embedding_model = ""

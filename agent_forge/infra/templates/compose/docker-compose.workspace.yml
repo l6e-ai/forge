@@ -1,0 +1,33 @@
+version: "3.8"
+services:
+  monitor:
+    image: python:3.13-slim
+    environment:
+      - MONITOR_PORT=8321
+      - PYTHONUNBUFFERED=1
+    command: >
+      sh -c "pip install --no-cache-dir agent-forge 'uvicorn[standard]' &&
+             uvicorn agent_forge.web.monitor_main:app --host 0.0.0.0 --port 8321 --log-level info --access-log"
+    ports:
+      - "8321:8321"
+    restart: unless-stopped
+
+  api:
+    image: python:3.13-slim
+    environment:
+      - PYTHONUNBUFFERED=1
+      - AF_MONITOR_URL=http://monitor:8321
+      - AF_WORKSPACE=/workspace
+    command: >
+      sh -c "pip install --no-cache-dir agent-forge 'uvicorn[standard]' &&
+             uvicorn agent_forge.web.api_main:app --host 0.0.0.0 --port 8000 --log-level info --access-log"
+    volumes:
+      - ./:/workspace
+    ports:
+      - "8000:8000"
+    depends_on:
+      - monitor
+    restart: unless-stopped
+
+# Optionally add a UI service externally or serve a static UI behind the API.
+
