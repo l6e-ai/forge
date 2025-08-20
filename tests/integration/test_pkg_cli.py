@@ -203,3 +203,169 @@ def test_pkg_install_requires_workspace(tmp_path: Path) -> None:
     assert "not a workspace" in result_install.output.lower() or "missing" in result_install.output.lower()
 
 
+def test_pkg_checksums_present_and_inspect_counts(tmp_path: Path) -> None:
+    runner = CliRunner()
+    agent_dir = _write_min_agent(tmp_path / "src", name="csdemo")
+    dist_dir = tmp_path / "dist"
+
+    # Build without extra files -> expect 2 checksum entries (package.toml + agent/agent.py)
+    result_build = runner.invoke(
+        main_app,
+        ["pkg", "build", str(agent_dir), "--out", str(dist_dir), "--version", "0.0.1"],
+        catch_exceptions=False,
+    )
+    assert result_build.exit_code == 0, result_build.output
+    pkg_path = dist_dir / "csdemo-0.0.1.l6e"
+    assert pkg_path.exists()
+
+    # Open and check checksums.txt exists and has 2 lines
+    import zipfile
+    with zipfile.ZipFile(pkg_path, "r") as zf:
+        with zf.open("checksums.txt") as f:
+            lines = f.read().decode("utf-8").strip().splitlines()
+    assert len(lines) == 2
+    assert any("package.toml" in ln for ln in lines)
+    assert any("agent/agent.py" in ln for ln in lines)
+
+    # Inspect summary shows count
+    result_inspect = runner.invoke(main_app, ["pkg", "inspect", str(pkg_path)], catch_exceptions=False)
+    assert result_inspect.exit_code == 0
+    assert "Checksums" in result_inspect.output
+    assert "(2 entries)" in result_inspect.output
+
+
+def test_pkg_install_verifies_checksums_and_detects_mismatch(tmp_path: Path) -> None:
+    runner = CliRunner()
+    agent_dir = _write_min_agent(tmp_path / "src", name="tamper")
+    dist_dir = tmp_path / "dist"
+
+    # Build
+    result_build = runner.invoke(
+        main_app,
+        ["pkg", "build", str(agent_dir), "--out", str(dist_dir), "--version", "0.0.1"],
+        catch_exceptions=False,
+    )
+    assert result_build.exit_code == 0, result_build.output
+    pkg_path = dist_dir / "tamper-0.0.1.l6e"
+    assert pkg_path.exists()
+
+    # Prepare workspace
+    ws_path = tmp_path / "ws"
+    result_init = runner.invoke(main_app, ["init", str(ws_path)], catch_exceptions=False)
+    assert result_init.exit_code == 0
+
+    # First install should pass verification
+    result_install_ok = runner.invoke(
+        main_app,
+        ["pkg", "install", str(pkg_path), "--workspace", str(ws_path)],
+        catch_exceptions=False,
+    )
+    assert result_install_ok.exit_code == 0, result_install_ok.output
+    assert "Checksum verification passed" in result_install_ok.output
+
+    # Create a tampered package: replace agent/agent.py content but keep checksums.txt
+    import zipfile
+    tampered = dist_dir / "tamper-0.0.1-tampered.l6e"
+    with zipfile.ZipFile(pkg_path, "r") as zf_in, zipfile.ZipFile(tampered, "w") as zf_out:
+        for info in zf_in.infolist():
+            with zf_in.open(info.filename) as src:
+                data = src.read()
+            if info.filename == "agent/agent.py":
+                data = b"print('tampered')\n"
+            zf_out.writestr(info.filename, data)
+
+    # Install tampered should fail checksum verification
+    result_install_bad = runner.invoke(
+        main_app,
+        ["pkg", "install", str(tampered), "--workspace", str(ws_path)],
+        catch_exceptions=False,
+    )
+    assert result_install_bad.exit_code != 0
+    assert "checksum mismatch" in result_install_bad.output.lower()
+
+
+def test_pkg_sign_and_verify_signature(tmp_path: Path, monkeypatch) -> None:
+    runner = CliRunner()
+    agent_dir = _write_min_agent(tmp_path / "src", name="signed")
+    dist_dir = tmp_path / "dist"
+
+    # Generate a signing key using PyNaCl
+    try:
+        from nacl.signing import SigningKey  # type: ignore
+    except Exception:
+        # If PyNaCl isn't available in the test env, skip gracefully
+        import pytest  # type: ignore
+
+        pytest.skip("PyNaCl not available")
+        return
+
+    sk = SigningKey.generate()
+    # Write private as 32-byte seed (required by SigningKey()) and public as hex
+    seed = sk._seed  # type: ignore[attr-defined]
+    pk_bytes = sk.verify_key.encode()
+    key_path = tmp_path / "sk.key"
+    pub_path = tmp_path / "pk.key"
+    key_path.write_text(seed.hex(), encoding="utf-8")
+    pub_path.write_text(pk_bytes.hex(), encoding="utf-8")
+
+    # Build signed package
+    result_build = runner.invoke(
+        main_app,
+        [
+            "pkg",
+            "build",
+            str(agent_dir),
+            "--out",
+            str(dist_dir),
+            "--version",
+            "0.0.1",
+            "--sign-key",
+            str(key_path),
+        ],
+        catch_exceptions=False,
+    )
+    assert result_build.exit_code == 0, result_build.output
+    pkg_path = dist_dir / "signed-0.0.1.l6e"
+    assert pkg_path.exists()
+
+    # Prepare workspace
+    ws_path = tmp_path / "ws"
+    result_init = runner.invoke(main_app, ["init", str(ws_path)], catch_exceptions=False)
+    assert result_init.exit_code == 0
+
+    # Verify signature using embedded pub key
+    result_install_sig = runner.invoke(
+        main_app,
+        [
+            "pkg",
+            "install",
+            str(pkg_path),
+            "--workspace",
+            str(ws_path),
+            "--verify-sig",
+        ],
+        catch_exceptions=False,
+    )
+    assert result_install_sig.exit_code == 0, result_install_sig.output
+    assert "Signature verification passed" in result_install_sig.output
+
+    # Verify signature using provided key path (ignoring embedded)
+    result_install_sig2 = runner.invoke(
+        main_app,
+        [
+            "pkg",
+            "install",
+            str(pkg_path),
+            "--workspace",
+            str(ws_path),
+            "--verify-sig",
+            "--overwrite",
+            "--public-key",
+            str(pub_path),
+        ],
+        catch_exceptions=False,
+    )
+    assert result_install_sig2.exit_code == 0, result_install_sig2.output
+    assert "Signature verification passed" in result_install_sig2.output
+
+
