@@ -45,14 +45,14 @@ const steps: DemoStep[] = [
   {
     id: "package",
     title: "Package",
-    command: () => "forge package my-agent",
-    output: () => "📦 Created my-agent.l6e",
+    command: () => "forge pkg build agents/my-agent -o dist",
+    output: () => "📦 Created dist/my-agent-0.1.0.l6e",
   },
   {
     id: "deploy",
     title: "Deploy",
-    command: () => "forge deploy my-agent.l6e",
-    output: () => "🚀 Agent running locally",
+    command: () => "forge up",
+    output: () => "🚀 Stack running locally (personal-scale)",
   },
 ];
 

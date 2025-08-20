@@ -28,7 +28,7 @@ const items = [
   {
     name: "Your stack",
     description:
-      "Interfaces over rewrites. Adapt existing agents or frameworks like LangChain without changing your codebase.",
+      "Interfaces over rewrites. Adapt existing agents or frameworks (LangChain, custom services) into your cloud when you need it.",
     href: "/docs/adapters",
     logo: null,
   },

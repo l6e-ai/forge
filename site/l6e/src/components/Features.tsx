@@ -12,7 +12,19 @@ const features = [
   },
   {
     title: "🏠 Local-first",
-    body: "Run on your machine with zero required cloud services and private data by default.",
+    body: "Run on laptops or your VPC with zero required cloud services; private data by default.",
+  },
+  {
+    title: "👤 Personal-scale by design",
+    body: "Perfect for single-user assistants. Runs great on Apple Silicon; scale up only when you need to.",
+  },
+  {
+    title: "🐳 One-command Docker stack",
+    body: "Bring-up a small-scale agent stack locally with minimal config. Great for demos, dev, and edge nodes.",
+  },
+  {
+    title: "🔒 Your stack, your data",
+    body: "Agents run entirely on your infrastructure—developer machines or internal cloud. Data never leaves unless you say so.",
   },
   {
     title: "🔧 Fast Dev Loop",

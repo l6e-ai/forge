@@ -6,7 +6,7 @@ import AutoModelsDiagram from "./AutoModelsDiagram";
 const steps = `# Auto Models (alpha)
 $ forge models doctor
 $ forge models bootstrap --agent agents/my-agent --provider ollama
-$ forge up --agents my-agent   # auto-bootstraps if needed`;
+$ forge up   # auto-bootstraps models on first run if needed`;
 
 export default function AutoModels() {
   return (
@@ -14,7 +14,7 @@ export default function AutoModels() {
       <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight mb-4">Auto Models</h2>
       <p className="text-white/70 max-w-3xl mb-8">
         Ship once; run anywhere. Forge detects the system and installs an optimized open-source model automatically—so
-        developers aren&apos;t forced to handpick models and their users don&apos;t sweat the details. Apple Silicon optimized; <i>currently in alpha with Ollama support.</i>
+        developers aren&apos;t forced to handpick models and their users don&apos;t sweat the details. Tailored for personal-scale agents and Apple Silicon; <i>currently in alpha with Ollama support.</i>
       </p>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-3">
