@@ -34,6 +34,9 @@ export const AgentsPanel: React.FC = () => {
     setActive(data.active || [])
   }
 
+  const activeNames = new Set((active || []).map(a => a.name))
+  const inactiveDiscovered = (discovered || []).filter(name => !activeNames.has(name))
+
   return (
     <div className="flex flex-col gap-2">
       {active.map(a => (
@@ -48,7 +51,7 @@ export const AgentsPanel: React.FC = () => {
           </div>
         </div>
       ))}
-      {discovered.map(name => (
+      {inactiveDiscovered.map(name => (
         <div key={name} className="flex items-center justify-between rounded-md border border-slate-800 bg-slate-950/40 px-3 py-2">
           <div className="flex items-center gap-2">
             <span className="font-medium">{name}</span>
