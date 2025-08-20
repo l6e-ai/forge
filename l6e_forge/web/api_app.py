@@ -107,8 +107,20 @@ def create_app() -> FastAPI:
         aid = runtime.get_agent_id_by_name(agent_name)
         if aid is None:
             aid = await runtime.register_agent(agent_dir)
-        session_uuid = str(uuid.uuid4())
-        conversation_id = f"{agent_name}:{session_uuid}"
+        # Support persistent conversations via optional conversation_id and session_id
+        incoming_conv = payload.get("conversation_id")
+        incoming_sess = payload.get("session_id")
+        if isinstance(incoming_conv, str) and incoming_conv.strip():
+            conversation_id = incoming_conv.strip()
+            if isinstance(incoming_sess, str) and incoming_sess.strip():
+                session_uuid = incoming_sess.strip()
+            else:
+                # Derive session from conversation suffix if format is agent:session
+                parts = conversation_id.split(":")
+                session_uuid = parts[-1] if len(parts) > 1 and parts[-1] else str(uuid.uuid4())
+        else:
+            session_uuid = str(uuid.uuid4())
+            conversation_id = f"{agent_name}:{session_uuid}"
         ctx = AgentContext(conversation_id=conversation_id, session_id=session_uuid)
         mon = get_monitoring()
         mon.add_chat_log(conversation_id=conversation_id, role="user", content=text)
@@ -117,7 +129,7 @@ def create_app() -> FastAPI:
         print(f"/api/chat end agent_id={aid} content={resp.content!r}")
         mon.add_chat_log(conversation_id=conversation_id, role="assistant", content=resp.content, agent_id=str(aid))
         await mon.record_event("chat.message", {"direction": "out", "agent": str(aid)})
-        return {"content": resp.content, "conversation_id": conversation_id, "agent_id": str(aid)}
+        return {"content": resp.content, "conversation_id": conversation_id, "session_id": session_uuid, "agent_id": str(aid)}
 
     # Lightweight HTTP proxy to Monitor for production (mirrors dev Vite proxy)
     try:

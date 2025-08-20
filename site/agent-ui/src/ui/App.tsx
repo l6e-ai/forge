@@ -7,18 +7,20 @@ import { AppProviders } from '../AppProviders'
 export const App: React.FC = () => {
   return (
     <AppProviders>
-      <div className="app">
-        <header className="header">
-          <h1>l6e forge UI</h1>
-          <PerfPanel />
+      <div className="min-h-screen">
+        <header className="sticky top-0 z-10 border-b border-slate-800 bg-slate-900/80 backdrop-blur">
+          <div className="mx-auto max-w-6xl px-4 py-3 flex items-center justify-between">
+            <h1 className="text-lg font-semibold tracking-tight">l6e Forge</h1>
+            <PerfPanel />
+          </div>
         </header>
-        <main className="grid">
-          <section className="card">
-            <h2 className="section-title">Active Agents</h2>
+        <main className="mx-auto max-w-6xl px-4 py-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+          <section className="rounded-lg border border-slate-800 bg-slate-900 p-4">
+            <h2 className="mb-2 text-slate-300 font-medium">Active Agents</h2>
             <AgentsPanel />
           </section>
-          <section className="card" style={{ gridColumn: '1 / -1' }}>
-            <h2 className="section-title">Chat</h2>
+          <section className="rounded-lg border border-slate-800 bg-slate-900 p-4 md:col-span-2">
+            <h2 className="mb-2 text-slate-300 font-medium">Chat</h2>
             <ChatPanel />
           </section>
         </main>
