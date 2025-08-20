@@ -26,9 +26,9 @@ export const MonitorProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const refresh = useCallback(async () => {
     const [a, p, c] = await Promise.all([
-      fetch('/api/agents').then(r => r.json()),
-      fetch('/api/perf').then(r => r.json()),
-      fetch('/api/chats').then(r => r.json()),
+      fetch('/monitor/api/agents').then(r => r.json()),
+      fetch('/monitor/api/perf').then(r => r.json()),
+      fetch('/monitor/api/chats').then(r => r.json()),
     ])
     setAgents(a)
     setPerf(p)
@@ -41,7 +41,7 @@ export const MonitorProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   useEffect(() => {
     const proto = location.protocol === 'https:' ? 'wss' : 'ws'
-    const ws = new WebSocket(`${proto}://${location.host}/ws`)
+    const ws = new WebSocket(`${proto}://${location.host}/monitor/ws`)
     wsRef.current = ws
     ws.onmessage = (ev) => {
       try {
@@ -52,15 +52,15 @@ export const MonitorProvider: React.FC<{ children: React.ReactNode }> = ({ child
           return
         }
         if (msg.type === 'metric' && msg.data?.name === 'response_time_ms') {
-          fetch('/api/perf').then(r => r.json()).then(setPerf)
+          fetch('/monitor/api/perf').then(r => r.json()).then(setPerf)
         }
         if (msg.type === 'event') {
           const et = msg.data?.event_type
           if (et === 'chat.message') {
-            fetch('/api/chats').then(r => r.json()).then(setChats)
+            fetch('/monitor/api/chats').then(r => r.json()).then(setChats)
           }
           if (et === 'agent.registered' || et === 'agent.unregistered') {
-            fetch('/api/agents').then(r => r.json()).then(setAgents)
+            fetch('/monitor/api/agents').then(r => r.json()).then(setAgents)
           }
         }
       } catch (e) {
@@ -77,7 +77,7 @@ export const MonitorProvider: React.FC<{ children: React.ReactNode }> = ({ child
   }, [])
 
   const sendChat = useCallback(async (text: string) => {
-    await fetch('/ingest/chat', {
+    await fetch('/monitor/api/ingest/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ role: 'user', content: text, conversation_id: 'local' })

@@ -43,7 +43,8 @@ export const ChatPanel: React.FC = () => {
       </div>
       <div className="chat-input">
         <input value={input} onChange={e => setInput(e.target.value)} placeholder="Say something…" onKeyDown={e => { if (e.key === 'Enter') onSend() }} />
-        <button onClick={onSend}>Send</button>
+        <button onClick={onSend}>Log</button>
+        <button onClick={async () => { if (!input.trim()) return; const res = await fetch('/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ agent: 'test-auto', message: input }) }); const data = await res.json(); console.log('api/chat', data); setInput(''); }}>Send via API</button>
       </div>
     </div>
   )
