@@ -3,43 +3,39 @@ import Section from "./Section";
 
 const features = [
   {
+    title: "🤖 Auto Models (alpha)",
+    body: "One command picks and installs the right OSS model for your hardware. Apple Silicon optimized. Ollama today; more soon.",
+  },
+  {
     title: "📦 Portable Agents",
-    body: "Package agents that run anywhere. Build once, deploy everywhere.",
+    body: "Ship a single portable package and run it anywhere—dev to prod.",
   },
   {
-    title: "🏠 Local Infrastructure",
-    body: "Run on your hardware with complete data sovereignty.",
+    title: "🏠 Local-first",
+    body: "Run on your machine with zero required cloud services and private data by default.",
   },
   {
-    title: "🔧 Developer Experience",
-    body: "Hot reload, instant testing, rich tooling. Build fast.",
+    title: "🔧 Fast Dev Loop",
+    body: "Hot reload, instant testing, and a focused CLI to move fast.",
   },
   {
-    title: "🎯 Template Ecosystem",
-    body: "Start with proven patterns for assistants, coding, research, and more.",
-  },
-  {
-    title: "⚡ Performance",
-    body: "Blazing fast on modern hardware with local models.",
-  },
-  {
-    title: "🔒 Enterprise Ready",
-    body: "Secure packaging, audit trails, and compliance friendly.",
+    title: "🎯 Ready-made Templates",
+    body: "Start from proven assistants, coding, and research patterns—customize in minutes.",
   },
   {
     title: "🧩 Pluggable Runners",
-    body: "Use multiple local LLM providers (LM Studio, Ollama). Easily extend with custom runners like llama.cpp (coming soon).",
+    body: "Use LM Studio or Ollama out of the box. llama.cpp support is coming soon.",
   },
   {
-    title: "🔌 Interfaces, not rewrites",
-    body: "Type-safe interfaces let you adapt existing agents or frameworks (e.g., LangChain) without rebuilding from scratch.",
+    title: "🔌 Interfaces over rewrites",
+    body: "Adapt existing agents or frameworks (e.g., LangChain) without rebuilding your codebase.",
   },
 ];
 
 export default function Features() {
   return (
     <Section id="features" className="py-16">
-      <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight mb-8">Key Capabilities</h2>
+      <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight mb-8">Highlights</h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {features.map((f) => (
           <div key={f.title} className="rounded-lg border border-white/10 bg-white/5 p-5">

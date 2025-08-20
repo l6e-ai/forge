@@ -3,6 +3,7 @@ import Hero from "../components/Hero";
 import Features from "../components/Features";
 import Integrations from "../components/Integrations";
 import GettingStarted from "../components/GettingStarted";
+import AutoModels from "../components/AutoModels";
 import Footer from "../components/Footer";
 import DemoSection from "../components/Demo/DemoSection";
 
@@ -14,6 +15,7 @@ export default function Home() {
         <Hero />
         <DemoSection />
         <Features />
+        <AutoModels />
         <Integrations />
         <GettingStarted />
       </main>
