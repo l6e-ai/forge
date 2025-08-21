@@ -1,6 +1,7 @@
 import Nav from "../components/Nav";
 import Hero from "../components/Hero";
 import Features from "../components/Features";
+import AgentsOnRails from "../components/AgentsOnRails";
 import Integrations from "../components/Integrations";
 import GettingStarted from "../components/GettingStarted";
 import AutoModels from "../components/AutoModels";
@@ -15,6 +16,7 @@ export default function Home() {
         <Hero />
         <DemoSection />
         <Features />
+        <AgentsOnRails />
         <AutoModels />
         <Integrations />
         <GettingStarted />

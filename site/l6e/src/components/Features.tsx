@@ -7,6 +7,10 @@ const features = [
     body: "One command picks and installs the right OSS model for your hardware. Apple Silicon optimized. Ollama today; more soon.",
   },
   {
+    title: "🚆 Agents on Rails",
+    body: "Opinionated defaults and tooling to build fast without lock‑in. Start local, keep interfaces stable as you grow.",
+  },
+  {
     title: "📦 Portable Agents",
     body: "Ship a single portable package and run it anywhere—dev to prod.",
   },
@@ -19,8 +23,8 @@ const features = [
     body: "Perfect for single-user assistants. Runs great on Apple Silicon; scale up only when you need to.",
   },
   {
-    title: "🐳 One-command Docker stack",
-    body: "Bring-up a small-scale agent stack locally with minimal config. Great for demos, dev, and edge nodes.",
+    title: "🐳 Optional Docker stack",
+    body: "Spin up API, monitoring, chat UI, and in-memory store with one command. Swap components for your infra when ready.",
   },
   {
     title: "🔒 Your stack, your data",
@@ -41,6 +45,10 @@ const features = [
   {
     title: "🔌 Interfaces over rewrites",
     body: "Adapt existing agents or frameworks (e.g., LangChain) without rebuilding your codebase.",
+  },
+  {
+    title: "☁️ MVP to cloud path",
+    body: "Ship a single-user MVP quickly, then move to multi-user cloud with the same core contracts.",
   },
 ];
 

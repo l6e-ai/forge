@@ -19,15 +19,15 @@ export default function Hero() {
     <Section className="pt-16 pb-12 sm:pt-24 sm:pb-16">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
         <div>
-          <div className="flex flex-col gap-2 mb-4">
+          <div className="flex flex-col sm:flex-row gap-2 mb-4 w-full">
             <div className="inline-flex w-fit items-center gap-2 rounded-full border border-white/10 px-3 py-1 text-xs text-white/70">
               <span className="h-2 w-2 rounded-full bg-[var(--accent)]" /> Open Source • Local-first
             </div>
-            <div className="inline-flex w-fit items-center gap-2 rounded-full border border-[var(--accent)]/30 bg-[var(--accent)]/10 px-3 py-1 text-[10px] text-[var(--accent)]">
-              <span className="h-2 w-2 rounded-full bg-[var(--accent)]" /> Auto Models (alpha)
-            </div>
             <div className="inline-flex w-fit items-center gap-2 rounded-full border border-white/10 px-3 py-1 text-xs text-white/70">
               <span className="h-2 w-2 rounded-full bg-[var(--accent)]" /> Your stack, your data
+            </div>
+            <div className="inline-flex w-fit items-center gap-2 rounded-full border border-[var(--accent)]/30 bg-[var(--accent)]/10 px-3 py-1 text-[10px] text-[var(--accent)]">
+              <span className="h-2 w-2 rounded-full bg-[var(--accent)]" /> Auto Models (alpha)
             </div>
           </div>
           <h1 className="text-4xl sm:text-5xl font-bold tracking-tight">
@@ -38,13 +38,17 @@ export default function Hero() {
           <p className="mt-4 text-lg text-white/70 max-w-xl">
             <span className="text-green-500 mb-4">Introducing Forge by l6e, now in alpha:</span>
             <br />
-            Create portable AI agents that run anywhere. Plug into local LLM runners like LM Studio and Ollama. Keep your data on your infrastructure—laptops or your VPC—with zero required cloud. Optimized for personal-scale, single-user assistants that run great on Apple Silicon. 
+            Create portable AI agents that run anywhere. Plug into local LLM runners like LM Studio and Ollama. Keep your data on your infrastructure—laptops or your VPC—with zero required cloud. Optimized for personal-scale, single-user assistants.
             <br /><br />
-            Our Auto Model selector can choose and install optimized OSS model(s) for any system your agent runs on. Out-of-the-box Docker stack included to run small-scale agents on local hardware with minimal configuration.
+            Forge&apos;s Auto Model selector can choose and install optimized OSS model(s) for any system your agent runs on; ship portable agents to your team or customers in minutes.
           </p>
           <div className="mt-6 flex items-center gap-3">
             <Button href="https://github.com/l6e-ai/forge" variant="primary">Create Your First Agent</Button>
             <Button href="https://github.com/l6e-ai/forge" variant="outline">View on GitHub</Button>
+          </div>
+
+          <div className="mt-6 inline-flex w-fit items-center gap-2 rounded-full border border-white/10 px-3 py-1 text-xs text-white/70">
+              <span className="h-2 w-2 rounded-full bg-[var(--accent)]" /> Optimized for Apple Silicon
           </div>
         </div>
         <div>
