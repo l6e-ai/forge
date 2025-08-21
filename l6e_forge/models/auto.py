@@ -373,6 +373,9 @@ class ModelSuggestion:
     estimate_source: Literal["installed", "catalog", "estimate"]
     is_installed: bool
     provider_available: bool
+    mem_capacity_gb: float
+    mem_capacity_type: Literal["vram", "ram"]
+    mem_pct: int
 
 
 def suggest_models(sys: SystemProfile, hints: AutoHints, top_n: int = 5) -> List[ModelSuggestion]:
@@ -433,6 +436,7 @@ def suggest_models(sys: SystemProfile, hints: AutoHints, top_n: int = 5) -> List
             base_reason = "fits GPU VRAM" if sys.has_gpu else "fits system RAM"
             if not base_fits:
                 base_reason = "may exceed local memory"
+            mem_pct = int(round((base_est / capacity) * 100)) if capacity > 0 else 0
 
             suggestions.append(
                 ModelSuggestion(
@@ -445,6 +449,9 @@ def suggest_models(sys: SystemProfile, hints: AutoHints, top_n: int = 5) -> List
                     estimate_source=base_source,
                     is_installed=base_installed,
                     provider_available=provider_up,
+                    mem_capacity_gb=capacity,
+                    mem_capacity_type="vram" if (sys.has_gpu and sys.vram_gb > 0) else "ram",
+                    mem_pct=mem_pct,
                 )
             )
 
@@ -459,6 +466,7 @@ def suggest_models(sys: SystemProfile, hints: AutoHints, top_n: int = 5) -> List
                         reason2 = "fits GPU VRAM" if sys.has_gpu else "fits system RAM"
                         if not fits2:
                             reason2 = "may exceed local memory"
+                        mem_pct2 = int(round((est2 / capacity) * 100)) if capacity > 0 else 0
                         suggestions.append(
                             ModelSuggestion(
                                 entry=entry,
@@ -470,6 +478,9 @@ def suggest_models(sys: SystemProfile, hints: AutoHints, top_n: int = 5) -> List
                                 estimate_source="installed",
                                 is_installed=True,
                                 provider_available=provider_up,
+                                mem_capacity_gb=capacity,
+                                mem_capacity_type="vram" if (sys.has_gpu and sys.vram_gb > 0) else "ram",
+                                mem_pct=mem_pct2,
                             )
                         )
 

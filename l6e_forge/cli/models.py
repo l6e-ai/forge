@@ -113,6 +113,7 @@ def bootstrap(
     table.add_column("Provider")
     table.add_column("Tag")
     table.add_column("Est. Mem (GB)")
+    table.add_column("% of VRAM/RAM")
     table.add_column("Fits Local")
     table.add_column("Source")
     table.add_column("Installed")
@@ -124,6 +125,7 @@ def bootstrap(
             s.provider,
             s.provider_tag or "-",
             f"{s.est_memory_gb:.1f}",
+            f"{s.mem_pct}% of {s.mem_capacity_type.upper()} ({s.mem_capacity_gb:.1f} GB)",
             "yes" if s.fits_local else "maybe",
             s.estimate_source,
             "yes" if s.is_installed else "no",
@@ -217,6 +219,7 @@ def suggest(
     table.add_column("Provider")
     table.add_column("Tag")
     table.add_column("Est. Mem (GB)")
+    table.add_column("% of VRAM/RAM")
     table.add_column("Fits Local")
     table.add_column("Source")
     table.add_column("Installed")
@@ -232,6 +235,7 @@ def suggest(
             s.provider,
             s.provider_tag or "-",
             f"{s.est_memory_gb:.1f}",
+            f"{s.mem_pct}% of {s.mem_capacity_type.upper()} ({s.mem_capacity_gb:.1f} GB)",
             "yes" if s.fits_local else "maybe",
             s.estimate_source,
             "yes" if s.is_installed else "no",
