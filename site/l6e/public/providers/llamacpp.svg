@@ -1,9 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none">
-  <rect width="64" height="64" rx="12" fill="#111"/>
-  <path d="M18 42 C18 28 28 22 32 22 C40 22 46 28 46 42" stroke="#FFB800" stroke-width="3" fill="none" stroke-linecap="round"/>
-  <circle cx="26" cy="28" r="2" fill="#FFB800"/>
-  <circle cx="38" cy="28" r="2" fill="#FFB800"/>
-  <text x="32" y="56" text-anchor="middle" font-size="9" fill="#fff" font-family="Inter, Arial, sans-serif">llama.cpp</text>
-  <title>llama.cpp</title>
-</svg>
-

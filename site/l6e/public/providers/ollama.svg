@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none">
-  <rect width="64" height="64" rx="12" fill="#111"/>
-  <path d="M20 20 h24 v24 h-24 z" stroke="#00A2FF" stroke-width="3" fill="none"/>
-  <circle cx="32" cy="32" r="8" stroke="#00A2FF" stroke-width="3" fill="none"/>
-  <text x="32" y="56" text-anchor="middle" font-size="10" fill="#fff" font-family="Inter, Arial, sans-serif">Ollama</text>
-  <title>Ollama</title>
-</svg>
-
