@@ -740,6 +740,21 @@ docs = ["sphinx (>=5.3)", "sphinx-rtd-theme (>=1)"]
 testing = ["coverage (>=6.2)", "hypothesis (>=5.7.1)"]
 
 [[package]]
+name = "questionary"
+version = "2.1.0"
+description = "Python library to build pretty command line user prompts ⭐️"
+optional = false
+python-versions = ">=3.8"
+groups = ["cli"]
+files = [
+    {file = "questionary-2.1.0-py3-none-any.whl", hash = "sha256:44174d237b68bc828e4878c763a9ad6790ee61990e0ae72927694ead57bab8ec"},
+    {file = "questionary-2.1.0.tar.gz", hash = "sha256:6302cdd645b19667d8f6e6634774e9538bfcd1aad9be287e743d96cacaf95587"},
+]
+
+[package.dependencies]
+prompt_toolkit = ">=2.0,<4.0"
+
+[[package]]
 name = "rich"
 version = "14.1.0"
 description = "Render rich text, tables, progress bars, syntax highlighting, markdown and more to the terminal"
@@ -927,4 +942,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.13"
-content-hash = "1f06f015f034bab16f6d447c86898d5b1f810c9bd75b2e14059b20f7e1294947"
+content-hash = "69bb14ddcbfa66f1fa696b826a489a04dd42cf4cd8c7ec7cf757d21e50d80277"

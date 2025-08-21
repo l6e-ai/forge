@@ -5,6 +5,10 @@ import typer
 from rich import print as rprint
 from pathlib import Path
 from rich.table import Table
+try:
+    from questionary import select as qselect  # type: ignore
+except Exception:  # pragma: no cover
+    qselect = None  # type: ignore
 
 from l6e_forge.models.managers.ollama import OllamaModelManager
 from l6e_forge.models.managers.lmstudio import LMStudioModelManager
@@ -14,6 +18,7 @@ from l6e_forge.models.auto import (
     recommend_models,
     ensure_ollama_models,
     apply_recommendations_to_agent_config,
+    suggest_models,
 )
 
 
@@ -80,34 +85,152 @@ def doctor() -> None:
 @app.command()
 def bootstrap(
     agent: str = typer.Argument(..., help="Agent directory (contains config.toml)"),
-    provider: str = typer.Option("ollama", "--provider", help="Provider to bootstrap (ollama only for now)"),
+    provider_order: str = typer.Option("ollama,lmstudio", "--provider-order", help="Preferred providers order (comma-separated)"),
+    quality: str = typer.Option("balanced", "--quality", help="speed|balanced|quality"),
+    quant: str = typer.Option("auto", "--quant", help="auto|q4|q5|q8|mxfp4|8bit"),
+    top_n: int = typer.Option(5, "--top", help="Number of options to show"),
+    interactive: bool = typer.Option(False, "--interactive/--no-interactive", help="Prompt to choose a model"),
+    accept_best: bool = typer.Option(False, "--accept-best", help="Skip prompt and accept the top suggestion"),
     dry_run: bool = typer.Option(False, "--dry-run", help="Only print recommendations"),
 ) -> None:
-    """Auto-select and (optionally) pull recommended local models for an agent."""
+    """Suggest, select, and configure local models; pulls for Ollama when needed."""
     sys = get_system_profile()
-    hints = AutoHints(provider_order=[provider])
-    recs = recommend_models(sys, hints)
-    rprint("[cyan]Recommended Models[/cyan]")
-    for k, v in recs.items():
-        rprint(f"  {k}: {v}")
+    order = [p.strip() for p in provider_order.split(",") if p.strip()]
+    hints = AutoHints(
+        provider_order=order,
+        quality=quality if quality in ("speed", "balanced", "quality") else "balanced",
+        quantization=quant if quant in ("auto", "q4", "q5", "q8", "mxfp4", "8bit") else "auto",
+    )
+
+    suggestions = suggest_models(sys, hints, top_n=top_n)
+    if not suggestions:
+        rprint("[yellow]No model suggestions found. Ensure providers are running and try again.[/yellow]")
+        raise typer.Exit(code=1)
+
+    table = Table(title="Model Suggestions")
+    table.add_column("#")
+    table.add_column("Model")
+    table.add_column("Provider")
+    table.add_column("Tag")
+    table.add_column("Est. Mem (GB)")
+    table.add_column("Fits Local")
+    table.add_column("Source")
+    table.add_column("Installed")
+    table.add_column("Notes")
+    for idx, s in enumerate(suggestions):
+        table.add_row(
+            str(idx),
+            s.entry.display_name,
+            s.provider,
+            s.provider_tag or "-",
+            f"{s.est_memory_gb:.1f}",
+            "yes" if s.fits_local else "maybe",
+            s.estimate_source,
+            "yes" if s.is_installed else "no",
+            s.reason,
+        )
+    rprint(table)
+
     if dry_run:
         return
-    if provider == "ollama":
+
+    choice_idx = 0
+    if interactive and not accept_best:
+        if qselect is not None:
+            # Build choices like "0) Provider • Tag • Model"
+            items = [
+                (f"{i}) {s.provider} • {s.provider_tag or '-'} • {s.entry.display_name}  [{s.est_memory_gb:.1f} GB]"
+                 , i)
+                for i, s in enumerate(suggestions)
+            ]
+            try:
+                choice_idx = qselect("Select a model:", choices=[{"name": name, "value": idx} for name, idx in items]).ask()  # type: ignore
+                if choice_idx is None:
+                    choice_idx = 0
+            except Exception:
+                choice_idx = 0
+        else:
+            try:
+                choice_idx = int(typer.prompt("Select a model by index", default="0"))
+            except Exception:
+                choice_idx = 0
+    elif not accept_best and not interactive:
+        rprint("[yellow]Tip:[/yellow] re-run with --interactive to choose or --accept-best to auto-select the top option.")
+        return
+
+    choice_idx = max(0, min(choice_idx, len(suggestions) - 1))
+    chosen = suggestions[choice_idx]
+
+    recs = {"chat": chosen.provider_tag or chosen.entry.model_key, "embedding": "nomic-embed-text:latest"}
+    if chosen.provider == "ollama":
         recs = ensure_ollama_models(recs, endpoint=os.environ.get("OLLAMA_HOST"))
-        apply_recommendations_to_agent_config(Path(agent), provider, recs)
-        # Show a concise confirmation of config
-        rprint("[green]Models ready and agent config updated.[/green]")
-        try:
-            cfg_path = Path(agent) / "config.toml"
-            text = cfg_path.read_text(encoding="utf-8")
-            # Print only the model and memory sections for clarity
-            snippet = "\n".join([ln for ln in text.splitlines() if ln.strip().startswith("[model]") or ln.strip().startswith("provider =") or ln.strip().startswith("model =") or ln.strip().startswith("[memory]") or ln.strip().startswith("embedding_model")])
-            if snippet:
-                rprint("\n[cyan]Updated config[/cyan]\n" + snippet)
-        except Exception:
-            pass
-    else:
-        rprint(f"[yellow]Provider not supported yet: {provider}[/yellow]")
+    apply_recommendations_to_agent_config(Path(agent), chosen.provider, recs)
+
+    rprint("[green]Agent config updated.[/green]")
+    try:
+        cfg_path = Path(agent) / "config.toml"
+        text = cfg_path.read_text(encoding="utf-8")
+        snippet = "\n".join([
+            ln
+            for ln in text.splitlines()
+            if ln.strip().startswith("[model]")
+            or ln.strip().startswith("provider =")
+            or ln.strip().startswith("model =")
+            or ln.strip().startswith("[memory]")
+            or ln.strip().startswith("embedding_model")
+        ])
+        if snippet:
+            rprint("\n[cyan]Updated config[/cyan]\n" + snippet)
+    except Exception:
+        pass
+
+
+@app.command()
+def suggest(
+    provider: str | None = typer.Option(None, "--provider", help="Preferred provider order, comma-separated (e.g., ollama,lmstudio)"),
+    quality: str = typer.Option("balanced", "--quality", help="speed|balanced|quality"),
+    top_n: int = typer.Option(5, "--top", help="Number of options to show"),
+    quant: str = typer.Option("auto", "--quant", help="Quantization assumption: auto|q4|q5|q8|mxfp4|8bit"),
+) -> None:
+    """Show suggested chat models with estimated memory usage and fit.
+
+    This presents a short list with our estimated memory (including overhead) so users can pick.
+    """
+    sys = get_system_profile()
+    order = [p.strip() for p in (provider or "ollama,lmstudio").split(",") if p.strip()]
+    hints = AutoHints(
+        provider_order=order,
+        quality=quality if quality in ("speed", "balanced", "quality") else "balanced",
+        quantization=quant if quant in ("auto", "q4", "q5", "q8", "mxfp4", "8bit") else "auto",
+    )
+    suggestions = suggest_models(sys, hints, top_n=top_n)
+
+    table = Table(title="Suggested Chat Models")
+    table.add_column("Model")
+    table.add_column("Provider")
+    table.add_column("Tag")
+    table.add_column("Est. Mem (GB)")
+    table.add_column("Fits Local")
+    table.add_column("Source")
+    table.add_column("Installed")
+    table.add_column("Notes")
+
+    if not suggestions:
+        rprint("[yellow]No suggestions available. Ensure providers are running.[/yellow]")
+        raise typer.Exit(code=0)
+
+    for s in suggestions:
+        table.add_row(
+            s.entry.display_name,
+            s.provider,
+            s.provider_tag or "-",
+            f"{s.est_memory_gb:.1f}",
+            "yes" if s.fits_local else "maybe",
+            s.estimate_source,
+            "yes" if s.is_installed else "no",
+            s.reason,
+        )
+    rprint(table)
 
 
 def main() -> None:

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Literal, Tuple
+from typing import Literal, Tuple, Optional, List, Dict
 import os
 import platform
 import re
@@ -132,6 +132,7 @@ class AutoHints:
     task: Literal["assistant", "coder", "tool-use"] = "assistant"
     quality: Literal["speed", "balanced", "quality"] = "balanced"
     context: int = 8192
+    quantization: Literal["auto", "q4", "q5", "q8", "mxfp4", "8bit"] = "auto"
 
 
 def recommend_models(sys: SystemProfile, hints: AutoHints) -> dict[str, str]:
@@ -141,6 +142,357 @@ def recommend_models(sys: SystemProfile, hints: AutoHints) -> dict[str, str]:
     if sys.has_gpu and sys.vram_gb >= 8:
         chat = "llama3.1:8b-instruct"
     return {"chat": chat, "embedding": embed}
+
+
+# -----------------------------
+# Model catalog and estimation
+# -----------------------------
+
+@dataclass
+class ModelCatalogEntry:
+    model_key: str  # canonical name, e.g., "llama3.2-3b", "gpt-oss-20b"
+    display_name: str  # human-friendly
+    role: Literal["chat", "embedding"]
+    params_b: Optional[float] = None  # total params in billions
+    active_params_b: Optional[float] = None  # for MoE
+    context_length: int = 8192
+    # Approx artifact size in GB if known (quantized). If provided, we prefer using this.
+    artifact_size_gb: Optional[float] = None
+    # Provider mapping: provider -> tag/id used by that provider
+    providers: Dict[str, str] = None  # e.g., {"ollama": "llama3.2:3b"}
+    notes: Optional[str] = None
+    # Optional quantized artifact sizes (GB) if known
+    quantized_artifacts_gb: Optional[Dict[str, float]] = None  # e.g., {"q4": 5.0, "q8": 9.5}
+    # Optional provider-specific quantized sizes (GB), e.g., {"lmstudio": {"mxfp4": 63.4}}
+    provider_quantized_artifacts_gb: Optional[Dict[str, Dict[str, float]]] = None
+
+
+def get_model_catalog() -> List[ModelCatalogEntry]:
+    """Return a curated list of common OSS models, including new GPT-OSS models.
+
+    Notes:
+    - artifact_size_gb values are rough and may vary by quantization.
+    - gpt-oss models are MoE; active_params_b reflects per-token active parameters.
+    """
+    catalog: List[ModelCatalogEntry] = [
+        ModelCatalogEntry(
+            model_key="llama3.2-3b",
+            display_name="Llama 3.2 3B Instruct",
+            role="chat",
+            params_b=3.2,
+            context_length=8192,
+            artifact_size_gb=2.5,  # ~Q4 estimate
+            providers={"ollama": "llama3.2:3b"},
+            notes="Good baseline for CPUs/AS chips",
+            quantized_artifacts_gb={"q4": 2.2, "q5": 2.8, "q8": 3.6},
+        ),
+        ModelCatalogEntry(
+            model_key="llama3.1-8b",
+            display_name="Llama 3.1 8B Instruct",
+            role="chat",
+            params_b=8.0,
+            context_length=8192,
+            artifact_size_gb=5.5,  # ~Q4 estimate
+            providers={"ollama": "llama3.1:8b-instruct"},
+            notes="Faster on GPUs; okay on M-series",
+            quantized_artifacts_gb={"q4": 4.8, "q5": 6.1, "q8": 9.7},
+        ),
+        ModelCatalogEntry(
+            model_key="gpt-oss-20b",
+            display_name="GPT-OSS 20B (MoE)",
+            role="chat",
+            params_b=21.0,
+            active_params_b=3.6,
+            context_length=8192,
+            artifact_size_gb=None,  # derive from active params
+            providers={"lmstudio": "gpt-oss-20b", "ollama": "gpt-oss:20b"},
+            notes="MoE: ~3.6B active params; good quality for local high-end",
+            # From LM Studio (screenshot): MXFP4 ~12.11GB, 8BIT ~22.26GB
+            quantized_artifacts_gb={"mxfp4": 12.1, "8bit": 22.3},
+            provider_quantized_artifacts_gb={
+                "ollama": {"mxfp4": 14.0},  # page lists ~14GB
+            },
+        ),
+        ModelCatalogEntry(
+            model_key="gpt-oss-120b",
+            display_name="GPT-OSS 120B (MoE)",
+            role="chat",
+            params_b=117.0,
+            active_params_b=5.1,
+            context_length=8192,
+            artifact_size_gb=None,  # derive; typically needs high-end GPU
+            providers={"lmstudio": "gpt-oss-120b", "ollama": "gpt-oss:120b"},
+            notes="MoE: ~5.1B active params; requires powerful GPU",
+            # From LM Studio (screenshot): MXFP4 ~63.39GB, 8BIT ~124.20GB
+            quantized_artifacts_gb={"mxfp4": 63.4, "8bit": 124.2},
+            provider_quantized_artifacts_gb={
+                "ollama": {"mxfp4": 65.0},  # page lists ~65GB
+            },
+        ),
+        ModelCatalogEntry(
+            model_key="nomic-embed-text",
+            display_name="Nomic Embed Text",
+            role="embedding",
+            params_b=None,
+            context_length=8192,
+            artifact_size_gb=0.5,
+            providers={"ollama": "nomic-embed-text:latest"},
+            notes="Solid general-purpose embedding model",
+        ),
+        # # Additional chat models with quantized size approximations
+        # ModelCatalogEntry(
+        #     model_key="mistral-7b",
+        #     display_name="Mistral 7B Instruct",
+        #     role="chat",
+        #     params_b=7.0,
+        #     context_length=8192,
+        #     providers={"ollama": "mistral:7b-instruct"},
+        #     notes="Well-rounded 7B; strong CPU/GPU performance",
+        #     quantized_artifacts_gb={"q4": 4.1, "q5": 5.4, "q8": 9.5},
+        # ),
+        # ModelCatalogEntry(
+        #     model_key="mixtral-8x7b",
+        #     display_name="Mixtral 8x7B Instruct (MoE)",
+        #     role="chat",
+        #     params_b=46.7,
+        #     active_params_b=12.0,
+        #     context_length=8192,
+        #     providers={"ollama": "mixtral:8x7b-instruct"},
+        #     notes="MoE: high quality; larger on disk; 2 experts active",
+        #     # Disk artifacts are large despite MoE; estimates reflect typical q-sizes
+        #     quantized_artifacts_gb={"q4": 26.0, "q5": 33.0, "q8": 55.0},
+        # ),
+        # ModelCatalogEntry(
+        #     model_key="qwen2.5-7b",
+        #     display_name="Qwen2.5 7B Instruct",
+        #     role="chat",
+        #     params_b=7.0,
+        #     context_length=8192,
+        #     providers={"ollama": "qwen2.5:7b-instruct"},
+        #     notes="Competitive 7B with good reasoning for its size",
+        #     quantized_artifacts_gb={"q4": 4.5, "q5": 6.0, "q8": 10.5},
+        # ),
+        # ModelCatalogEntry(
+        #     model_key="qwen2.5-14b",
+        #     display_name="Qwen2.5 14B Instruct",
+        #     role="chat",
+        #     params_b=14.0,
+        #     context_length=8192,
+        #     providers={"ollama": "qwen2.5:14b-instruct"},
+        #     notes="Higher quality; prefers GPU with >12GB VRAM",
+        #     quantized_artifacts_gb={"q4": 9.0, "q5": 11.5, "q8": 19.0},
+        # ),
+        # ModelCatalogEntry(
+        #     model_key="gemma2-2b",
+        #     display_name="Gemma 2 2B Instruct",
+        #     role="chat",
+        #     params_b=2.0,
+        #     context_length=8192,
+        #     providers={"ollama": "gemma2:2b-instruct"},
+        #     notes="Tiny footprint; great for constrained environments",
+        #     quantized_artifacts_gb={"q4": 1.5, "q5": 1.9, "q8": 3.1},
+        # ),
+        # ModelCatalogEntry(
+        #     model_key="gemma2-9b",
+        #     display_name="Gemma 2 9B Instruct",
+        #     role="chat",
+        #     params_b=9.0,
+        #     context_length=8192,
+        #     providers={"ollama": "gemma2:9b-instruct"},
+        #     notes="Balanced quality; good on modern GPUs",
+        #     quantized_artifacts_gb={"q4": 5.5, "q5": 7.2, "q8": 11.5},
+        # ),
+    ]
+    return catalog
+
+
+def estimate_memory_gb(
+    entry: ModelCatalogEntry,
+    quantization: Literal["auto", "q4", "q5", "q8", "mxfp4", "8bit"] = "auto",
+    overhead_ratio: float = 0.25,
+    provider: Optional[str] = None,
+) -> float:
+    """Estimate runtime memory footprint in GB.
+
+    Strategy:
+    - If artifact_size_gb provided, use: size * (1 + overhead_ratio)
+    - Else, base on active_params_b (for MoE) or params_b (full) with bytes/param
+      determined by weight_precision_bits (8 -> 1 byte, 16 -> 2 bytes, 4 -> 0.5 bytes).
+      Then multiply by (1 + overhead_ratio).
+    This is a rough estimate; actual memory will vary by runtime.
+    """
+    # Prefer quantized artifact size if provided
+    if (
+        quantization != "auto"
+        and entry.provider_quantized_artifacts_gb
+        and provider
+        and quantization in entry.provider_quantized_artifacts_gb.get(provider, {})
+    ):
+        base = entry.provider_quantized_artifacts_gb[provider][quantization]
+    elif quantization != "auto" and entry.quantized_artifacts_gb and quantization in entry.quantized_artifacts_gb:
+        base = entry.quantized_artifacts_gb[quantization]
+    elif quantization == "auto" and (entry.provider_quantized_artifacts_gb or entry.quantized_artifacts_gb):
+        # Choose a sensible default based on provider or smallest known quant
+        preferred_order = ["mxfp4", "q4", "q5", "q8", "8bit"]
+        source_map = None
+        if provider and entry.provider_quantized_artifacts_gb and provider in entry.provider_quantized_artifacts_gb:
+            source_map = entry.provider_quantized_artifacts_gb[provider]
+        else:
+            source_map = entry.quantized_artifacts_gb or {}
+        for q in preferred_order:
+            if q in source_map:
+                base = source_map[q]
+                break
+    elif entry.artifact_size_gb is not None:
+        base = entry.artifact_size_gb
+    else:
+        params_b = entry.active_params_b or entry.params_b or 0.0
+        # Map quantization to bytes/param (rough)
+        if quantization == "q4":
+            bytes_per_param = 0.5
+        elif quantization == "q5":
+            bytes_per_param = 0.625
+        elif quantization in ("q8", "8bit"):
+            bytes_per_param = 1.0
+        elif quantization == "mxfp4":
+            bytes_per_param = 0.5  # treat similar to q4 for rough estimate
+        else:  # auto fallback when no catalog sizes
+            bytes_per_param = 1.0
+        base = params_b * bytes_per_param  # rough GB since params_b is in billions
+    return round(base * (1.0 + overhead_ratio), 1)
+
+
+@dataclass
+class ModelSuggestion:
+    entry: ModelCatalogEntry
+    provider: str
+    provider_tag: Optional[str]
+    est_memory_gb: float
+    fits_local: bool
+    reason: str
+    estimate_source: Literal["installed", "catalog", "estimate"]
+    is_installed: bool
+    provider_available: bool
+
+
+def suggest_models(sys: SystemProfile, hints: AutoHints, top_n: int = 5) -> List[ModelSuggestion]:
+    """Return a list of suggested models with rough memory estimates and fit.
+
+    We filter by role=chat for now and order by a simple score that prefers
+    models that fit local hardware and align with quality hints.
+    """
+    suggestions: List[ModelSuggestion] = []
+    # Detect installed/available providers
+    installed_ollama_sizes: Dict[str, float] = {}
+    ollama_available = False
+    try:
+        installed_ollama_sizes = _ollama_list_models_with_sizes()
+        ollama_available = True
+    except Exception:
+        installed_ollama_sizes = {}
+
+    installed_lmstudio: List[str] = []
+    lmstudio_available = False
+    try:
+        installed_lmstudio = _lmstudio_list_models()
+        lmstudio_available = True
+    except Exception:
+        installed_lmstudio = []
+
+    for entry in get_model_catalog():
+        if entry.role != "chat" or not entry.providers:
+            continue
+        # Consider all providers for this entry
+        for provider_name, provider_tag in entry.providers.items():
+            provider_up = (provider_name == "ollama" and ollama_available) or (
+                provider_name == "lmstudio" and lmstudio_available
+            )
+            if not provider_up:
+                continue
+
+            # Base suggestion using catalog tag
+            base_tag = provider_tag
+            base_est = estimate_memory_gb(entry, quantization=hints.quantization, provider=provider_name)
+            base_source: Literal["installed", "catalog", "estimate"] = "estimate"
+            base_installed = False
+            if provider_name == "ollama" and base_tag in installed_ollama_sizes:
+                base_est = round(installed_ollama_sizes[base_tag] * 1.1, 1)
+                base_source = "installed"
+                base_installed = True
+            elif provider_name == "lmstudio" and base_tag in installed_lmstudio:
+                base_installed = True
+                if entry.provider_quantized_artifacts_gb and entry.provider_quantized_artifacts_gb.get("lmstudio"):
+                    base_source = "catalog"
+            elif entry.quantized_artifacts_gb and (
+                hints.quantization in (entry.quantized_artifacts_gb or {}) or hints.quantization == "auto"
+            ):
+                base_source = "catalog"
+
+            capacity = sys.vram_gb if sys.has_gpu and sys.vram_gb > 0 else sys.ram_gb
+            base_fits = base_est <= max(capacity - 1.0, 0)
+            base_reason = "fits GPU VRAM" if sys.has_gpu else "fits system RAM"
+            if not base_fits:
+                base_reason = "may exceed local memory"
+
+            suggestions.append(
+                ModelSuggestion(
+                    entry=entry,
+                    provider=provider_name,
+                    provider_tag=base_tag,
+                    est_memory_gb=base_est,
+                    fits_local=base_fits,
+                    reason=base_reason,
+                    estimate_source=base_source,
+                    is_installed=base_installed,
+                    provider_available=provider_up,
+                )
+            )
+
+            # Additional installed variants for Ollama (do not overwrite base)
+            if provider_name == "ollama":
+                for cand in _ollama_candidate_tags(base_tag):
+                    if cand == base_tag:
+                        continue
+                    if cand in installed_ollama_sizes:
+                        est2 = round(installed_ollama_sizes[cand] * 1.1, 1)
+                        fits2 = est2 <= max(capacity - 1.0, 0)
+                        reason2 = "fits GPU VRAM" if sys.has_gpu else "fits system RAM"
+                        if not fits2:
+                            reason2 = "may exceed local memory"
+                        suggestions.append(
+                            ModelSuggestion(
+                                entry=entry,
+                                provider=provider_name,
+                                provider_tag=cand,
+                                est_memory_gb=est2,
+                                fits_local=fits2,
+                                reason=reason2,
+                                estimate_source="installed",
+                                is_installed=True,
+                                provider_available=provider_up,
+                            )
+                        )
+
+    # Simple scoring: prefer fit, then by params (quality hint)
+    def score(s: ModelSuggestion) -> tuple:
+        installed_score = 2 if s.is_installed else 0
+        available_score = 1 if s.provider_available else 0
+        fit_score = 1 if s.fits_local else 0
+        params = s.entry.active_params_b or s.entry.params_b or 0.0
+        if hints.quality == "speed":
+            params_score = -params
+        elif hints.quality == "quality":
+            params_score = params
+        else:
+            params_score = -abs(params - 8.0)
+        try:
+            prov_rank = len(hints.provider_order) - hints.provider_order.index(s.provider)
+        except ValueError:
+            prov_rank = 0
+        return (installed_score, available_score, fit_score, prov_rank, params_score)
+
+    suggestions.sort(key=score, reverse=True)
+    return suggestions[:top_n]
 
 
 def _ollama_list_models(endpoint: str = None) -> list[str]:
@@ -160,6 +512,86 @@ def _ollama_list_models(endpoint: str = None) -> list[str]:
         return names
     except Exception:
         return []
+
+
+def _ollama_list_models_with_sizes(endpoint: str = None) -> Dict[str, float]:
+    """Return a mapping of model tag -> size in GB for installed models (best effort)."""
+    if not endpoint:
+        endpoint = os.environ.get("OLLAMA_HOST", "http://localhost:11434")
+    sizes: Dict[str, float] = {}
+    try:
+        import httpx
+
+        resp = httpx.get(f"{endpoint.rstrip('/')}/api/tags", timeout=5.0)
+        resp.raise_for_status()
+        items = resp.json().get("models", [])
+        for it in items:
+            name = it.get("name") or it.get("model")
+            size_bytes = it.get("size") or it.get("size_bytes") or 0
+            if isinstance(name, str) and isinstance(size_bytes, int):
+                sizes[name] = round(size_bytes / (1024 ** 3), 1)
+    except Exception:
+        return {}
+    return sizes
+
+
+def _lmstudio_list_models(endpoint: str = None) -> List[str]:
+    """Return list of model IDs visible to LM Studio's OpenAI-compatible API."""
+    if not endpoint:
+        endpoint = os.environ.get("LMSTUDIO_HOST", "http://localhost:1234/v1")
+    try:
+        import httpx
+
+        resp = httpx.get(f"{endpoint.rstrip('/')}/models", timeout=5.0)
+        resp.raise_for_status()
+        data = resp.json()
+        items = data.get("data", [])
+        names: List[str] = []
+        for it in items:
+            mid = it.get("id") or it.get("name")
+            if isinstance(mid, str):
+                names.append(mid)
+        return names
+    except Exception:
+        return []
+
+
+# -----------------------------
+# Provider helpers
+# -----------------------------
+
+def _ollama_candidate_tags(tag: str) -> List[str]:
+    """Return reasonable alternate tags for an Ollama model name.
+
+    Examples:
+    llama3.1:8b-instruct -> [llama3.1:8b-instruct, llama3.1:8b]
+    llama3.2:3b -> [llama3.2:3b, llama3.2:3b-instruct, llama3.2:latest]
+    """
+    candidates: List[str] = [tag]
+    # Drop -instruct suffix
+    if tag.endswith("-instruct"):
+        candidates.append(tag.replace("-instruct", ""))
+    # Add instruct variant if base provided
+    parts = tag.split(":", 1)
+    if len(parts) == 2 and not parts[1].endswith("-instruct"):
+        candidates.append(parts[0] + ":" + parts[1] + "-instruct")
+    # Add :latest if no explicit tag
+    if ":" not in tag:
+        candidates.append(tag + ":latest")
+    # Ensure uniqueness
+    out: List[str] = []
+    for c in candidates:
+        if c not in out:
+            out.append(c)
+    return out
+
+
+def _match_installed_ollama_tag(desired_tag: str, installed_sizes: Dict[str, float]) -> Optional[tuple[str, float]]:
+    """Return (installed_tag, size_gb) if any candidate of desired_tag is installed."""
+    for cand in _ollama_candidate_tags(desired_tag):
+        if cand in installed_sizes:
+            return cand, installed_sizes[cand]
+    return None
 
 
 def _maybe_pull_model(name: str) -> None:
