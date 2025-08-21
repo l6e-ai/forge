@@ -89,7 +89,7 @@ def bootstrap(
     quality: str = typer.Option("balanced", "--quality", help="speed|balanced|quality"),
     quant: str = typer.Option("auto", "--quant", help="auto|q4|q5|q8|mxfp4|8bit"),
     top_n: int = typer.Option(5, "--top", help="Number of options to show"),
-    interactive: bool = typer.Option(False, "--interactive/--no-interactive", help="Prompt to choose a model"),
+    interactive: bool = typer.Option(True, "--interactive/--no-interactive", help="Prompt to choose a model (default: interactive)"),
     accept_best: bool = typer.Option(False, "--accept-best", help="Skip prompt and accept the top suggestion"),
     dry_run: bool = typer.Option(False, "--dry-run", help="Only print recommendations"),
 ) -> None:
@@ -133,6 +133,13 @@ def bootstrap(
 
     if dry_run:
         return
+
+    # Non-interactive environments: force accept_best
+    import sys as _sys
+    if not (_sys.stdin.isatty() and _sys.stdout.isatty()):
+        interactive = False
+        if not accept_best:
+            accept_best = True
 
     choice_idx = 0
     if interactive and not accept_best:
