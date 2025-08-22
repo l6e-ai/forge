@@ -8,8 +8,12 @@ import zipfile
 from datetime import datetime
 from datetime import timezone
 import hashlib
-import hmac
 import base64
+import shutil
+import tempfile
+import subprocess
+from urllib.parse import urlparse, urlunparse, quote
+from rich.table import Table
 
 import typer
 from rich import print as rprint
@@ -206,7 +210,21 @@ def build(
     profile: str = typer.Option("thin", "--profile", help="Package profile: thin | medium | fat"),
     include_compose: bool = typer.Option(False, "--include-compose", help="Include a minimal compose overlay in package"),
     compose_services: str = typer.Option("auto", "--compose-services", help="Comma-separated services to include in compose or 'auto' to infer"),
-    requirements: str | None = typer.Option(None, "--requirements", help="Path to requirements.txt to include (for fat)"),
+    requirements: str | None = typer.Option(None, "--requirements", help="Path to requirements.txt to include (for fat or bundling)"),
+    bundle_wheels: bool = typer.Option(False, "--bundle-wheels/--no-bundle-wheels", help="Include a wheelhouse built from requirements.txt for offline install"),
+    poetry_config: bool = typer.Option(False, "--poetry-config/--no-poetry-config", help="Generate requirements from pyproject via 'poetry export' when --requirements is not provided"),
+    poetry_root: str | None = typer.Option(None, "--poetry-root", help="Directory to run 'poetry export' in (defaults to agent dir when auto-detected)"),
+    ui_dir: str | None = typer.Option(None, "--ui-dir", help="Path to a UI project (will be packaged under artifacts/ui)"),
+    ui_build: bool = typer.Option(False, "--ui-build/--no-ui-build", help="Run UI build (npm ci && npm run build) before packaging"),
+    ui_dist: str = typer.Option("dist", "--ui-dist", help="Relative path of build output within --ui-dir"),
+    ui_git: str | None = typer.Option(None, "--ui-git", help="Git URL to fetch UI from (prefered over --ui-dir if provided)"),
+    ui_ref: str = typer.Option("main", "--ui-ref", help="Git ref (branch|tag|commit) for --ui-git"),
+    ui_subdir: str | None = typer.Option(None, "--ui-subdir", help="Optional subdirectory within the cloned repo for the UI project"),
+    ui_git_ssh_key: str | None = typer.Option(None, "--ui-git-ssh-key", help="Path to SSH private key for cloning (sets GIT_SSH_COMMAND)"),
+    ui_git_insecure_host: bool = typer.Option(False, "--ui-git-insecure-host/--no-ui-git-insecure-host", help="Disable strict host key checking for git clone"),
+    ui_git_username: str | None = typer.Option(None, "--ui-git-username", help="Basic auth username for HTTPS git clone"),
+    ui_git_password: str | None = typer.Option(None, "--ui-git-password", help="Basic auth password for HTTPS git clone (or pass token here)"),
+    ui_git_token: str | None = typer.Option(None, "--ui-git-token", help="Personal access token for HTTPS git clone (used as password; username can be anything)"),
 ) -> None:
     """Create a minimal public .l6e from an agent directory."""
     agent_dir = Path(agent_path).expanduser().resolve()
@@ -244,6 +262,30 @@ def build(
     artifacts_meta: dict | None = None
     compose_meta: dict | None = None
     extras: list[tuple[str, bytes]] = []
+
+    # Validate wheel bundling input early (auto-detect poetry if not provided)
+    poetry_root_for_export: Path | None = None
+    if bundle_wheels and not (requirements or poetry_config or poetry_root):
+        # Only auto-detect Poetry if pyproject.toml exists in the agent directory itself
+        if (agent_dir / "pyproject.toml").exists():
+            poetry_config = True
+            poetry_root_for_export = agent_dir
+            rprint(f"[cyan]Using Poetry project at agent dir:[/cyan] {poetry_root_for_export}")
+        else:
+            rprint("[red]--bundle-wheels requires --requirements or a Poetry project (use --poetry-config)\n[yellow]Tip:[/yellow] Provide --requirements or run in an agent with its own pyproject.toml.")
+            raise typer.Exit(code=1)
+    if poetry_root:
+        p = Path(poetry_root).expanduser().resolve()
+        if not (p / "pyproject.toml").exists():
+            rprint(f"[red]--poetry-root does not contain pyproject.toml:[/red] {p}")
+            raise typer.Exit(code=1)
+        poetry_config = True
+        poetry_root_for_export = p
+    if requirements:
+        req_path_check = Path(requirements).expanduser().resolve()
+        if not req_path_check.exists():
+            rprint(f"[red]Requirements file not found:[/red] {req_path_check}")
+            raise typer.Exit(code=1)
 
     # Optional compose overlay
     if include_compose:
@@ -285,11 +327,157 @@ def build(
 
     # Optional artifacts metadata
     artifacts_meta = {"profile": profile}
+    # Include requirements.txt (provided or exported via poetry)
+    temp_req_path: Path | None = None
+    req_path_for_wheels: Path | None = None
     if requirements:
         req_path = Path(requirements).expanduser().resolve()
         if req_path.exists():
             extras.append(("artifacts/requirements.txt", req_path.read_bytes()))
             artifacts_meta["requirements"] = "artifacts/requirements.txt"
+            req_path_for_wheels = req_path
+    elif poetry_config:
+        # Attempt to export requirements from poetry
+        try:
+            import shutil as _shutil
+            if _shutil.which("poetry") is None:
+                rprint("[red]Poetry is not installed or not on PATH. Install Poetry or pass --requirements.[/red]")
+                raise typer.Exit(code=1)
+            proc = subprocess.run(
+                ["poetry", "export", "-f", "requirements.txt", "--without-hashes"],
+                cwd=str(poetry_root_for_export or agent_dir),
+                capture_output=True,
+                check=True,
+                text=False,
+            )
+            exported = proc.stdout or b""
+            if not exported.strip():
+                rprint("[red]poetry export produced no output[/red]")
+                raise typer.Exit(code=1)
+            extras.append(("artifacts/requirements.txt", exported))
+            artifacts_meta["requirements"] = "artifacts/requirements.txt"
+            # Write to temp file for wheel download step
+            temp_dir = Path(tempfile.mkdtemp(prefix="req_export_"))
+            temp_req_path = temp_dir / "requirements.txt"
+            temp_req_path.write_bytes(exported)
+            req_path_for_wheels = temp_req_path
+        except subprocess.CalledProcessError as exc:  # type: ignore[name-defined]
+            stderr = (exc.stderr or b"").decode("utf-8", errors="replace")
+            rprint(f"[red]Failed to export requirements via poetry (exit {exc.returncode}):[/red]\n{stderr}")
+            raise typer.Exit(code=1)
+        except Exception as exc:  # noqa: BLE001
+            rprint(f"[red]Failed to export requirements via poetry:[/red] {exc}")
+            raise typer.Exit(code=1)
+    # Optional wheel bundling (wheelhouse)
+    if bundle_wheels and req_path_for_wheels:
+        wheel_tmp = Path(tempfile.mkdtemp(prefix="wheelhouse_"))
+        try:
+            # Use pip download to collect wheels/sdists; prefer wheels where possible
+            cmd = [
+                "python",
+                "-m",
+                "pip",
+                "download",
+                "-r",
+                str(req_path_for_wheels),
+                "-d",
+                str(wheel_tmp),
+                "--only-binary=:all:",
+            ]
+            subprocess.run(cmd, check=False)
+            # Fallback: allow sdists if wheels not available
+            if not any(wheel_tmp.iterdir()):
+                subprocess.run(["python", "-m", "pip", "download", "-r", str(req_path_for_wheels), "-d", str(wheel_tmp)], check=False)
+            wheel_files = list(wheel_tmp.iterdir())
+            if wheel_files:
+                for wf in wheel_files:
+                    if wf.is_file():
+                        arcname = os.path.join("artifacts", "wheels", wf.name)
+                        extras.append((arcname, wf.read_bytes()))
+                artifacts_meta["wheels"] = "artifacts/wheels"
+        finally:
+            try:
+                if temp_req_path and temp_req_path.exists():
+                    shutil.rmtree(temp_req_path.parent, ignore_errors=True)
+                shutil.rmtree(wheel_tmp, ignore_errors=True)
+            except Exception:
+                pass
+
+    # Optional UI packaging from git (preferred) or local directory
+    def _package_ui_from_path(root: Path) -> None:
+        if ui_build:
+            try:
+                subprocess.run(["bash", "-lc", f"cd '{root}' && npm ci --no-audit --no-fund && npm run build"], check=False)
+            except Exception as exc:  # noqa: BLE001
+                rprint(f"[yellow]UI build command failed:[/yellow] {exc}")
+        dist_dir_path = root / ui_dist
+        if dist_dir_path.exists() and dist_dir_path.is_dir():
+            base_len_ui = len(str(dist_dir_path)) + 1
+            for p in dist_dir_path.rglob("*"):
+                if p.is_file():
+                    arcname = os.path.join("artifacts", "ui", str(p)[base_len_ui:])
+                    extras.append((arcname, p.read_bytes()))
+            artifacts_meta["ui_dir"] = "artifacts/ui"
+        else:
+            rprint(f"[yellow]UI dist directory not found:[/yellow] {dist_dir_path}")
+
+    if ui_git:
+        tmp_repo = Path(tempfile.mkdtemp(prefix="ui_repo_"))
+        try:
+            # Shallow clone
+            # If HTTPS and credentials provided, embed them in the URL to avoid interactive prompts
+            clone_url = ui_git
+            try:
+                parsed = urlparse(ui_git)
+                if parsed.scheme in ("http", "https"):
+                    if ui_git_token:
+                        user = quote(ui_git_username or "oauth2")
+                        pwd = quote(ui_git_token)
+                        netloc = f"{user}:{pwd}@{parsed.hostname or ''}"
+                        if parsed.port:
+                            netloc += f":{parsed.port}"
+                        clone_url = urlunparse((parsed.scheme, netloc, parsed.path, parsed.params, parsed.query, parsed.fragment))
+                    elif ui_git_username and ui_git_password:
+                        user = quote(ui_git_username)
+                        pwd = quote(ui_git_password)
+                        netloc = f"{user}:{pwd}@{parsed.hostname or ''}"
+                        if parsed.port:
+                            netloc += f":{parsed.port}"
+                        clone_url = urlunparse((parsed.scheme, netloc, parsed.path, parsed.params, parsed.query, parsed.fragment))
+            except Exception:
+                pass
+
+            clone_cmd = ["git", "clone", "--depth", "1", "--branch", ui_ref, clone_url, str(tmp_repo)]
+            env = os.environ.copy()
+            # Disable interactive terminal prompts (fail fast if creds missing)
+            env["GIT_TERMINAL_PROMPT"] = "0"
+            if ui_git_ssh_key or ui_git_insecure_host:
+                ssh_parts = ["ssh"]
+                if ui_git_ssh_key:
+                    ssh_parts += ["-i", ui_git_ssh_key, "-o", "IdentitiesOnly=yes"]
+                if ui_git_insecure_host:
+                    ssh_parts += ["-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null"]
+                env["GIT_SSH_COMMAND"] = " ".join(ssh_parts)
+            subprocess.run(clone_cmd, check=False, env=env)
+            repo_ui_root: Path = tmp_repo
+            if ui_subdir:
+                repo_ui_root = tmp_repo / ui_subdir
+            if not repo_ui_root.exists():
+                rprint(f"[yellow]UI subdir not found in repo:[/yellow] {repo_ui_root}")
+            else:
+                _package_ui_from_path(repo_ui_root)
+                artifacts_meta["ui_git"] = {"url": ui_git, "ref": ui_ref, "subdir": ui_subdir or ""}
+        finally:
+            try:
+                shutil.rmtree(tmp_repo, ignore_errors=True)
+            except Exception:
+                pass
+    elif ui_dir:
+        ui_root = Path(ui_dir).expanduser().resolve()
+        if not ui_root.exists() or not ui_root.is_dir():
+            rprint(f"[yellow]UI directory not found or not a directory:[/yellow] {ui_root}")
+        else:
+            _package_ui_from_path(ui_root)
 
     manifest_text = _write_manifest(pkg_name, version, description, agent_cfg, artifacts_meta, compose_meta)
     manifest_bytes = manifest_text.encode("utf-8")
@@ -391,6 +579,71 @@ def inspect(
 
 
 @app.command()
+def contents(
+    package_path: str = typer.Argument(..., help="Path to .l6e file"),
+    tree: bool = typer.Option(True, "--tree/--no-tree", help="Show archive contents"),
+    limit: int = typer.Option(0, "--limit", help="Limit number of displayed entries (0 = all)"),
+    stats: bool = typer.Option(True, "--stats/--no-stats", help="Show size statistics"),
+    artifacts: bool = typer.Option(True, "--artifacts/--no-artifacts", help="Show artifacts summary"),
+) -> None:
+    """List files contained in a .l6e bundle and summarize artifacts."""
+    pkg = Path(package_path).expanduser().resolve()
+    if not pkg.exists():
+        rprint(f"[red]Package not found:[/red] {pkg}")
+        raise typer.Exit(code=1)
+    try:
+        with zipfile.ZipFile(pkg, mode="r") as zf:
+            names = zf.namelist()
+            if tree:
+                tbl = Table(title="Archive Contents")
+                tbl.add_column("Path")
+                tbl.add_column("Size (KB)")
+                tbl.add_column("Compressed (KB)")
+                count = 0
+                total_size = 0
+                total_csize = 0
+                for info in zf.infolist():
+                    # skip directories
+                    if info.is_dir() or info.filename.endswith("/"):
+                        continue
+                    total_size += int(info.file_size or 0)
+                    total_csize += int(info.compress_size or 0)
+                    if limit and count >= limit:
+                        continue
+                    tbl.add_row(
+                        info.filename,
+                        f"{(info.file_size or 0)/1024:.1f}",
+                        f"{(info.compress_size or 0)/1024:.1f}",
+                    )
+                    count += 1
+                rprint(tbl)
+                if limit and count < (len([i for i in zf.infolist() if not (i.is_dir() or i.filename.endswith('/'))])):
+                    rprint(f"[yellow]Showing first {count} files (use --limit 0 for all).[/yellow]")
+                if stats:
+                    rprint(
+                        f"[cyan]Sizes[/cyan] total={total_size/1024/1024:.2f} MB, compressed={total_csize/1024/1024:.2f} MB"
+                    )
+
+            if artifacts:
+                has_ui = any(n.startswith("artifacts/ui/") for n in names)
+                has_wheels = any(n.startswith("artifacts/wheels/") for n in names)
+                ui_count = sum(1 for n in names if n.startswith("artifacts/ui/") and not n.endswith("/"))
+                wheel_files = [n for n in names if n.startswith("artifacts/wheels/") and n.endswith(".whl")]
+                rprint("\n[cyan]Artifacts Summary[/cyan]")
+                rprint(f"  UI: {'present' if has_ui else 'absent'}  files={ui_count}")
+                rprint(f"  Wheels: {'present' if has_wheels else 'absent'}  count={len(wheel_files)}")
+                if wheel_files and (not limit or limit > 0):
+                    show = wheel_files[: min(10, len(wheel_files))]
+                    for w in show:
+                        rprint(f"    - {w.split('/')[-1]}")
+                    if len(wheel_files) > len(show):
+                        rprint(f"    (+{len(wheel_files)-len(show)} more)")
+    except Exception as exc:  # noqa: BLE001
+        rprint(f"[red]Failed to read contents:[/red] {exc}")
+        raise typer.Exit(code=1)
+
+
+@app.command()
 def install(
     package_path: str = typer.Argument(..., help="Path to .l6e file"),
     workspace: str = typer.Option(".", "--workspace", "-w", help="Workspace root (contains forge.toml and agents/)"),
@@ -398,6 +651,8 @@ def install(
     verify: bool = typer.Option(True, "--verify/--no-verify", help="Verify checksums before install"),
     verify_sig: bool = typer.Option(False, "--verify-sig", help="Verify Ed25519 signature of checksums if present"),
     public_key: str | None = typer.Option(None, "--public-key", help="Path to Ed25519 public key (if not embedded)"),
+    install_wheels: bool = typer.Option(False, "--install-wheels/--no-install-wheels", help="Install bundled wheels into a venv after extraction"),
+    venv_path: str | None = typer.Option(None, "--venv-path", help="Path to create/use a virtual environment for installing wheels (defaults to <workspace>/.venv_agents/<agent>)"),
 ) -> None:
     """Install a package into a workspace's agents directory."""
     pkg = Path(package_path).expanduser().resolve()
@@ -411,7 +666,9 @@ def install(
         with zipfile.ZipFile(pkg, mode="r") as zf:
             # Read manifest for name
             with zf.open("package.toml") as f:
-                meta = tomllib.load(io.BytesIO(f.read())).get("metadata", {})
+                pkg_data = tomllib.load(io.BytesIO(f.read()))
+            meta = pkg_data.get("metadata", {})
+            artifacts_section = pkg_data.get("artifacts", {})
             agent_name = meta.get("name")
             if not agent_name:
                 rprint("[red]Manifest missing metadata.name[/red]")
@@ -484,6 +741,84 @@ def install(
                 dest.parent.mkdir(parents=True, exist_ok=True)
                 with zf.open(info.filename) as src, dest.open("wb") as dst:
                     dst.write(src.read())
+            # Optionally extract UI assets to workspace-level directory
+            try:
+                has_ui = any(n.startswith("artifacts/ui/") for n in zf.namelist())
+                if has_ui:
+                    ui_root = root / "ui" / str(agent_name)
+                    for info in zf.infolist():
+                        if not info.filename.startswith("artifacts/ui/"):
+                            continue
+                        rel = info.filename[len("artifacts/ui/") :]
+                        if not rel:
+                            continue
+                        dest = ui_root / rel
+                        if info.is_dir() or info.filename.endswith("/"):
+                            dest.mkdir(parents=True, exist_ok=True)
+                            continue
+                        dest.parent.mkdir(parents=True, exist_ok=True)
+                        with zf.open(info.filename) as src, dest.open("wb") as dst:
+                            dst.write(src.read())
+                    rprint(f"[green]Extracted UI assets to:[/green] {ui_root}")
+                    rprint("[cyan]To serve UI via API, set AF_UI_DIR to this path or mount it in compose (defaults to /app/static/ui in compose template).[/cyan]")
+            except Exception:
+                pass
+            # Optionally extract wheels to workspace and (optionally) install into a venv
+            try:
+                has_wheels = any(n.startswith("artifacts/wheels/") for n in zf.namelist())
+                wheelhouse_dir = None
+                if has_wheels:
+                    wheelhouse_dir = root / "wheels" / str(agent_name)
+                    for info in zf.infolist():
+                        if not info.filename.startswith("artifacts/wheels/"):
+                            continue
+                        rel = info.filename[len("artifacts/wheels/") :]
+                        if not rel:
+                            continue
+                        dest = wheelhouse_dir / rel
+                        if info.is_dir() or info.filename.endswith("/"):
+                            dest.mkdir(parents=True, exist_ok=True)
+                            continue
+                        dest.parent.mkdir(parents=True, exist_ok=True)
+                        with zf.open(info.filename) as src, dest.open("wb") as dst:
+                            dst.write(src.read())
+                    rprint(f"[green]Extracted wheel bundle to:[/green] {wheelhouse_dir}")
+                # Install wheels if requested
+                if install_wheels and wheelhouse_dir and wheelhouse_dir.exists():
+                    # Resolve requirements file if present (inside package)
+                    req_rel = artifacts_section.get("requirements")
+                    req_tmp_path = None
+                    if isinstance(req_rel, str):
+                        try:
+                            with zf.open(req_rel) as rf:
+                                req_bytes = rf.read()
+                            req_tmp_path = root / "wheels" / str(agent_name) / "requirements.txt"
+                            req_tmp_path.parent.mkdir(parents=True, exist_ok=True)
+                            req_tmp_path.write_bytes(req_bytes)
+                        except Exception:
+                            req_tmp_path = None
+                    # Create or use venv
+                    venv_dir = Path(venv_path).expanduser().resolve() if venv_path else (root / ".venv_agents" / str(agent_name))
+                    if not venv_dir.exists():
+                        rprint(f"[cyan]Creating virtual environment:[/cyan] {venv_dir}")
+                        subprocess.run(["python", "-m", "venv", str(venv_dir)], check=False)
+                    bin_dir = "Scripts" if os.name == "nt" else "bin"
+                    pip_exe = venv_dir / bin_dir / ("pip.exe" if os.name == "nt" else "pip")
+                    python_exe = venv_dir / bin_dir / ("python.exe" if os.name == "nt" else "python")
+                    subprocess.run([str(python_exe), "-m", "pip", "install", "--upgrade", "pip"], check=False)
+                    if req_tmp_path and req_tmp_path.exists():
+                        cmd = [str(python_exe), "-m", "pip", "install", "--no-index", "--find-links", str(wheelhouse_dir), "-r", str(req_tmp_path)]
+                        rprint("[cyan]Installing from requirements with wheelhouse...[/cyan]")
+                        subprocess.run(cmd, check=False)
+                    else:
+                        wheels = [str(p) for p in wheelhouse_dir.glob("*.whl")]
+                        if wheels:
+                            cmd = [str(python_exe), "-m", "pip", "install", "--no-index", "--find-links", str(wheelhouse_dir)] + wheels
+                            rprint("[cyan]Installing wheel files...[/cyan]")
+                            subprocess.run(cmd, check=False)
+                    rprint(f"[green]Dependencies installed into venv:[/green] {venv_dir}")
+            except Exception as exc:  # noqa: BLE001
+                rprint(f"[yellow]Wheel extraction/installation skipped or errored:[/yellow] {exc}")
         rprint(f"[green]Installed agent to:[/green] {root / 'agents' / agent_name}")
     except Exception as exc:  # noqa: BLE001
         rprint(f"[red]Failed to install package:[/red] {exc}")

@@ -22,3 +22,10 @@ l6e forge can be used with non-local agent's as well, either utilize an existing
 docker compose up monitor
 ```
 
+
+### Packaging
+
+Example full package
+```bash
+poetry run forge pkg build examples/example-workspace/agents/test-demo -o examples/example-workspace/dist --ui-git git@github.com:l6e-ai/forge.git --ui-ref main --ui-subdir site/agent-ui --ui-build --ui-dist /examples/example-workspace/dist --ui-git-ssh-key ~/.ssh/$GITHUB_SSH_KEY --bundle-wheels
+```
