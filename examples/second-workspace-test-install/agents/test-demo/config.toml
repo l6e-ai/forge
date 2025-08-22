@@ -11,4 +11,3 @@ providers = ["ollama"]
 quality = "balanced"
 [memory]
 embedding_model = "nomic-embed-text:latest"
-
