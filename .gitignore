@@ -28,3 +28,5 @@ notes/
 # Any tmp folders
 # (can be used for dev when testing the CLI)
 # tmp-*/
+
+**/wheels/
