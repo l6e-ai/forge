@@ -27,6 +27,14 @@ class Agent(IAgent):
         pass
 
     async def handle_message(self, message: Message, context: AgentContext) -> AgentResponse:
+        # Recall and store memory around the conversation
+        try:
+            mm = self.runtime.get_memory_manager()  # type: ignore[attr-defined]
+            memories = await mm.search_vectors(namespace="{{ name }}", query=message.content, limit=3)
+            recall = "\\n".join(f"- {m.content}" for m in memories)
+            await mm.store_vector(namespace="{{ name }}", key=message.message_id, content=message.content, metadata={"role": message.role})
+        except Exception:
+            recall = ""
         # Prefer runtime's model manager when available
         runtime = self.runtime
         manager: IModelManager
@@ -42,7 +50,10 @@ class Agent(IAgent):
             memory_requirement_gb=0.0,
         )
         model_id = await manager.load_model(spec)
-        chat = await manager.chat(model_id, [message])
+        # Prepend recalled context in a system message
+        sys_preface = f"You may use this related memory to answer:\\n{recall}\\n\\n" if recall else ""
+        prompt_msg = Message(role="user", content=sys_preface + message.content)
+        chat = await manager.chat(model_id, [prompt_msg])
         return AgentResponse(content=chat.message.content, agent_id=self.name, response_time=0.0)
 
     async def can_handle(self, message: Message, context: AgentContext) -> bool:

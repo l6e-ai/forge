@@ -20,11 +20,11 @@ services:
       - AF_UI_DIR=/app/static/ui
     command: >
       sh -c "pip install --no-cache-dir l6e-forge 'uvicorn[standard]' &&
-             python -c 'import os, subprocess; p=os.getcwd(); subprocess.run(["bash","-lc",f"test -d site/agent-ui && cd site/agent-ui && npm ci && npm run build || true"], check=False);' &&
              uvicorn l6e_forge.web.api_main:app --host 0.0.0.0 --port 8000 --log-level info --access-log"
     volumes:
       - ./:/workspace
-      - ./site/agent-ui/dist:/app/static/ui:ro
+      # Serve UI from workspace if present: <workspace>/ui/<agent_name>
+      - ./ui:/app/static/ui:ro
     ports:
       - "8000:8000"
     depends_on:

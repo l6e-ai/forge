@@ -39,6 +39,7 @@ class LocalRuntime:
         self._id_to_name: dict[AgentID, str] = {}
         self._name_to_id: dict[str, AgentID] = {}
         self._model_manager = None
+        self._memory_manager = None
         self._agent_configs: dict[AgentID, dict[str, Any]] = {}
         self._agent_paths: dict[AgentID, Path] = {}
         self._tool_registry = None
@@ -176,6 +177,12 @@ class LocalRuntime:
             await mon.record_event("chat.message", {"direction": "in", "role": message.role})
         except Exception:
             pass
+        # Best-effort: store conversation message in memory
+        try:
+            mm = self.get_memory_manager()
+            await mm.store_conversation(ctx.conversation_id or "local", message)  # type: ignore[attr-defined]
+        except Exception:
+            pass
         import time as _time
         _start = _time.perf_counter()
         resp = await agent.handle_message(message, ctx)
@@ -211,7 +218,41 @@ class LocalRuntime:
 
     # Resource management (stubs)
     def get_memory_manager(self):  # -> IMemoryManager
-        raise NotImplementedError
+        if self._memory_manager is None:
+            # Default to in-memory vector store and provider-backed embedding if available
+            from l6e_forge.memory.backends.inmemory import InMemoryVectorStore
+            from l6e_forge.memory.managers.inmemory import InMemoryMemoryManager
+            from l6e_forge.memory.embeddings.ollama import OllamaEmbeddingProvider
+            from l6e_forge.memory.embeddings.lmstudio import LMStudioEmbeddingProvider
+            from l6e_forge.memory.embeddings.mock import MockEmbeddingProvider
+
+            store = InMemoryVectorStore()
+            # Prefer Ollama embeddings if reachable, else LM Studio, else mock
+            embedder = None
+            try:
+                import httpx
+
+                # Probe Ollama
+                ollama = os.environ.get("OLLAMA_HOST", "http://localhost:11434").rstrip("/")
+                r = httpx.get(f"{ollama}/api/version", timeout=1.0)
+                if r.status_code == 200:
+                    embedder = OllamaEmbeddingProvider()
+            except Exception:
+                embedder = None
+            if embedder is None:
+                try:
+                    import httpx
+
+                    lm = os.environ.get("LMSTUDIO_HOST", "http://localhost:1234/v1").rstrip("/")
+                    r = httpx.get(f"{lm}/models", timeout=1.0)
+                    if r.status_code == 200:
+                        embedder = LMStudioEmbeddingProvider()
+                except Exception:
+                    embedder = None
+            if embedder is None:
+                embedder = MockEmbeddingProvider()
+            self._memory_manager = InMemoryMemoryManager(store, embedder)
+        return self._memory_manager
 
     def get_model_manager(self):  # -> IModelManager
         if self._model_manager is None:

@@ -1,15 +1,8 @@
+# l6e-forge Workspace Configuration
+
 [workspace]
 name = "example-workspace"
 version = "0.1.0"
 
 [runtime]
 hot_reload = true
-
-[models]
-# Optional: endpoints for direct model providers if used
-# default_provider = "ollama"
-# endpoints.ollama = "http://ollama:11434"
-
-[monitor]
-url = "http://monitor:8321"
-

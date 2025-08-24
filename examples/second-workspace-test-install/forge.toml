@@ -1,8 +1,0 @@
-# l6e-forge Workspace Configuration
-
-[workspace]
-name = "second-workspace-test-install"
-version = "0.1.0"
-
-[runtime]
-hot_reload = true

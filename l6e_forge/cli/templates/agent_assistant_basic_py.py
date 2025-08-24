@@ -25,8 +25,22 @@ class Agent(IAgent):
         pass
 
     async def handle_message(self, message: Message, context: AgentContext) -> AgentResponse:
-        # Minimal assistant behavior: acknowledge and reflect
-        reply = f"I can help. You said: {message.content}"
+        # Recall top memories and include in reply (MVP)
+        try:
+            mm = self.runtime.get_memory_manager()  # type: ignore[attr-defined]
+            memories = await mm.search_vectors(namespace="{{ name }}", query=message.content, limit=3)
+            recall = "\\n".join(f"- {m.content}" for m in memories)
+        except Exception:
+            recall = ""
+        # Upsert the message into memory
+        try:
+            mm = self.runtime.get_memory_manager()  # type: ignore[attr-defined]
+            await mm.store_vector(namespace="{{ name }}", key=message.message_id, content=message.content, metadata={"role": message.role})
+        except Exception:
+            pass
+        # Minimal assistant behavior: acknowledge and reflect with recalled context
+        ctx_text = f"\\n\\nRelated memory:\\n{recall}" if recall else ""
+        reply = f"I can help. You said: {message.content}{ctx_text}"
         return AgentResponse(content=reply, agent_id=self.name, response_time=0.0)
 
     async def can_handle(self, message: Message, context: AgentContext) -> bool:

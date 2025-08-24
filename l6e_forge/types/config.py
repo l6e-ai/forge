@@ -37,7 +37,7 @@ class RuntimeConfig:
 @dataclass
 class MemoryConfig:
     """Memory system configuration"""
-    provider: Literal["qdrant", "chroma", "memory", "sqlite"] = "qdrant"
+    provider: Literal["qdrant", "chroma", "memory", "sqlite"] = "memory"
     
     # Connection settings
     host: str = "localhost"
@@ -45,7 +45,7 @@ class MemoryConfig:
     
     # Memory behavior
     collection: Optional[str] = None
-    embedding_model: str = "all-MiniLM-L6-v2"
+    embedding_model: str = "nomic-embed-text:latest"
     max_context_messages: int = 50
     memory_decay_days: int = 90
     

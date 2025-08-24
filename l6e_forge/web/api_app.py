@@ -131,6 +131,41 @@ def create_app() -> FastAPI:
         await mon.record_event("chat.message", {"direction": "out", "agent": str(aid)})
         return {"content": resp.content, "conversation_id": conversation_id, "session_id": session_uuid, "agent_id": str(aid)}
 
+    # Memory endpoints (MVP)
+    @app.post("/api/memory/upsert")
+    async def memory_upsert(payload: dict[str, Any]) -> dict[str, Any]:
+        ns = str(payload.get("namespace", "default"))
+        key = str(payload.get("key"))
+        content = str(payload.get("content", ""))
+        metadata = payload.get("metadata") or {}
+        if not key or not content:
+            return {"error": "key and content are required"}
+        mm = _runtime().get_memory_manager()
+        await mm.store_vector(ns, key, content, metadata)
+        return {"ok": True}
+
+    @app.post("/api/memory/search")
+    async def memory_search(payload: dict[str, Any]) -> dict[str, Any]:
+        ns = str(payload.get("namespace", "default"))
+        query = str(payload.get("query", ""))
+        limit = int(payload.get("limit", 5))
+        if not query:
+            return {"error": "query is required"}
+        mm = _runtime().get_memory_manager()
+        results = await mm.search_vectors(ns, query, limit=limit)
+        out = [
+            {
+                "namespace": r.namespace,
+                "key": r.key,
+                "score": r.score,
+                "content": r.content,
+                "metadata": r.metadata,
+                "rank": r.rank,
+            }
+            for r in results
+        ]
+        return {"results": out}
+
     # Lightweight HTTP proxy to Monitor for production (mirrors dev Vite proxy)
     try:
         import httpx
