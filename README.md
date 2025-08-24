@@ -13,20 +13,22 @@ Forge helps you build and ship local-first AI agents with an optional full stack
 - Node 18+ (only if you plan to build a UI)
 - Optional: Docker (to run the stack), Ollama/LM Studio (for local LLMs)
 
-## Quickstart
+## Install and Quickstart
 ```bash
-# Install CLI (recommend Poetry group cli)
+# Install CLI (recommended: Poetry group cli)
 poetry install --only cli
 
 # Create a new workspace
 poetry run forge init ./my-workspace
 
-# Create an agent (examples also contain agents)
-# Edit agents/my-agent/agent.py as needed
+# Create an agent (then edit agents/my-agent/agent.py as needed)
+poetry run forge create agent my-agent --template assistant
 
 # Chat locally (no stack needed)
 poetry run forge chat my-agent -w ./my-workspace
 ```
+
+See the full Getting Started guide: `docs/getting-started.md`.
 
 ## Models (Suggest and Bootstrap)
 ```bash
@@ -41,6 +43,32 @@ poetry run forge models bootstrap agents/my-agent \
 Notes:
 - Quant options: `auto|q4|q5|q8|mxfp4|8bit`
 - GPT‑OSS 20B/120B supported (provider‑specific sizes used when available)
+
+## Memory via API (MVP)
+The API exposes memory upsert and search.
+
+- Upsert
+```bash
+curl -X POST http://localhost:8000/api/memory/upsert \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "namespace": "my-agent",
+    "key": "note-1",
+    "content": "Daisy is allergic to peanuts",
+    "metadata": {"type": "note"}
+  }'
+```
+
+- Search
+```bash
+curl -X POST http://localhost:8000/api/memory/search \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "namespace": "my-agent",
+    "query": "What is Daisy allergic to?",
+    "limit": 5
+  }'
+```
 
 ## Packaging
 Build a portable `.l6e` bundle. You can include a web UI and Python wheels for offline install.
@@ -103,6 +131,18 @@ poetry run forge up
 # API http://localhost:8000  Monitor http://localhost:8321  UI http://localhost:8000/ui/
 ```
 
+## CLI Reference
+For detailed CLI commands and flags (init, dev, chat, models, pkg, memory, templates), see `docs/cli.md`.
+
+## Environment Variables
+- `AF_COMPOSE_FILE`: Path to compose file for `forge up/down`.
+- `AF_MONITOR_URL`: Monitor base URL (used by dev runtime and chat).
+- `AF_API_URL`: API base URL for `forge memory` (default `http://localhost:8000`).
+- `OLLAMA_HOST`: Provider endpoint for Ollama (default `http://localhost:11434`).
+- `LMSTUDIO_HOST`: Provider endpoint for LM Studio (default `http://localhost:1234/v1`).
+ - `VITE_API_BASE`: Agent UI API base URL (e.g., `http://localhost:8000`).
+ - `VITE_MONITOR_BASE`: Agent UI Monitor base URL (e.g., `http://localhost:8321/monitor`).
+
 ## Scaling and Adapters
 - Base Docker stack is single‑user and not horizontally scalable
 - To scale: deploy shared providers (Qdrant/Postgres/etc.) and switch adapters in the agent
@@ -114,5 +154,17 @@ poetry run forge up
 - UI not visible: confirm files exist in `workspace/ui/<agent_name>`; `AF_UI_DIR` is `/app/static/ui` in compose
 - Models suggest empty: ensure providers are running (Ollama/LM Studio) and reachable
 
+## Documentation Site (optional)
+If you prefer a full docs site, use MkDocs (Material theme) with the `docs/` folder:
+```bash
+pip install mkdocs mkdocs-material
+mkdocs new .  # or create docs/mkdocs.yml manually
+mkdocs serve -f docs/mkdocs.yml
+```
+Publish via GitHub Pages or your preferred host. Keep this README concise and link to deeper pages in `docs/`.
+
 ## Contributing
 PRs welcome! See `CONTRIBUTING.md`. This is an alpha; APIs and CLIs may change.
+
+## License
+MIT

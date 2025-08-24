@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useMonitor } from '../utils/useMonitor'
+import { apiUrl } from '../utils/api'
 
 export const AgentsPanel: React.FC = () => {
   const { agents } = useMonitor()
@@ -9,7 +10,7 @@ export const AgentsPanel: React.FC = () => {
   useEffect(() => {
     ;(async () => {
       try {
-        const res = await fetch('/api/agents')
+        const res = await fetch(apiUrl('/api/agents'))
         console.log('res', res)
         const data = await res.json()
         setDiscovered(data.discovered || [])
@@ -19,16 +20,16 @@ export const AgentsPanel: React.FC = () => {
   }, [])
 
   const startAgent = async (name: string) => {
-    await fetch('/api/agents/start', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name }) })
-    const res = await fetch('/api/agents')
+    await fetch(apiUrl('/api/agents/start'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name }) })
+    const res = await fetch(apiUrl('/api/agents'))
     const data = await res.json()
     setDiscovered(data.discovered || [])
     setActive(data.active || [])
   }
 
   const stopAgent = async (agent_id: string) => {
-    await fetch('/api/agents/stop', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ agent_id }) })
-    const res = await fetch('/api/agents')
+    await fetch(apiUrl('/api/agents/stop'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ agent_id }) })
+    const res = await fetch(apiUrl('/api/agents'))
     const data = await res.json()
     setDiscovered(data.discovered || [])
     setActive(data.active || [])

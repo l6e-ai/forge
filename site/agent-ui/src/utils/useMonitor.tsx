@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { monitorUrl } from './api'
 
 type AgentStatus = { agent_id: string; name: string; status: string }
 type Perf = { avg_ms: number; p95_ms: number; count: number }
@@ -47,9 +48,9 @@ export const MonitorProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const refresh = useCallback(async () => {
     const [a, p, c] = await Promise.all([
-      fetch('/monitor/api/agents').then(r => r.json()),
-      fetch('/monitor/api/perf').then(r => r.json()),
-      fetch('/monitor/api/chats').then(r => r.json()),
+      fetch(monitorUrl('/api/agents')).then(r => r.json()),
+      fetch(monitorUrl('/api/perf')).then(r => r.json()),
+      fetch(monitorUrl('/api/chats')).then(r => r.json()),
     ])
     setIfChanged(agents, a, setAgents)
     setIfChanged(perf, p, setPerf)
@@ -72,8 +73,24 @@ export const MonitorProvider: React.FC<{ children: React.ReactNode }> = ({ child
       // Avoid opening a second connection
       if (wsRef.current && wsRef.current.readyState < 2) return
 
-      const proto = location.protocol === 'https:' ? 'wss' : 'ws'
-      const ws = new WebSocket(`${proto}://${location.host}/monitor/ws`)
+      const base = MONITOR_BASE || ''
+      let wsUrl: string
+      if (base) {
+        // If MONITOR_BASE is absolute (http/https), convert to ws/wss
+        try {
+          const u = new URL(base)
+          u.protocol = u.protocol === 'https:' ? 'wss:' : 'ws:'
+          u.pathname = (u.pathname.replace(/\/$/, '')) + '/ws'
+          wsUrl = u.toString()
+        } catch {
+          // Fallback to relative
+          wsUrl = '/monitor/ws'
+        }
+      } else {
+        const proto = location.protocol === 'https:' ? 'wss' : 'ws'
+        wsUrl = `${proto}://${location.host}/monitor/ws`
+      }
+      const ws = new WebSocket(wsUrl)
       wsRef.current = ws
 
       ws.onopen = () => {
@@ -95,7 +112,7 @@ export const MonitorProvider: React.FC<{ children: React.ReactNode }> = ({ child
             lastPerfFetchRef.current = now
             if (perfTimerRef.current) window.clearTimeout(perfTimerRef.current)
             perfTimerRef.current = window.setTimeout(() => {
-              fetch('/monitor/api/perf').then(r => r.json()).then((p) => setIfChanged(perf, p, setPerf))
+              fetch(monitorUrl('/api/perf')).then(r => r.json()).then((p) => setIfChanged(perf, p, setPerf))
             }, 200)
           }
           if (msg.type === 'event') {
@@ -115,7 +132,7 @@ export const MonitorProvider: React.FC<{ children: React.ReactNode }> = ({ child
               lastAgentsFetchRef.current = now
               if (agentsTimerRef.current) window.clearTimeout(agentsTimerRef.current)
               agentsTimerRef.current = window.setTimeout(() => {
-                fetch('/monitor/api/agents').then(r => r.json()).then((a) => setIfChanged(agents, a, setAgents))
+                fetch(monitorUrl('/api/agents')).then(r => r.json()).then((a) => setIfChanged(agents, a, setAgents))
               }, 200)
             }
           }
@@ -143,7 +160,7 @@ export const MonitorProvider: React.FC<{ children: React.ReactNode }> = ({ child
   }, [])
 
   const sendChat = useCallback(async (text: string) => {
-    await fetch('/monitor/ingest/chat', {
+    await fetch(monitorUrl('/ingest/chat'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ role: 'user', content: text, conversation_id: 'local' })

@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useMonitor } from '../utils/useMonitor'
+import { apiUrl } from '../utils/api'
 
 export const ChatPanel: React.FC = () => {
   const { chats, sendChat } = useMonitor()
@@ -13,7 +14,7 @@ export const ChatPanel: React.FC = () => {
   useEffect(() => {
     ;(async () => {
       try {
-        const r = await fetch('/api/agents')
+        const r = await fetch(apiUrl('/api/agents'))
         const data = await r.json()
         const discovered: string[] = data?.discovered || []
         const active: string[] = (data?.active || []).map((a: any) => a.name)
@@ -53,7 +54,7 @@ export const ChatPanel: React.FC = () => {
           body.conversation_id = conversationId
         }
       }
-      const resp = await fetch('/api/chat', {
+      const resp = await fetch(apiUrl('/api/chat'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
