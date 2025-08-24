@@ -30,3 +30,8 @@ notes/
 # tmp-*/
 
 **/wheels/
+
+
+# Ignore personal docs
+
+docs/personal/
