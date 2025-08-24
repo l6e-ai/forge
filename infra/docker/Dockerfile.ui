@@ -3,12 +3,26 @@ FROM node:22-alpine
 # Set working directory to the UI app
 WORKDIR /app/site/agent-ui
 
+# Install pnpm
+RUN apk add --no-cache git && \
+    npm install -g pnpm
+
+COPY site/agent-ui/package.json /app/site/agent-ui/package.json
+COPY site/agent-ui/package-lock.json /app/site/agent-ui/package-lock.json
+# Install Packages
+RUN pnpm install
+
+# Copy source
+COPY site/agent-ui/ /app/site/agent-ui/
+
+# Build
+RUN pnpm run build
+
+
 # Ensure Vite binds to all interfaces inside the container
 ENV HOST=0.0.0.0
 
 EXPOSE 5173
 
-# Install deps on container start (works with bind-mounted source)
-CMD ["sh", "-c", "npm ci && npm run dev -- --host 0.0.0.0"]
-
-
+# Run
+CMD ["pnpm", "run", "dev", "--", "--host", "0.0.0.0"]

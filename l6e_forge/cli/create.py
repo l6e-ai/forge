@@ -59,7 +59,15 @@ def agent(
                 from l6e_forge.infra.compose import ComposeTemplateService, ComposeServiceSpec
 
                 svc = ComposeTemplateService()
-                services = [ComposeServiceSpec(name="monitor"), ComposeServiceSpec(name="api", context={"memory_provider": memory_provider})]
+                ui_context: dict = {}
+                workspace_ui_dir = root / "ui"
+                if workspace_ui_dir.exists():
+                    ui_context["ui_mount"] = str(workspace_ui_dir.resolve())
+                services = [
+                    ComposeServiceSpec(name="monitor"),
+                    ComposeServiceSpec(name="api", context={"memory_provider": memory_provider}),
+                    ComposeServiceSpec(name="ui", context=ui_context),
+                ]
                 if memory_provider == "qdrant":
                     services.append(ComposeServiceSpec(name="qdrant"))
                 compose_text = _asyncio.run(svc.generate(services))

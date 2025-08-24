@@ -50,7 +50,7 @@ class ComposeTemplateService:
         "monitor": (
             """
   monitor:
-    image: l6e-forge/monitor:{{ tag | default('latest') }}
+    image: l6eai/l6e-forge-monitor:{{ tag | default('latest') }}
     ports:
       - "{{ port | default('8321') }}:{{ port | default('8321') }}"
             """
@@ -58,7 +58,7 @@ class ComposeTemplateService:
         "api": (
             """
   api:
-    image: l6e-forge/api:{{ tag | default('latest') }}
+    image: l6eai/l6e-forge-api:{{ tag | default('latest') }}
     environment:
       - AF_MONITOR_URL=http://monitor:8321
       - AF_WORKSPACE=/workspace
@@ -74,9 +74,11 @@ class ComposeTemplateService:
         "ui": (
             """
   ui:
-    image: node:22-alpine
-    working_dir: /app/site/agent-ui
-    command: sh -c "npm ci && npm run dev -- --host 0.0.0.0"
+    image: l6eai/l6e-forge-ui:{{ tag | default('latest') }}
+    {% if ui_mount is defined and ui_mount %}
+    volumes:
+      - "{{ ui_mount }}:/app/static/ui:ro"
+    {% endif %}
     ports:
       - "{{ port | default('5173') }}:{{ port | default('5173') }}"
             """

@@ -50,16 +50,28 @@ hot_reload = true
                 encoding="utf-8",
             )
 
-        # Include a packaged docker-compose file for production use
+        # Generate a docker-compose file using the ComposeTemplateService (preferred over copying a static template)
         if with_compose:
             try:
-                from importlib import resources
-                with resources.as_file(resources.files("l6e_forge.infra.templates.compose").joinpath("docker-compose.workspace.yml")) as cp:
-                    target_cp = root / "docker-compose.yml"
-                    if not target_cp.exists():
-                        target_cp.write_text(cp.read_text(encoding="utf-8"), encoding="utf-8")
+                from l6e_forge.infra.compose import ComposeTemplateService, ComposeServiceSpec
+
+                target_cp = root / "docker-compose.yml"
+                if not target_cp.exists():
+                    svc = ComposeTemplateService()
+                    ui_context: dict = {}
+                    workspace_ui_dir = root / "ui"
+                    if workspace_ui_dir.exists():
+                        ui_context["ui_mount"] = str(workspace_ui_dir.resolve())
+
+                    services = [
+                        ComposeServiceSpec(name="monitor"),
+                        ComposeServiceSpec(name="api"),
+                        ComposeServiceSpec(name="ui", context=ui_context),
+                    ]
+                    compose_text = await svc.generate(services)
+                    target_cp.write_text(compose_text, encoding="utf-8")
             except Exception:
-                # Non-fatal if packaging or path fails
+                # Non-fatal if compose generation fails
                 pass
 
         # Optionally scaffold a basic example agent if a template is requested later
