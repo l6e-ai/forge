@@ -88,7 +88,7 @@ class ComposeTemplateService:
 
     async def generate(self, services: List[ComposeServiceSpec]) -> str:
         """Render a compose file from service specs."""
-        header = "version: '3.8'\nservices:\n"
+        header = "services:\n"
         fragments: List[str] = []
         for spec in services:
             tmpl = self._templates.get(spec.name)

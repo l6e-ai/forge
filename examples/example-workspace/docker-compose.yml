@@ -1,4 +1,3 @@
-version: '3.8'
 services:
   monitor:
     image: l6e-forge/monitor:latest

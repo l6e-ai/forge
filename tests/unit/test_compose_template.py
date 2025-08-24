@@ -15,7 +15,6 @@ def test_compose_template_renders_selected_services() -> None:
         ])
 
     text = asyncio.run(_run())
-    assert "version: '3.8'" in text
     assert "services:" in text
     assert "monitor:" in text
     assert "redis:" in text

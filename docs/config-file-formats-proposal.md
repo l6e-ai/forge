@@ -287,8 +287,6 @@ minimum_memory = "8GB"
 ## Development Environment (`docker-compose.yml`)
 
 ```yaml
-version: '3.8'
-
 services:
   qdrant:
     image: qdrant/qdrant:latest
