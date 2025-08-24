@@ -221,12 +221,21 @@ class LocalRuntime:
         if self._memory_manager is None:
             # Default to in-memory vector store and provider-backed embedding if available
             from l6e_forge.memory.backends.inmemory import InMemoryVectorStore
+            from l6e_forge.memory.backends.qdrant import QdrantVectorStore
             from l6e_forge.memory.managers.inmemory import InMemoryMemoryManager
             from l6e_forge.memory.embeddings.ollama import OllamaEmbeddingProvider
             from l6e_forge.memory.embeddings.lmstudio import LMStudioEmbeddingProvider
             from l6e_forge.memory.embeddings.mock import MockEmbeddingProvider
 
+            # Choose store based on env/config; default to in-memory
             store = InMemoryVectorStore()
+            try:
+                # If QDRANT_URL or AF_MEMORY_PROVIDER=qdrant, use Qdrant
+                if os.environ.get("QDRANT_URL") or os.environ.get("AF_MEMORY_PROVIDER") == "qdrant":
+                    collection = os.environ.get("AF_MEMORY_COLLECTION", "agent_memory")
+                    store = QdrantVectorStore(collection=collection)
+            except Exception:
+                pass
             # Prefer Ollama embeddings if reachable, else LM Studio, else mock
             embedder = None
             try:

@@ -27,6 +27,8 @@ class ComposeTemplateService:
     image: qdrant/qdrant:{{ tag | default('latest') }}
     ports:
       - "{{ port | default('6333') }}:{{ port | default('6333') }}"
+    volumes:
+      - ./data/qdrant:/qdrant/storage
             """
         ).strip("\n"),
         "redis": (
@@ -62,6 +64,9 @@ class ComposeTemplateService:
       - AF_WORKSPACE=/workspace
       - OLLAMA_HOST=http://host.docker.internal:11434
       - LMSTUDIO_HOST=http://host.docker.internal:1234/v1
+      - AF_MEMORY_PROVIDER={{ memory_provider | default('memory') }}
+      - QDRANT_URL=http://qdrant:6333
+      - AF_MEMORY_COLLECTION=agent_memory
     ports:
       - "{{ port | default('8000') }}:{{ port | default('8000') }}"
             """

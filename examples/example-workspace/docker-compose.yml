@@ -1,35 +1,27 @@
+version: '3.8'
 services:
   monitor:
-    image: python:3.13-slim
-    environment:
-      - MONITOR_PORT=8321
-      - PYTHONUNBUFFERED=1
-    command: >
-      sh -c "pip install --no-cache-dir l6e-forge 'uvicorn[standard]' &&
-             uvicorn l6e_forge.web.monitor_main:app --host 0.0.0.0 --port 8321 --log-level info --access-log"
+    image: l6e-forge/monitor:latest
     ports:
       - "8321:8321"
-    restart: unless-stopped
-
+            
   api:
-    image: python:3.13-slim
+    image: l6e-forge/api:latest
     environment:
-      - PYTHONUNBUFFERED=1
       - AF_MONITOR_URL=http://monitor:8321
       - AF_WORKSPACE=/workspace
-      - AF_UI_DIR=/app/static/ui
-    command: >
-      sh -c "pip install --no-cache-dir l6e-forge 'uvicorn[standard]' &&
-             uvicorn l6e_forge.web.api_main:app --host 0.0.0.0 --port 8000 --log-level info --access-log"
-    volumes:
-      - ./:/workspace
-      # Serve UI from workspace if present: <workspace>/ui/<agent_name>
-      - ./ui:/app/static/ui:ro
+      - OLLAMA_HOST=http://host.docker.internal:11434
+      - LMSTUDIO_HOST=http://host.docker.internal:1234/v1
+      - AF_MEMORY_PROVIDER=qdrant
+      - QDRANT_URL=http://qdrant:6333
+      - AF_MEMORY_COLLECTION=agent_memory
     ports:
       - "8000:8000"
-    depends_on:
-      - monitor
-    restart: unless-stopped
-
-# Optionally add a UI service externally or serve a static UI behind the API.
-
+            
+  qdrant:
+    image: qdrant/qdrant:latest
+    ports:
+      - "6333:6333"
+    volumes:
+      - ./data/qdrant:/qdrant/storage
+            

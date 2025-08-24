@@ -36,6 +36,8 @@ def agent(
         "--template",
         help="Template to use (e.g., 'basic', 'assistant'). Provider-specific variants are resolved automatically.",
     ),
+    include_compose: bool = typer.Option(True, "--include-compose/--no-include-compose", help="Generate/append compose with memory provider."),
+    memory_provider: str = typer.Option("qdrant", "--memory-provider", help="Default memory provider to include in compose (qdrant|memory)"),
 ):
     """Scaffold a minimal agent directory."""
     root = Path(workspace).resolve()
@@ -51,6 +53,20 @@ def agent(
             rendered = _asyncio.run(engine.render_template(tf.content.strip(), variables))
             (target / tf.path).write_text(rendered, encoding=tf.encoding)
         rprint(f"[green]Created agent at {target}[/green]")
+        # Optionally write/append compose with memory provider
+        if include_compose:
+            try:
+                from l6e_forge.infra.compose import ComposeTemplateService, ComposeServiceSpec
+
+                svc = ComposeTemplateService()
+                services = [ComposeServiceSpec(name="monitor"), ComposeServiceSpec(name="api", context={"memory_provider": memory_provider})]
+                if memory_provider == "qdrant":
+                    services.append(ComposeServiceSpec(name="qdrant"))
+                compose_text = _asyncio.run(svc.generate(services))
+                (root / "docker-compose.yml").write_text(compose_text, encoding="utf-8")
+                rprint("[green]Wrote docker-compose.yml with memory provider.[/green]")
+            except Exception as exc:
+                rprint(f"[yellow]Compose generation skipped:[/yellow] {exc}")
     except FileExistsError:
         rprint(f"[red]Agent already exists: {target}[/red]")
         raise typer.Exit(code=1)
