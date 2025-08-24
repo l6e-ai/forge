@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { monitorUrl } from './api'
+import { monitorUrl, MONITOR_BASE } from './api'
 
 type AgentStatus = { agent_id: string; name: string; status: string }
 type Perf = { avg_ms: number; p95_ms: number; count: number }

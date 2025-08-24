@@ -75,6 +75,9 @@ class ComposeTemplateService:
             """
   ui:
     image: l6eai/l6e-forge-ui:{{ tag | default('latest') }}
+    environment:
+      - VITE_API_BASE={{ api_base | default('http://api:8000') }}
+      - VITE_MONITOR_BASE={{ monitor_base | default('http://monitor:8321/monitor') }}
     {% if ui_mount is defined and ui_mount %}
     volumes:
       - "{{ ui_mount }}:/app/static/ui:ro"
