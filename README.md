@@ -129,7 +129,7 @@ Forge is in active development. Our goals include:
 
 ## License
 
-MIT
+Apache 2.0
 
 ---
 
