@@ -86,7 +86,7 @@ hot_reload = true
 create schema if not exists forge;
 
 create table if not exists forge.conversations (
-  conversation_id text primary key,
+  conversation_id uuid primary key,
   agent_id text,
   user_id text,
   started_at timestamptz default now(),
@@ -96,7 +96,7 @@ create table if not exists forge.conversations (
 
 create table if not exists forge.messages (
   message_id uuid primary key,
-  conversation_id text not null references forge.conversations(conversation_id) on delete cascade,
+  conversation_id uuid not null references forge.conversations(conversation_id) on delete cascade,
   role text not null,
   content text not null,
   timestamp timestamptz not null default now(),

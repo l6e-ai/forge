@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional
 from l6e_forge.memory.managers.base import IMemoryManager
 from l6e_forge.memory.embeddings.base import IEmbeddingProvider
 from l6e_forge.memory.embeddings.mock import MockEmbeddingProvider
-from l6e_forge.types.core import Message
+from l6e_forge.types.core import Message, ConversationID
 try:
     from l6e_forge.memory.conversation.base import IConversationStore
 except Exception:
@@ -54,16 +54,16 @@ class InMemoryMemoryManager(IMemoryManager):
     async def delete_kv(self, namespace: str, key: str) -> None:
         self._kv.get(namespace, {}).pop(key, None)
 
-    async def store_conversation(self, conversation_id: str, message: Message) -> None:
+    async def store_conversation(self, conversation_id: ConversationID, message: Message) -> None:
         if self._conversation_store is not None:
             await self._conversation_store.store_message(conversation_id, message)
             return
-        self._conversations.setdefault(conversation_id, []).append(message)
+        self._conversations.setdefault(str(conversation_id), []).append(message)
 
-    async def get_conversation(self, conversation_id: str, limit: int = 50) -> list[Message]:
+    async def get_conversation(self, conversation_id: ConversationID, limit: int = 50) -> list[Message]:
         if self._conversation_store is not None:
             return await self._conversation_store.get_messages(conversation_id, limit)
-        msgs = self._conversations.get(conversation_id, [])
+        msgs = self._conversations.get(str(conversation_id), [])
         return msgs[-limit:]
 
     async def store_session(self, session_id: str, key: str, value: Any) -> None:

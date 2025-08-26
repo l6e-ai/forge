@@ -2,9 +2,10 @@
 """Memory system types for l6e-forge"""
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Any, Optional, Literal, Union
+from typing import Dict, List, Any, Optional, Literal
 from datetime import datetime
 import uuid
+from l6e_forge.types.core import ConversationID, AgentID
 
 # ============================================================================
 # Memory Storage Types
@@ -133,8 +134,8 @@ class MemoryNamespace:
 @dataclass
 class ConversationMemory:
     """Memory for conversation context"""
-    conversation_id: str
-    agent_id: str
+    conversation_id: ConversationID
+    agent_id: AgentID
     
     # Conversation summary
     summary: str = ""
@@ -161,7 +162,7 @@ class ConversationMemory:
 class SessionMemory:
     """Temporary session-scoped memory"""
     session_id: str
-    agent_id: str
+    agent_id: AgentID
     
     # Session data
     data: Dict[str, Any] = field(default_factory=dict)

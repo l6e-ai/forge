@@ -5,6 +5,7 @@ import asyncio
 from pathlib import Path
 import sys
 import json
+import time
 
 import typer
 from rich import print as rprint
@@ -228,7 +229,7 @@ def chat(
     async def _run_once() -> int:
         # Minimal context
         msg = Message(content=message, role="user")
-        conversation_id = f"{agent}:{session_uuid}"
+        conversation_id = uuid.uuid4()
         ctx = AgentContext(conversation_id=conversation_id, session_id=session_uuid, workspace_path=root)
         try:
             if use_direct_model:
@@ -255,13 +256,13 @@ def chat(
                     d_agent_id, d_name = _direct_identifiers()
                     # Mark agent as ready so UI shows it
                     mon.set_agent_status(d_agent_id, d_name, status="ready", config={"provider": use_provider, "model": use_model})
-                    mon.add_chat_log(conversation_id=ctx.conversation_id or "local", role=msg.role, content=msg.content)
+                    mon.add_chat_log(conversation_id=str(ctx.conversation_id), role=msg.role, content=msg.content)
                     await mon.record_event("chat.message", {"direction": "in", "role": msg.role})
                     _start = time.perf_counter()
                     resp = await manager.chat(model_id, [msg], timeout=timeout)
                     elapsed_ms = (time.perf_counter() - _start) * 1000.0
                     _print_response(resp.message.content)
-                    mon.add_chat_log(conversation_id=ctx.conversation_id or "local", role="assistant", content=resp.message.content, agent_id=d_agent_id)
+                    mon.add_chat_log(conversation_id=str(ctx.conversation_id), role="assistant", content=resp.message.content, agent_id=d_agent_id)
                     await mon.record_metric("response_time_ms", elapsed_ms, tags={"agent": d_agent_id})
                     await mon.record_event("chat.message", {"direction": "out", "agent": d_agent_id})
             else:
@@ -327,7 +328,7 @@ def chat(
 
             async def _run_one_msg(text: str) -> int:
                 msg = Message(content=text, role="user")
-                conversation_id = f"{agent}:{session_uuid}"
+                conversation_id = uuid.uuid4()
                 ctx = AgentContext(conversation_id=conversation_id, session_id=session_uuid, workspace_path=root)
                 try:
                     if use_direct_model:

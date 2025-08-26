@@ -11,14 +11,6 @@ Build the fastest, most developer-friendly way to create, run, and share local A
 - **Developer speed**: File save → hot reload → test change in seconds.
 - **Template-driven onboarding**: From install to working agent in under 5 minutes.
 
-### MVP Scope (Phase 1-2)
-- **CLI foundation**: `forge init`, `forge create`, `forge dev`, `forge chat`, `forge list`.
-- **Agent base class**: Simple `handle_message()` with tool access.
-- **Hot reload**: Watch agent files and reload within ~1s, preserving context when possible.
-- **Ollama only**: Local model integration to keep footprint minimal.
-- **Essential tools**: Filesystem, web requests, terminal (safe/sandboxed).
-- **Basic memory**: In-memory + SQLite persistence.
-- **Templates**: `basic`, `assistant`, `coder` to accelerate onboarding.
 
 ### Post-MVP (Direction, not required now)
 - Improve Monitoring UI: for conversations, errors, metrics.
@@ -30,15 +22,6 @@ Build the fastest, most developer-friendly way to create, run, and share local A
 2) Edit agent → save → hot reload
 3) `forge chat assistant` for interactive testing
 4) Later: `forge package`, `forge install`, `forge deploy`
-
-### CLI Command Specs (MVP)
-- **forge init <workspace>**: Create workspace structure and default `forge.toml`.
-- **forge create <agent> [--template=<name>]**: Scaffold agent folder with `agent.py`, `config.toml`, optional `tools.py`.
-- **forge list**: List agents in the current workspace and their status.
-- **forge dev**: Start local runtime, hot reload, and monitoring hooks (UI later).
-- **forge chat <agent>**: Open interactive REPL with the agent; uses agent/workspace config by default.
-- **forge template list**: List available templates and supported providers.
-- **forge models list [--provider]**: List models from local providers (Ollama, LM Studio).
 
 ### Architecture Overview
 - **CLI** (`l6e_forge/cli/`): Typer-based commands (`create`, `dev`, `chat`, `template`, `models`).

@@ -53,7 +53,7 @@ class ToolSpec:
 class ToolContext:
     """Context provided to tool during execution"""
     agent_id: str
-    conversation_id: str
+    conversation_id: str  # Keep as string for tool-facing context/JSON boundaries
     session_id: str
     
     # Execution environment

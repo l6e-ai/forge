@@ -7,7 +7,7 @@ import uuid
 from typing import Callable, Any
 import os
 
-from l6e_forge.types.core import AgentID, AgentResponse, Message
+from l6e_forge.types.core import AgentID, AgentResponse, Message, ConversationID
 from l6e_forge.types.agent import AgentSpec
 from l6e_forge.runtime.monitoring import get_monitoring
 
@@ -157,7 +157,7 @@ class LocalRuntime:
         self,
         message: Message,
         target: AgentID | None = None,
-        conversation_id: str | None = None,
+        conversation_id: ConversationID | None = None,
         session_id: str | None = None,
     ) -> AgentResponse:
         agent: "IAgent" | None = None
@@ -170,12 +170,12 @@ class LocalRuntime:
         # Minimal context
         from l6e_forge.types.core import AgentContext  # local import to avoid cycles
 
-        ctx = AgentContext(conversation_id=conversation_id or "local", session_id=session_id or "local")
+        ctx = AgentContext(conversation_id=conversation_id or uuid.uuid4(), session_id=session_id or "local")
         # Request logging moved to API layer to avoid duplicates
         # Best-effort: store conversation message in memory
         try:
             mm = self.get_memory_manager()
-            await mm.store_conversation(ctx.conversation_id or "local", message)  # type: ignore[attr-defined]
+            await mm.store_conversation(ctx.conversation_id, message)
         except Exception:
             pass
         import time as _time
@@ -219,7 +219,7 @@ class LocalRuntime:
                 continue
             from l6e_forge.types.core import AgentContext  # local import to avoid cycles
 
-            ctx = AgentContext(conversation_id="local", session_id="local")
+            ctx = AgentContext(conversation_id=uuid.uuid4(), session_id="local")
             results.append(await agent.handle_message(message, ctx))
         return results
 

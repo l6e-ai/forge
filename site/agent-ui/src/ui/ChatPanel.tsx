@@ -46,10 +46,7 @@ export const ChatPanel: React.FC = () => {
     return (h >>> 0).toString(36)
   }
 
-  const seedConversationId = useCallback(() => {
-    const agent = selectedAgent || 'demo'
-    return `${agent}:${Date.now().toString(36)}`
-  }, [selectedAgent])
+  // Let the API generate UUID conversation IDs; UI no longer seeds IDs
 
   useEffect(() => {
     const opts = agentNames
@@ -93,17 +90,9 @@ export const ChatPanel: React.FC = () => {
       setIsSending(true)
       const body: any = { agent: selectedAgent || 'demo', message: text }
       let convForSend: string | null = null
-      if (persistent) {
-        if (!conversationId) {
-          // seed a new conversation id on first send
-          const seed = `${selectedAgent || 'demo'}:${Date.now().toString(36)}`
-          setConversationId(seed)
-          body.conversation_id = seed
-          convForSend = seed
-        } else {
-          body.conversation_id = conversationId
-          convForSend = conversationId
-        }
+      if (persistent && conversationId) {
+        body.conversation_id = conversationId
+        convForSend = conversationId
       }
       if (convForSend) setSendingConvId(convForSend)
       const seq = ++reqSeqRef.current
@@ -151,7 +140,7 @@ export const ChatPanel: React.FC = () => {
             )
           })}
           <button
-            onClick={() => { const seed = seedConversationId(); setPersistent(true); setConversationId(seed) }}
+            onClick={() => { setPersistent(true); setConversationId('') }}
             className="text-xs px-2 py-1 rounded-md border border-slate-700 bg-slate-900 text-slate-300 hover:border-slate-600"
           >
             + New
@@ -177,7 +166,7 @@ export const ChatPanel: React.FC = () => {
           )
         })}
         {/* Loading bubble */}
-        {isSending && sendingConvId === activeConversationId && (
+        {isSending && (!sendingConvId || sendingConvId === activeConversationId) && (
           <div className="mb-3 flex justify-start" aria-live="polite" aria-busy="true">
             <div className="bg-slate-800 text-slate-100 max-w-[80%] rounded-2xl px-3 py-2 shadow-sm">
               <div className="text-[10px] opacity-70 mb-1">thinking…</div>
@@ -208,7 +197,7 @@ export const ChatPanel: React.FC = () => {
             <span className="text-slate-500 text-xs">conv: {activeConversationId}</span>
           )}
           <button
-            onClick={() => { const seed = seedConversationId(); setPersistent(true); setConversationId(seed) }}
+            onClick={() => { setPersistent(true); setConversationId('') }}
             className="ml-auto text-xs px-2 py-1 rounded-md border border-slate-700 bg-slate-900 text-slate-300 hover:border-slate-600"
           >New chat</button>
         </div>

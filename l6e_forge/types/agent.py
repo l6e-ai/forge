@@ -7,7 +7,7 @@ from datetime import datetime
 from pathlib import Path
 from enum import Enum
 
-from l6e_forge.types.core import AgentID
+from l6e_forge.types.core import AgentID, ConversationID
 
 from .config import AgentConfig
 
@@ -102,7 +102,7 @@ class Capability:
 @dataclass
 class AgentProfile:
     """Agent behavioral and capability profile"""
-    agent_id: str
+    agent_id: AgentID
     
     # Core capabilities
     capabilities: List[Capability] = field(default_factory=list)
@@ -133,8 +133,8 @@ class AgentProfile:
 @dataclass
 class AgentConversation:
     """Conversation state between user and agent"""
-    conversation_id: str
-    agent_id: str
+    conversation_id: ConversationID
+    agent_id: AgentID
     user_id: Optional[str] = None
     
     # Conversation metadata
@@ -199,7 +199,7 @@ class AgentTeam:
 class LearningEvent:
     """Record of an agent learning from interaction"""
     event_id: str
-    agent_id: str
+    agent_id: AgentID
     
     # Event details
     event_type: str  # "feedback", "correction", "new_pattern", etc.
@@ -211,7 +211,7 @@ class LearningEvent:
     confidence_change: float
     
     # Context
-    conversation_id: str
+    conversation_id: ConversationID
     user_feedback: Optional[str] = None
     success_metrics: Dict[str, float] = field(default_factory=dict)
     
@@ -224,7 +224,7 @@ class LearningEvent:
 @dataclass
 class AgentKnowledgeBase:
     """Agent's accumulated knowledge and patterns"""
-    agent_id: str
+    agent_id: AgentID
     
     # Factual knowledge
     facts: Dict[str, Any] = field(default_factory=dict)

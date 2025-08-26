@@ -23,7 +23,7 @@ class Event:
     # Routing
     source_agent_id: Optional[str] = None
     target_agent_id: Optional[str] = None
-    conversation_id: Optional[str] = None
+    conversation_id: Optional[str] = None  # JSON boundary: keep string here
     
     # Event metadata
     priority: int = 5  # 1-10, lower = higher priority

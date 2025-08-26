@@ -1,7 +1,7 @@
 
 from typing import Any, Protocol
 
-from l6e_forge.types.core import Message
+from l6e_forge.types.core import Message, ConversationID
 from l6e_forge.types.memory import MemoryResult
 
 
@@ -31,11 +31,11 @@ class IMemoryManager(Protocol):
         ...
     
     # Conversation memory (for chat history)
-    async def store_conversation(self, conversation_id: str, message: Message) -> None:
+    async def store_conversation(self, conversation_id: ConversationID, message: Message) -> None:
         """Store a conversation message"""
         ...
     
-    async def get_conversation(self, conversation_id: str, limit: int = 50) -> list[Message]:
+    async def get_conversation(self, conversation_id: ConversationID, limit: int = 50) -> list[Message]:
         """Get conversation history"""
         ...
     

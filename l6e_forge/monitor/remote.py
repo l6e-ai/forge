@@ -48,7 +48,7 @@ class RemoteMonitoringService(IMonitoringService):
         self._post_sync("/ingest/agent/remove", {"agent_id": agent_id})
 
     def add_chat_log(self, conversation_id: str, role: str, content: str, agent_id: str | None = None) -> None:  # noqa: D401
-        self._post_sync("/ingest/chat", {"conversation_id": conversation_id, "role": role, "content": content, "agent_id": agent_id})
+        self._post_sync("/ingest/chat", {"conversation_id": str(conversation_id), "role": role, "content": content, "agent_id": agent_id})
 
     # --- Read helpers ---
     def get_recent_events(self, limit: int = 200) -> List[dict[str, Any]]:

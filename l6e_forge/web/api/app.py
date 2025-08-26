@@ -115,17 +115,21 @@ def create_app() -> FastAPI:
         # Support persistent conversations via optional conversation_id and session_id
         incoming_conv = payload.get("conversation_id")
         incoming_sess = payload.get("session_id")
+        # Enforce UUID conversation ids. If client provides a non-UUID, ignore and generate a new one
+        conversation_uuid: str
         if isinstance(incoming_conv, str) and incoming_conv.strip():
-            conversation_id = incoming_conv.strip()
-            if isinstance(incoming_sess, str) and incoming_sess.strip():
-                session_uuid = incoming_sess.strip()
-            else:
-                # Derive session from conversation suffix if format is agent:session
-                parts = conversation_id.split(":")
-                session_uuid = parts[-1] if len(parts) > 1 and parts[-1] else str(uuid.uuid4())
+            try:
+                conversation_uuid = uuid.UUID(incoming_conv.strip())
+            except Exception:
+                conversation_uuid = uuid.uuid4()
+        else:
+            conversation_uuid = uuid.uuid4()
+        # Session can be client-provided; fallback to a new UUID
+        if isinstance(incoming_sess, str) and incoming_sess.strip():
+            session_uuid = incoming_sess.strip()
         else:
             session_uuid = str(uuid.uuid4())
-            conversation_id = f"{agent_name}:{session_uuid}"
+        conversation_id = conversation_uuid
         # Idempotency: optional request_id from client; cache simple last result per (conversation_id, request_id)
         request_id = str(payload.get("request_id") or "").strip()
         _idem_key = f"{conversation_id}:{request_id}" if request_id else None
@@ -137,15 +141,15 @@ def create_app() -> FastAPI:
         if _idem_key and _idem_key in idem_cache:
             return idem_cache[_idem_key]
 
-        ctx = AgentContext(conversation_id=conversation_id, session_id=session_uuid)
+        ctx = AgentContext(conversation_id=conversation_uuid, session_id=session_uuid)
         mon = get_monitoring()
-        mon.add_chat_log(conversation_id=conversation_id, role="user", content=text)
+        mon.add_chat_log(conversation_id=str(conversation_uuid), role="user", content=text)
         await mon.record_event("chat.message", {"direction": "in", "role": "user"})
-        resp = await runtime.route_message(Message(role="user", content=text), target=aid, conversation_id=conversation_id, session_id=session_uuid)
+        resp = await runtime.route_message(Message(role="user", content=text), target=aid, conversation_id=conversation_uuid, session_id=session_uuid)
         print(f"/api/chat end agent_id={aid} content={resp.content!r}")
-        mon.add_chat_log(conversation_id=conversation_id, role="assistant", content=resp.content, agent_id=str(aid))
+        mon.add_chat_log(conversation_id=str(conversation_uuid), role="assistant", content=resp.content, agent_id=str(aid))
         await mon.record_event("chat.message", {"direction": "out", "agent": str(aid)})
-        out = {"content": resp.content, "conversation_id": conversation_id, "session_id": session_uuid, "agent_id": str(aid)}
+        out = {"content": resp.content, "conversation_id": str(conversation_uuid), "session_id": session_uuid, "agent_id": str(aid)}
         if _idem_key:
             idem_cache[_idem_key] = out
         return out

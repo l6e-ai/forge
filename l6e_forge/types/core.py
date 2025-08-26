@@ -44,7 +44,7 @@ class Message:
     role: Literal["user", "assistant", "system", "tool"]
     timestamp: datetime = field(default_factory=datetime.now)
     message_id: uuid.UUID = field(default_factory=uuid.uuid4)
-    conversation_id: str = ""
+    conversation_id: ConversationID = field(default_factory=uuid.uuid4)
     metadata: dict[str, Any] = field(default_factory=dict)
     
     # Optional fields for rich messages
@@ -55,10 +55,10 @@ class Message:
 @dataclass
 class AgentContext:
     """Context information passed to agents"""
-    conversation_id: str
+    conversation_id: ConversationID
     session_id: str
     user_id: str | None = None
-    agent_id: str = ""
+    agent_id: AgentID | None = None
     workspace_path: Path = Path(".")
     runtime_config: dict[str, Any] = field(default_factory=dict)
     

@@ -6,6 +6,7 @@ from typing import Any, Literal
 from datetime import datetime
 from pathlib import Path
 import uuid
+from l6e_forge.types.core import AgentID
 
 # ============================================================================
 # Test Definition Types
@@ -107,7 +108,7 @@ class TestEnvironment:
     """Test environment for agents"""
     environment_id: str
     workspace_path: Path
-    agent_id: str
+    agent_id: AgentID
     
     # Environment configuration
     test_config: dict[str, Any] = field(default_factory=dict)

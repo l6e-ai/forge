@@ -102,7 +102,7 @@ class InMemoryMonitoringService(IMonitoringService):
 
     def add_chat_log(self, conversation_id: str, role: str, content: str, agent_id: str | None = None) -> None:
         entry = {
-            "conversation_id": conversation_id,
+            "conversation_id": str(conversation_id),
             "role": role,
             "content": content,
             "agent_id": agent_id,
