@@ -27,14 +27,14 @@ class Agent(IAgent):
     async def handle_message(self, message: Message, context: AgentContext) -> AgentResponse:
         # Recall top memories and include in reply (MVP)
         try:
-            mm = self.runtime.get_memory_manager()  # type: ignore[attr-defined]
+            mm = self.runtime.get_memory_manager()
             memories = await mm.search_vectors(namespace="{{ name }}", query=message.content, limit=3)
             recall = "\\n".join(f"- {m.content}" for m in memories)
         except Exception:
             recall = ""
         # Upsert the message into memory
         try:
-            mm = self.runtime.get_memory_manager()  # type: ignore[attr-defined]
+            mm = self.runtime.get_memory_manager()
             await mm.store_vector(namespace="{{ name }}", key=message.message_id, content=message.content, metadata={"role": message.role})
         except Exception:
             pass

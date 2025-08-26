@@ -284,7 +284,7 @@ def chat(
                 mon = get_monitoring()
                 d_agent_id, _ = _direct_identifiers()
                 # Best-effort removal
-                mon.remove_agent(d_agent_id)  # type: ignore[attr-defined]
+                mon.remove_agent(d_agent_id)
             else:
                 assert runtime is not None and agent_id is not None
                 try:

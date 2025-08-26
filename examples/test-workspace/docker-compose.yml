@@ -11,7 +11,7 @@ services:
       - ../../l6e_forge/monitor:/app/l6e_forge/monitor
     ports:
       - "8321:8321"
-            
+
   api:
     build:
       context: ../../

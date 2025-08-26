@@ -29,7 +29,7 @@ class Agent(IAgent):
     async def handle_message(self, message: Message, context: AgentContext) -> AgentResponse:
         # Recall and store memory (MVP)
         try:
-            mm = self.runtime.get_memory_manager()  # type: ignore[attr-defined]
+            mm = self.runtime.get_memory_manager()
             memories = await mm.search_vectors(namespace="my-ollama", query=message.content, limit=3)
             recall = "\n".join(f"- {m.content}" for m in memories)
             await mm.store_vector(namespace="my-ollama", key=message.message_id, content=message.content, metadata={"role": message.role})
@@ -37,7 +37,7 @@ class Agent(IAgent):
             recall = ""
 
         # Use runtime model manager with provider/model resolved by bootstrapper
-        manager = self.runtime.get_model_manager()  # type: ignore[attr-defined]
+        manager = self.runtime.get_model_manager()
         spec = ModelSpec(
             model_id=self._model or "auto",
             provider=self._provider or "ollama",

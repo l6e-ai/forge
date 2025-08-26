@@ -15,6 +15,11 @@ export default defineConfig({
         target: proxyTarget,
         changeOrigin: true,
       },
+      '/api/ws': {
+        target: proxyTarget,
+        changeOrigin: true,
+        ws: true,
+      },
       '/monitor': {
         target: proxyTarget,
         changeOrigin: true,
