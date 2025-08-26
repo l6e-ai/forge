@@ -115,6 +115,8 @@ class LocalRuntime:
         try:
             mon = get_monitoring()
             mon.set_agent_status(str(agent_id), agent_name, status="ready", config=config_data)
+            # Emit event so UIs refresh active agents
+            await mon.record_event("agent.registered", {"agent_id": str(agent_id), "name": agent_name})
         except Exception:
             pass
         return agent_id
@@ -127,6 +129,7 @@ class LocalRuntime:
         try:
             mon = get_monitoring()
             mon.remove_agent(str(agent_id))
+            await mon.record_event("agent.unregistered", {"agent_id": str(agent_id)})
         except Exception:
             pass
 

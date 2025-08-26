@@ -59,6 +59,10 @@ class IMonitoringService(Protocol):
         """Return a small performance summary (avg, p95, count)."""
         ...
 
+    def get_perf_by_agent(self) -> dict[str, dict[str, Any]]:
+        """Return performance summary grouped by agent id: {agent_id: {avg_ms,p95_ms,count}}"""
+        ...
+
     # --- Streaming/subscription API (optional) ---
     async def subscribe(self):  # -> asyncio.Queue
         """Subscribe to live updates. May not be supported by remote implementations."""

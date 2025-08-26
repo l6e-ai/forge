@@ -1,8 +1,10 @@
 import React from 'react'
 import { useAgents } from '../utils/useAgents'
+import { useMonitor } from '../utils/useMonitor'
 
 export const AgentsPanel: React.FC = () => {
   const { discovered, active, startAgent, stopAgent } = useAgents()
+  const { perfByAgent } = useMonitor()
 
   const onStart = async (name: string) => { await startAgent(name) }
   const onStop = async (agent_id: string) => { await stopAgent(agent_id) }
@@ -18,7 +20,13 @@ export const AgentsPanel: React.FC = () => {
             <span className="font-medium">{a.name}</span>
             <span className="text-xs text-slate-400">{a.agent_id.slice(0, 8)}</span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
+            {(() => {
+              const pa = perfByAgent && (perfByAgent[a.agent_id] || perfByAgent[a.name])
+              return pa ? (
+                <span className="text-[11px] text-slate-400">{`${pa.avg_ms.toFixed(0)}ms avg · ${pa.p95_ms.toFixed(0)}ms p95 · ${pa.count}`}</span>
+              ) : null
+            })()}
             <span className="text-xs rounded-full border border-emerald-600/50 bg-emerald-600/10 text-emerald-400 px-2 py-0.5">active</span>
             <button className="text-xs rounded-md border border-slate-700 bg-slate-800 hover:bg-slate-700 px-2 py-1" onClick={() => onStop(a.agent_id)}>Stop</button>
           </div>

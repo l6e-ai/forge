@@ -126,6 +126,30 @@ class InMemoryMonitoringService(IMonitoringService):
             "count": len(values),
         }
 
+    def get_perf_by_agent(self) -> dict[str, Any]:
+        # Group response_time_ms by agent tag
+        points = list(self._metric_name_to_points.get("response_time_ms", []))
+        buckets: dict[str, list[float]] = {}
+        for p in points:
+            try:
+                tags = p.get("tags") or {}
+                agent_id = str(tags.get("agent") or "unknown")
+                buckets.setdefault(agent_id, []).append(float(p.get("value", 0.0)))
+            except Exception:
+                continue
+        out: dict[str, dict[str, Any]] = {}
+        for agent_id, values in buckets.items():
+            if not values:
+                continue
+            sorted_vals = sorted(values)
+            p95_index = max(0, int(len(sorted_vals) * 0.95) - 1)
+            out[agent_id] = {
+                "avg_ms": sum(values) / len(values),
+                "p95_ms": sorted_vals[p95_index],
+                "count": len(values),
+            }
+        return out
+
     # ---- Subscription management ----
     async def subscribe(self) -> asyncio.Queue:
         q: asyncio.Queue = asyncio.Queue()

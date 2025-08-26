@@ -101,6 +101,18 @@ class RemoteMonitoringService(IMonitoringService):
             return {"avg_ms": 0.0, "p95_ms": 0.0, "count": 0}
         return {"avg_ms": 0.0, "p95_ms": 0.0, "count": 0}
 
+    def get_perf_by_agent(self) -> dict[str, Any]:
+        try:
+            with httpx.Client(timeout=self.timeout_seconds) as client:
+                r = client.get(f"{self.base_url}/api/perf/by-agent")
+                r.raise_for_status()
+                if r.headers.get("content-type", "").startswith("application/json"):
+                    data = r.json()
+                    return data if isinstance(data, dict) else {}
+        except Exception:
+            return {}
+        return {}
+
     async def subscribe(self):  # pragma: no cover - not supported for remote
         raise NotImplementedError("subscribe not supported for RemoteMonitoringService")
 
