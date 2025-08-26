@@ -3,6 +3,14 @@
 # Do not use this as an example of how to run forge in your environment (it differs from the template generated compose file)
 
 services:
+  qdrant:
+    image: qdrant/qdrant:latest
+    ports:
+      - "6333:6333"
+    volumes:
+      - ./data/qdrant:/qdrant/storage
+    restart: unless-stopped
+
   monitor:
     build:
       context: ../../
@@ -11,13 +19,19 @@ services:
       - ../../l6e_forge:/app/l6e_forge
     ports:
       - "8321:8321"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://0.0.0.0:8321/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   api:
     build:
       context: ../../
       dockerfile: infra/docker/Dockerfile.api
     environment:
-      # Do not set AF_MONITOR_URL so API serves monitor endpoints locally
       - AF_MONITOR_URL=http://monitor:8321
       - AF_WORKSPACE=/workspace
       - OLLAMA_HOST=http://host.docker.internal:11434
@@ -29,23 +43,28 @@ services:
       - ./:/workspace
     ports:
       - "8000:8000"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://0.0.0.0:8000/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    depends_on:
+      monitor:
+        condition: service_healthy
             
   ui:
     build:
       context: ../../
       dockerfile: infra/docker/Dockerfile.ui
+    restart: unless-stopped
     volumes:
       - ../../site/agent-ui:/app/static/ui
     environment:
-      - VITE_API_BASE=/api
-      - VITE_MONITOR_BASE=/monitor
-      - VITE_PROXY_API_TARGET=http://api:8000
+      - VITE_API_BASE=http://localhost:8000/api
     ports:
       - "5173:5173"
-            
-  qdrant:
-    image: qdrant/qdrant:latest
-    ports:
-      - "6333:6333"
-    volumes:
-      - ./data/qdrant:/qdrant/storage
+    depends_on:
+      api:
+        condition: service_healthy
