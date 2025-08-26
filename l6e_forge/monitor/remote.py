@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any, Optional, List
 
 import httpx
 
@@ -26,7 +26,7 @@ class RemoteMonitoringService(IMonitoringService):
         await self._post("/ingest/event", {"name": name, "data": data})
 
     def get_metrics(self, name: str, time_range: tuple[Any, Any] | None = None) -> list[dict[str, Any]]:  # type: ignore[override]
-        # Not retrieved from remote for now
+        # Remote read not implemented; return empty for now
         return []
 
     async def start_trace(self, trace_name: str) -> str:
@@ -49,6 +49,63 @@ class RemoteMonitoringService(IMonitoringService):
 
     def add_chat_log(self, conversation_id: str, role: str, content: str, agent_id: str | None = None) -> None:  # noqa: D401
         self._post_sync("/ingest/chat", {"conversation_id": conversation_id, "role": role, "content": content, "agent_id": agent_id})
+
+    # --- Read helpers ---
+    def get_recent_events(self, limit: int = 200) -> List[dict[str, Any]]:
+        try:
+            with httpx.Client(timeout=self.timeout_seconds) as client:
+                r = client.get(f"{self.base_url}/api/events?limit={limit}")
+                r.raise_for_status()
+                if r.headers.get("content-type", "").startswith("application/json"):
+                    data = r.json()
+                    # The monitor returns a JSON array; pass through
+                    return data if isinstance(data, list) else []
+        except Exception:
+            return []
+        return []
+
+    def get_agent_status(self) -> List[dict[str, Any]]:
+        try:
+            with httpx.Client(timeout=self.timeout_seconds) as client:
+                r = client.get(f"{self.base_url}/api/agents")
+                r.raise_for_status()
+                if r.headers.get("content-type", "").startswith("application/json"):
+                    data = r.json()
+                    # The monitor returns a JSON array for agents
+                    return data if isinstance(data, list) else data.get("agents", [])
+        except Exception:
+            return []
+        return []
+
+    def get_chat_logs(self, limit: int = 200) -> List[dict[str, Any]]:
+        try:
+            with httpx.Client(timeout=self.timeout_seconds) as client:
+                r = client.get(f"{self.base_url}/api/chats?limit={limit}")
+                r.raise_for_status()
+                if r.headers.get("content-type", "").startswith("application/json"):
+                    data = r.json()
+                    return data if isinstance(data, list) else []
+        except Exception:
+            return []
+        return []
+
+    def get_perf_summary(self) -> dict[str, Any]:
+        try:
+            with httpx.Client(timeout=self.timeout_seconds) as client:
+                r = client.get(f"{self.base_url}/api/perf")
+                r.raise_for_status()
+                if r.headers.get("content-type", "").startswith("application/json"):
+                    data = r.json()
+                    return data if isinstance(data, dict) else {}
+        except Exception:
+            return {"avg_ms": 0.0, "p95_ms": 0.0, "count": 0}
+        return {"avg_ms": 0.0, "p95_ms": 0.0, "count": 0}
+
+    async def subscribe(self):  # pragma: no cover - not supported for remote
+        raise NotImplementedError("subscribe not supported for RemoteMonitoringService")
+
+    async def unsubscribe(self, q) -> None:  # pragma: no cover - not supported for remote
+        return None
 
     # --- HTTP helper ---
     async def _post(self, path: str, json: dict[str, Any]) -> Optional[dict[str, Any]]:
