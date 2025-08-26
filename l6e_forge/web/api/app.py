@@ -40,8 +40,8 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
-    @app.get("/healthz")
-    async def healthz() -> dict[str, str]:
+    @app.get("/api/health")
+    async def health() -> dict[str, str]:
         return {"ok": "true"}
 
     @app.get("/agents")
@@ -190,6 +190,11 @@ def create_app() -> FastAPI:
     async def api_perf() -> dict[str, Any]:
         mon = get_monitoring()
         return mon.get_perf_summary()
+
+    @app.get("/api/perf/by-agent")
+    async def api_perf_by_agent() -> dict[str, Any]:
+        mon = get_monitoring()
+        return mon.get_perf_by_agent()
 
     @app.get("/api/chats")
     async def api_chats(limit: int = 200) -> list[dict[str, Any]]:

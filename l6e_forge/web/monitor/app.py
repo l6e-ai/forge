@@ -28,6 +28,10 @@ def create_app(monitor: IMonitoringService) -> FastAPI:
     async def index() -> HTMLResponse:
         return HTMLResponse(_INDEX_HTML)
 
+    @app.get("/api/health")
+    async def health() -> JSONResponse:
+        return JSONResponse({"ok": True})
+
     @app.get("/api/agents")
     async def agents() -> JSONResponse:
         return JSONResponse(monitor.get_agent_status())
@@ -43,6 +47,10 @@ def create_app(monitor: IMonitoringService) -> FastAPI:
     @app.get("/api/perf")
     async def perf() -> JSONResponse:
         return JSONResponse(monitor.get_perf_summary())
+
+    @app.get("/api/perf/by-agent")
+    async def perf_by_agent() -> JSONResponse:
+        return JSONResponse(monitor.get_perf_by_agent())
 
     # Ingestion endpoints to accept metrics/events/status from remote runtimes
     @app.post("/ingest/metric")
@@ -159,7 +167,8 @@ _INDEX_HTML = """
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>l6e forge Monitor</title>
+  <link rel="icon" href="https://l6e.ai/l6e-icon.svg">
+  <title>l6e forge: Monitor</title>
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; background: #0b0f14; color: #e6edf3; }
     header { position: sticky; top: 0; background: #0d1117; padding: 12px 16px; border-bottom: 1px solid #30363d; display: flex; align-items: center; justify-content: space-between; }
