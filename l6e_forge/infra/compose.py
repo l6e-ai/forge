@@ -1,9 +1,11 @@
-from __future__ import annotations
 
 from dataclasses import dataclass, field
 from typing import Dict, List
 
 from l6e_forge.workspace.template_engine.jinja import JinjaTemplateEngine
+
+
+# TODO update w/ depends on and health checks for services
 
 
 @dataclass
@@ -29,6 +31,14 @@ class ComposeTemplateService:
       - "{{ port | default('6333') }}:{{ port | default('6333') }}"
     volumes:
       - ./data/qdrant:/qdrant/storage
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    ports:
+      - "6333:6333"
+    volumes:
+      - ./data/qdrant:/qdrant/storage
+    restart: unless-stopped
             """
         ).strip("\n"),
         "redis": (
@@ -37,6 +47,7 @@ class ComposeTemplateService:
     image: redis:{{ tag | default('alpine') }}
     ports:
       - "{{ port | default('6379') }}:{{ port | default('6379') }}"
+    restart: unless-stopped
             """
         ).strip("\n"),
         "ollama": (
@@ -45,6 +56,7 @@ class ComposeTemplateService:
     image: ollama/ollama:{{ tag | default('latest') }}
     ports:
       - "{{ port | default('11434') }}:{{ port | default('11434') }}"
+    restart: unless-stopped
             """
         ).strip("\n"),
         "monitor": (
@@ -53,6 +65,7 @@ class ComposeTemplateService:
     image: l6eai/l6e-forge-monitor:{{ tag | default('latest') }}
     ports:
       - "{{ port | default('8321') }}:{{ port | default('8321') }}"
+    restart: unless-stopped
             """
         ).strip("\n"),
         "api": (
@@ -71,6 +84,7 @@ class ComposeTemplateService:
       - ./:/workspace
     ports:
       - "{{ port | default('8000') }}:{{ port | default('8000') }}"
+    restart: unless-stopped
             """
         ).strip("\n"),
         "ui": (
@@ -80,14 +94,14 @@ class ComposeTemplateService:
     # We must tunnel through localhost since we are running in our browser
     # (instead of using api/monitor service names in docker network)
     environment:
-      - VITE_API_BASE={{ api_base | default('http://localhost:8000') }}
-      - VITE_MONITOR_BASE={{ monitor_base | default('http://localhost:8321/monitor') }}
+      - VITE_API_BASE={{ api_base | default('http://localhost:8000/api') }}
     {% if ui_mount is defined and ui_mount %}
     volumes:
       - "{{ ui_mount }}:/app/static/ui:ro"
     {% endif %}
     ports:
       - "{{ port | default('5173') }}:{{ port | default('5173') }}"
+    restart: unless-stopped
             """
         ).strip("\n"),
     }

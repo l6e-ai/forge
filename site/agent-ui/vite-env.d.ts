@@ -9,7 +9,6 @@ interface ViteTypeOptions {
 
 interface ImportMetaEnv {
     readonly VITE_API_BASE: string
-    readonly VITE_MONITOR_BASE: string
 }
 
 interface ImportMeta {

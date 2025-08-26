@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { apiUrl } from './api'
+import { useMonitor } from './useMonitor'
 
 export type ActiveAgent = { agent_id: string; name: string }
 
@@ -31,6 +32,7 @@ export const AgentsProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const didInitialRef = useRef(false)
+  const { agents: monitorAgents } = useMonitor()
 
   const refresh = useCallback(async () => {
     try {
@@ -40,13 +42,16 @@ export const AgentsProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const data = await res.json()
       setDiscovered(data.discovered || [])
-      setActive(data.active || [])
+      // Prefer monitor-provided active agents; fall back to API response if not yet available
+      if (!monitorAgents || monitorAgents.length === 0) {
+        setActive(data.active || [])
+      }
     } catch (e: any) {
       setError(e?.message || 'Failed to load agents')
     } finally {
       setIsLoading(false)
     }
-  }, [])
+  }, [monitorAgents])
 
   const startAgent = useCallback(async (name: string) => {
     await fetch(apiUrl('/agents/start'), {
@@ -72,11 +77,24 @@ export const AgentsProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     refresh()
   }, [refresh])
 
+  // Keep active agents in sync with MonitorProvider websocket snapshot/events
+  useEffect(() => {
+    try {
+      const mapped = (monitorAgents || []).map(a => ({ agent_id: a.agent_id, name: a.name }))
+      // Only update if changed to avoid renders
+      const prev = JSON.stringify(active)
+      const next = JSON.stringify(mapped)
+      if (prev !== next) setActive(mapped)
+    } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [monitorAgents])
+
   const agentNames = useMemo(() => {
     const activeNames = new Set((active || []).map(a => a.name))
     const all = new Set<string>([...Array.from(activeNames), ...discovered])
     return Array.from(all)
   }, [active, discovered])
+
 
   const value = useMemo<AgentsState>(() => ({
     discovered,

@@ -20,7 +20,7 @@ Configure CLI behavior and endpoints using these environment variables:
 
 - `AF_COMPOSE_FILE`: Path to the compose file for `forge up/down`.
 - `AF_MONITOR_URL`: Base URL for the monitor service (default: `http://localhost:8321`).
-- `AF_API_URL`: Base URL for the API used by memory commands (default: `http://localhost:8000`).
+- `AF_API_URL`: Base URL for the API used by memory commands (default: `http://localhost:8000/api`).
 - `OLLAMA_HOST`: Provider endpoint for Ollama (default: `http://localhost:11434`).
 - `LMSTUDIO_HOST`: Provider endpoint for LM Studio (default: `http://localhost:1234/v1`).
 [Source](https://github.com/l6e-ai/forge/blob/a23d7609ed652edab7a9bd1d092d2effcb9f2d33/docs/cli.md)
@@ -213,7 +213,7 @@ forge pkg install <package.l6e> \
 
 ## Memory API Helpers
 
-These commands call the local API (`AF_API_URL`, default `http://localhost:8000`).
+These commands call the local API (`AF_API_URL`, default `http://localhost:8000/api`).
 
 ### `forge memory upsert`
 Upsert memory content.

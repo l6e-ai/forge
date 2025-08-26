@@ -95,7 +95,7 @@ Configure compose files, monitor/API URLs, and provider endpoints:
 
 * `AF_COMPOSE_FILE`: Path to compose file for `forge up/down`
 * `AF_MONITOR_URL`: Monitor base URL
-* `AF_API_URL`: API base URL (default `http://localhost:8000`)
+* `AF_API_URL`: API base URL (default `http://localhost:8000/api`)
 * `OLLAMA_HOST`: Ollama endpoint (default `http://localhost:11434`)
 * `LMSTUDIO_HOST`: LM Studio endpoint (default `http://localhost:1234/v1`)
 
