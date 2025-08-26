@@ -4,6 +4,7 @@ from pathlib import Path
 import sys
 import os
 import subprocess
+from typing import Literal
 
 import typer
 from rich import print as rprint
@@ -27,13 +28,16 @@ app.add_typer(template_cmd.app, name="template")
 app.add_typer(models_cmd.app, name="models")
 app.add_typer(package_cmd.app, name="pkg")
 app.add_typer(memory_cmd.app, name="memory")
-
-
 @app.command()
 def init(
     workspace: str = typer.Argument(..., help="Path to create the workspace in"),
     with_example: bool = typer.Option(False, "--with-example", help="Also scaffold a sample agent 'demo'"),
     with_compose: bool = typer.Option(True, "--with-compose/--no-with-compose", help="Include a production docker-compose.yml in the workspace"),
+    conversation_store: str = typer.Option(
+        "postgres",
+        "--conversation-store",
+        help="Conversation store to configure (postgres|none)",
+    ),
 ):
     """Create a new l6e-forge workspace at the given path."""
     manager = LocalWorkspaceManager()
@@ -42,7 +46,7 @@ def init(
         typer.echo(f"Creating workspace at: {path}")
         import asyncio
 
-        asyncio.run(manager.create_workspace(path, with_compose=with_compose))
+        asyncio.run(manager.create_workspace(path, with_compose=with_compose, conversation_store=conversation_store))
         # Optionally scaffold an example agent to get started quickly
         if with_example:
             try:

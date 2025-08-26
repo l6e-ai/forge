@@ -3,6 +3,18 @@
 # Do not use this as an example of how to run forge in your environment (it differs from the template generated compose file)
 
 services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_USER=forge
+      - POSTGRES_PASSWORD=forge
+      - POSTGRES_DB=forge
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./migrations:/docker-entrypoint-initdb.d:ro
+    restart: unless-stopped
+
   qdrant:
     image: qdrant/qdrant:latest
     ports:
@@ -39,6 +51,7 @@ services:
       - AF_MEMORY_PROVIDER=qdrant
       - QDRANT_URL=http://qdrant:6333
       - AF_MEMORY_COLLECTION=agent_memory
+      - AF_DB_URL=postgresql://forge:forge@postgres:5432/forge
     volumes:
       - ./:/workspace
     ports:
@@ -51,6 +64,10 @@ services:
       retries: 5
       start_period: 30s
     depends_on:
+      qdrant:
+        condition: service_started
+      postgres:
+        condition: service_started
       monitor:
         condition: service_healthy
             

@@ -80,6 +80,7 @@ class ComposeTemplateService:
       - AF_MEMORY_PROVIDER={{ memory_provider | default('memory') }}
       - QDRANT_URL=http://qdrant:6333
       - AF_MEMORY_COLLECTION=agent_memory
+      - AF_DB_URL={{ db_url | default('postgresql://forge:forge@postgres:5432/forge') }}
     volumes:
       - ./:/workspace
     ports:
@@ -101,6 +102,21 @@ class ComposeTemplateService:
     {% endif %}
     ports:
       - "{{ port | default('5173') }}:{{ port | default('5173') }}"
+    restart: unless-stopped
+            """
+        ).strip("\n"),
+        "postgres": (
+            """
+  postgres:
+    image: postgres:{{ tag | default('17-alpine') }}
+    environment:
+      - POSTGRES_USER={{ user | default('forge') }}
+      - POSTGRES_PASSWORD={{ password | default('forge') }}
+      - POSTGRES_DB={{ database | default('forge') }}
+    ports:
+      - "{{ port | default('5432') }}:5432"
+    volumes:
+      - ./migrations:/docker-entrypoint-initdb.d:ro
     restart: unless-stopped
             """
         ).strip("\n"),

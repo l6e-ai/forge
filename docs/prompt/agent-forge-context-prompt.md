@@ -11,15 +11,6 @@ Build the fastest, most developer-friendly way to create, run, and share local A
 - **Developer speed**: File save → hot reload → test change in seconds.
 - **Template-driven onboarding**: From install to working agent in under 5 minutes.
 
-### Current Status (Repo Snapshot)
-- Types and interfaces are in place: `l6e_forge/types/*`, `l6e_forge/core/agents/base.py`, `l6e_forge/runtime/base.py`.
-- CLI foundation implemented: `forge init`, `forge create`, `forge dev`, `forge chat`, `forge template list`, `forge models list`.
-- Minimal runtime working: `LocalRuntime` registers agents, passes runtime into agents, and dev hot‑reload re‑registers agents with debounce.
-- Templates: Jinja2 engine with provider‑pluggable assistant templates (Ollama, LM Studio) and basic echo.
-- Model managers: Ollama + LM Studio (OpenAI‑compatible) with basic health/list endpoints.
-- Config manager: loads TOML (`forge.toml`, per‑agent `config.toml`), with precedence (CLI > agent > workspace) used in chat/dev.
-- Minimal `pyproject.toml` (Python >= 3.13), docs skeleton under `docs/`.
-
 ### MVP Scope (Phase 1-2)
 - **CLI foundation**: `forge init`, `forge create`, `forge dev`, `forge chat`, `forge list`.
 - **Agent base class**: Simple `handle_message()` with tool access.
@@ -30,8 +21,7 @@ Build the fastest, most developer-friendly way to create, run, and share local A
 - **Templates**: `basic`, `assistant`, `coder` to accelerate onboarding.
 
 ### Post-MVP (Direction, not required now)
-- Packaging and distribution: `.forge` package format; install from local path or Git URL.
-- Monitoring UI: Local web dashboard (FastAPI + WebSocket) for conversations, errors, metrics.
+- Improve Monitoring UI: for conversations, errors, metrics.
 - Registry/marketplace: Agent discovery and sharing.
 - Advanced memory, multiple model providers, richer security sandboxing.
 
@@ -77,25 +67,6 @@ Build the fastest, most developer-friendly way to create, run, and share local A
 - Libraries: `typer`, `rich`, `watchdog`, `httpx`, `sqlite3`/`aiosqlite`, `tomllib`/`tomli`.
 - Keep dependencies minimal; defer complex features until post‑MVP.
 - Favor clear, verbose, well-typed code over cleverness.
-
-### Remaining MVP Work (Gaps to close)
-- **Runtime/config cohesion**:
-  - Honor `models.endpoints.*` in `LocalRuntime.get_model_manager()`; add a provider registry instead of hardcoding.
-  - Persist agent path → agent ID mapping for robust reloads.
-- **Config UX**:
-  - Add schema validation and helpful errors for `forge.toml` and per‑agent `config.toml`.
-  - Show provider/model and status in `forge list` by reading agent config.
-- **CLI polish**:
-  - `forge dev` expose `--debounce` and reflect effective config in startup banner.
-  - Improve error messages and troubleshooting hints (e.g., provider offline, model missing).
-- **Chat UX**:
-  - Optional streaming output; richer REPL controls (multiline send with Shift+Enter).
-- **Testing/CI**:
-  - Add provider‑mocked tests for `forge chat` provider path and `forge models list`.
-  - Set up CI to run `poetry run pytest` on PRs.
-- **Docs**:
-  - Quickstart from `forge init` → `forge create` (assistant with Ollama/LM Studio) → `forge dev` → `forge chat`.
-  - Troubleshooting for local providers/endpoints and model pulls.
 
 ### Assistant Working Agreement (when using this prompt)
 - Prioritize the MVP commands and hot reload path before extras.

@@ -59,3 +59,10 @@ class IAgent(Protocol):
     def get_metrics(self) -> dict[str, Any]:
         """Get current metrics for this agent"""
         ...
+
+    def get_result_processor(self):
+        """Return an instance implementing `process(response, context)` or None.
+
+        If provided, this takes precedence over `get_result_processor_name` and env defaults.
+        """
+        ...

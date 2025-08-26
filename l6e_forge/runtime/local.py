@@ -181,6 +181,20 @@ class LocalRuntime:
         import time as _time
         _start = _time.perf_counter()
         resp = await agent.handle_message(message, ctx)
+        # Process result with configurable processor (agent override or env default)
+        try:
+            # Agent-provided processor instance or default no-op
+            processor_inst = None
+            get_rp_inst = getattr(agent, "get_result_processor", None)
+            if callable(get_rp_inst):  # type: ignore[call-arg]
+                processor_inst = get_rp_inst()  # type: ignore[call-arg]
+            if processor_inst is None:
+                from l6e_forge.runtime.result_processing import get_default_processor
+
+                processor_inst = get_default_processor()
+            resp = await processor_inst.process(resp, context=ctx)  # type: ignore[arg-type]
+        except Exception:
+            pass
         # Ensure response object integrity for UI
         try:
             if not getattr(resp, "agent_id", None):
@@ -253,7 +267,16 @@ class LocalRuntime:
                     embedder = None
             if embedder is None:
                 embedder = MockEmbeddingProvider()
-            self._memory_manager = InMemoryMemoryManager(store, embedder)
+            # Optional conversation store (Postgres) if AF_DB_URL is set
+            conversation_store = None
+            try:
+                db_url = os.environ.get("AF_DB_URL", "").strip()
+                if db_url:
+                    from l6e_forge.memory.conversation.postgres import PostgresConversationStore
+                    conversation_store = PostgresConversationStore(db_url)
+            except Exception:
+                conversation_store = None
+            self._memory_manager = InMemoryMemoryManager(store, embedder, conversation_store)
         return self._memory_manager
 
     def get_model_manager(self):  # -> IModelManager

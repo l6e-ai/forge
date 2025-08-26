@@ -1,0 +1,50 @@
+services:
+  monitor:
+    image: l6eai/l6e-forge-monitor:latest
+    ports:
+      - "8321:8321"
+    restart: unless-stopped
+            
+  api:
+    image: l6eai/l6e-forge-api:latest
+    environment:
+      - AF_MONITOR_URL=http://monitor:8321
+      - AF_WORKSPACE=/workspace
+      - OLLAMA_HOST=http://host.docker.internal:11434
+      - LMSTUDIO_HOST=http://host.docker.internal:1234/v1
+      - AF_MEMORY_PROVIDER=qdrant
+      - QDRANT_URL=http://qdrant:6333
+      - AF_MEMORY_COLLECTION=agent_memory
+      - AF_DB_URL=postgresql://forge:forge@postgres:5432/forge
+    volumes:
+      - ./:/workspace
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+            
+  ui:
+    image: l6eai/l6e-forge-ui:latest
+    # We must tunnel through localhost since we are running in our browser
+    # (instead of using api/monitor service names in docker network)
+    environment:
+      - VITE_API_BASE=http://localhost:8000/api
+    
+    ports:
+      - "5173:5173"
+    restart: unless-stopped
+            
+  qdrant:
+    image: qdrant/qdrant:latest
+    ports:
+      - "6333:6333"
+    volumes:
+      - ./data/qdrant:/qdrant/storage
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    ports:
+      - "6333:6333"
+    volumes:
+      - ./data/qdrant:/qdrant/storage
+    restart: unless-stopped
+            

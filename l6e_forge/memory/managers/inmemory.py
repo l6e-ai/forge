@@ -1,21 +1,26 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from l6e_forge.memory.managers.base import IMemoryManager
 from l6e_forge.memory.embeddings.base import IEmbeddingProvider
 from l6e_forge.memory.embeddings.mock import MockEmbeddingProvider
 from l6e_forge.types.core import Message
+try:
+    from l6e_forge.memory.conversation.base import IConversationStore
+except Exception:
+    IConversationStore = None  # type: ignore
 from l6e_forge.types.memory import MemoryResult
 
 
 class InMemoryMemoryManager(IMemoryManager):
-    def __init__(self, vector_store, embedder: IEmbeddingProvider | None = None) -> None:
+    def __init__(self, vector_store, embedder: IEmbeddingProvider | None = None, conversation_store: Optional["IConversationStore"] = None) -> None:
         self._store = vector_store
         self._embedder = embedder or MockEmbeddingProvider()
         self._kv: Dict[str, Dict[str, Any]] = {}
         self._conversations: Dict[str, List[Message]] = {}
         self._sessions: Dict[str, Dict[str, Any]] = {}
+        self._conversation_store = conversation_store
 
     async def store_vector(self, namespace: str, key: str, content: str, metadata: dict[str, Any] | None = None) -> None:
         emb = self._embedder.embed(content)
@@ -50,9 +55,14 @@ class InMemoryMemoryManager(IMemoryManager):
         self._kv.get(namespace, {}).pop(key, None)
 
     async def store_conversation(self, conversation_id: str, message: Message) -> None:
+        if self._conversation_store is not None:
+            await self._conversation_store.store_message(conversation_id, message)
+            return
         self._conversations.setdefault(conversation_id, []).append(message)
 
     async def get_conversation(self, conversation_id: str, limit: int = 50) -> list[Message]:
+        if self._conversation_store is not None:
+            return await self._conversation_store.get_messages(conversation_id, limit)
         msgs = self._conversations.get(conversation_id, [])
         return msgs[-limit:]
 

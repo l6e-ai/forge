@@ -43,14 +43,14 @@ class Message:
     content: str
     role: Literal["user", "assistant", "system", "tool"]
     timestamp: datetime = field(default_factory=datetime.now)
-    message_id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    message_id: uuid.UUID = field(default_factory=uuid.uuid4)
     conversation_id: str = ""
     metadata: dict[str, Any] = field(default_factory=dict)
     
     # Optional fields for rich messages
     attachments: list[Attachment] = field(default_factory=list)
     tool_calls: list[ToolCall] = field(default_factory=list)  # Forward reference
-    parent_message_id: str | None = None
+    parent_message_id: uuid.UUID | None = None
 
 @dataclass
 class AgentContext:

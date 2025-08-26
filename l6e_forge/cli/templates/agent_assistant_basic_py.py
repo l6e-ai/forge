@@ -35,7 +35,7 @@ class Agent(IAgent):
         # Upsert the message into memory
         try:
             mm = self.runtime.get_memory_manager()
-            await mm.store_vector(namespace="{{ name }}", key=message.message_id, content=message.content, metadata={"role": message.role})
+            await mm.store_vector(namespace="{{ name }}", key=str(message.message_id), content=message.content, metadata={"role": message.role})
         except Exception:
             pass
         # Minimal assistant behavior: acknowledge and reflect with recalled context

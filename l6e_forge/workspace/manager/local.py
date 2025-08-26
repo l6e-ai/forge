@@ -17,7 +17,7 @@ class LocalWorkspaceManager(IWorkspaceManager):
     Keeps behavior minimal to support MVP commands: `forge init` and `forge list`.
     """
 
-    async def create_workspace(self, path: Path, template: str | None = None, with_compose: bool = True) -> None:
+    async def create_workspace(self, path: Path, template: str | None = None, with_compose: bool = True, conversation_store: str | None = None) -> None:
         root = Path(path).expanduser().resolve()
         root.mkdir(parents=True, exist_ok=True)
 
@@ -65,9 +65,48 @@ hot_reload = true
 
                     services = [
                         ComposeServiceSpec(name="monitor"),
-                        ComposeServiceSpec(name="api"),
+                        ComposeServiceSpec(name="api", context={}),
                         ComposeServiceSpec(name="ui", context=ui_context),
                     ]
+                    # Configure conversation store; default to postgres
+                    if (conversation_store or "postgres").lower() == "postgres":
+                        services.insert(0, ComposeServiceSpec(name="postgres"))
+                        # Ensure AF_DB_URL is templated via api context (defaults ok)
+                        services = [
+                            ComposeServiceSpec(name=s.name, context=(s.context | {"db_url": "postgresql://forge:forge@postgres:5432/forge"} if s.name == "api" else s.context))
+                            for s in services
+                        ]
+                        # Create migrations directory with initial file
+                        mig_dir = root / "migrations"
+                        mig_dir.mkdir(parents=True, exist_ok=True)
+                        (mig_dir / "0001_init.sql").write_text(
+                            (
+                                """
+-- Create schema and tables for conversation/message persistence
+create schema if not exists forge;
+
+create table if not exists forge.conversations (
+  conversation_id text primary key,
+  agent_id text,
+  user_id text,
+  started_at timestamptz default now(),
+  last_activity timestamptz default now(),
+  message_count integer default 0
+);
+
+create table if not exists forge.messages (
+  message_id uuid primary key,
+  conversation_id text not null references forge.conversations(conversation_id) on delete cascade,
+  role text not null,
+  content text not null,
+  timestamp timestamptz not null default now(),
+  metadata jsonb default '{}'::jsonb
+);
+
+create index if not exists idx_messages_conversation_ts on forge.messages (conversation_id, timestamp desc);
+"""
+                            ).strip()
+                        , encoding="utf-8")
                     compose_text = await svc.generate(services)
                     target_cp.write_text(compose_text, encoding="utf-8")
             except Exception:

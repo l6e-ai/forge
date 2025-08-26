@@ -32,7 +32,7 @@ class Agent(IAgent):
             mm = self.runtime.get_memory_manager()
             memories = await mm.search_vectors(namespace="my-ollama", query=message.content, limit=3)
             recall = "\n".join(f"- {m.content}" for m in memories)
-            await mm.store_vector(namespace="my-ollama", key=message.message_id, content=message.content, metadata={"role": message.role})
+            await mm.store_vector(namespace="my-ollama", key=str(message.message_id), content=message.content, metadata={"role": message.role})
         except Exception:
             recall = ""
 

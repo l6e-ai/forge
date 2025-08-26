@@ -1,24 +1,24 @@
 from __future__ import annotations
 
-AGENT_OLLAMA_PY = """
-from __future__ import annotations
-
 from l6e_forge.types.config import AgentConfig
 from l6e_forge.types.core import AgentContext, AgentResponse, Message
 from l6e_forge.types.error import HealthStatus
 from l6e_forge.runtime.base import IRuntime
-from l6e_forge.models.managers.ollama import IModelManager, OllamaModelManager
-from l6e_forge.types.model import ModelSpec
 from l6e_forge.core.agents.base import IAgent
+from l6e_forge.types.model import ModelSpec
 
 
 class Agent(IAgent):
-    name = "{{ name }}"
-    description = "Ollama-powered agent"
+    name = "my-ollama"
+    description = "Assistant agent using auto-bootstrap models"
     version = "0.1.0"
 
     async def configure(self, config: AgentConfig) -> None:
-        pass
+        self.config = config
+        # Bootstrapper populates these fields in config.toml
+        model_cfg = getattr(config, "model", {}) if hasattr(config, "model") else (config.get("model", {}) if isinstance(config, dict) else {})
+        self._provider = (getattr(model_cfg, "provider", None) if hasattr(model_cfg, "provider") else model_cfg.get("provider")) if model_cfg else None
+        self._model = (getattr(model_cfg, "model", None) if hasattr(model_cfg, "model") else model_cfg.get("model")) if model_cfg else None
 
     async def initialize(self, runtime: IRuntime) -> None:
         self.runtime = runtime
@@ -27,31 +27,26 @@ class Agent(IAgent):
         pass
 
     async def handle_message(self, message: Message, context: AgentContext) -> AgentResponse:
-        # Recall and store memory around the conversation
+        # Recall and store memory (MVP)
         try:
             mm = self.runtime.get_memory_manager()  # type: ignore[attr-defined]
-            memories = await mm.search_vectors(namespace="{{ name }}", query=message.content, limit=3)
-            recall = "\\n".join(f"- {m.content}" for m in memories)
-            await mm.store_vector(namespace="{{ name }}", key=str(message.message_id), content=message.content, metadata={"role": message.role})
+            memories = await mm.search_vectors(namespace="my-ollama", query=message.content, limit=3)
+            recall = "\n".join(f"- {m.content}" for m in memories)
+            await mm.store_vector(namespace="my-ollama", key=str(message.message_id), content=message.content, metadata={"role": message.role})
         except Exception:
             recall = ""
-        # Prefer runtime's model manager when available
-        runtime = self.runtime
-        manager: IModelManager
-        if runtime is not None:
-            manager = runtime.get_model_manager()  # type: ignore[attr-defined]
-        else:
-            endpoint = "{{ endpoint }}"
-            manager = OllamaModelManager(endpoint=endpoint) if endpoint else OllamaModelManager()
+
+        # Use runtime model manager with provider/model resolved by bootstrapper
+        manager = self.runtime.get_model_manager()  # type: ignore[attr-defined]
         spec = ModelSpec(
-            model_id="{{ model }}",
-            provider="ollama",
-            model_name="{{ model }}",
+            model_id=self._model or "auto",
+            provider=self._provider or "ollama",
+            model_name=self._model or "llama3.2:3b",
             memory_requirement_gb=0.0,
         )
         model_id = await manager.load_model(spec)
-        # Prepend recalled context in a system message
-        sys_preface = f"You may use this related memory to answer:\\n{recall}\\n\\n" if recall else ""
+        # Prepend recalled context as a system/user preface
+        sys_preface = f"You may use this related memory to answer:\n{recall}\n\n" if recall else ""
         prompt_msg = Message(role="user", content=sys_preface + message.content)
         chat = await manager.chat(model_id, [prompt_msg])
         return AgentResponse(content=chat.message.content, agent_id=self.name, response_time=0.0)
@@ -71,6 +66,3 @@ class Agent(IAgent):
 
     def get_metrics(self):
         return {}
-"""
-
-

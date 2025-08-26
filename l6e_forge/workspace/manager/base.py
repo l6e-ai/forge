@@ -8,7 +8,7 @@ from l6e_forge.types.workspace import WorkspaceState, WorkspaceValidation
 class IWorkspaceManager(Protocol):
     """Workspace manager interface"""
     
-    async def create_workspace(self, path: Path, template: str | None = None) -> None:
+    async def create_workspace(self, path: Path, template: str | None = None, with_compose: bool = True, conversation_store: str | None = None) -> None:
         """Create a new workspace"""
         ...
     
