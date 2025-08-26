@@ -1,3 +1,5 @@
+# Getting Started
+
 ## Prerequisites
 
 Forge CLI requires Python 3.13 (Poetry is recommended for dependency management). Node.js 18+ is only needed if you plan to build a UI. Optional dependencies include Docker (for running the stack) and Ollama or LM Studio (for local LLMs) \[[source](https://github.com/l6e-ai/forge/blob/9992fedf4d2bc696c97a5017490730e12843b0ff/README.md)\].

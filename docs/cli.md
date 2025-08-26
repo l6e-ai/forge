@@ -1,35 +1,49 @@
-## Forge CLI Guide
+> **Note:** This CLI is in alpha. Features, commands, options, and behaviors are subject to change. Expect instability and evolving APIs. Always consult the latest code and documentation for updates.
 
-This guide documents the `forge` CLI: commands, flags, environment variables, and examples.
+## Installation
 
-### Installation
+Install the CLI using Poetry:
+
 ```bash
 poetry install --only cli
 poetry run forge --help
 ```
+[Source](https://github.com/l6e-ai/forge/blob/a23d7609ed652edab7a9bd1d092d2effcb9f2d33/docs/cli.md)
 
-### Conventions
-- Replace `<workspace>` with your workspace path (contains `forge.toml` and `agents/`).
-- Replace `<agent>` with your agent name (directory under `agents/`).
+## Workspace Structure
 
----
+A workspace consists of a root directory containing `forge.toml` and an `agents/` directory. Most commands assume you are operating within a valid workspace.
 
-### Top-level commands
+## Environment Variables
 
-#### forge init
-Create a new workspace directory with optional compose.
+Configure CLI behavior and endpoints using these environment variables:
+
+- `AF_COMPOSE_FILE`: Path to the compose file for `forge up/down`.
+- `AF_MONITOR_URL`: Base URL for the monitor service (default: `http://localhost:8321`).
+- `AF_API_URL`: Base URL for the API used by memory commands (default: `http://localhost:8000`).
+- `OLLAMA_HOST`: Provider endpoint for Ollama (default: `http://localhost:11434`).
+- `LMSTUDIO_HOST`: Provider endpoint for LM Studio (default: `http://localhost:1234/v1`).
+[Source](https://github.com/l6e-ai/forge/blob/a23d7609ed652edab7a9bd1d092d2effcb9f2d33/docs/cli.md)
+
+## Top-Level Commands
+
+### `forge init`
+Create a new workspace directory. Optionally scaffold a sample agent and include a production compose file.
+
 ```bash
 forge init <workspace> [--with-example] [--with-compose/--no-with-compose]
 ```
 
-#### forge list
+### `forge list`
 List agents in the current workspace.
+
 ```bash
 forge list
 ```
 
-#### forge up
-Start local stack: containers (monitor, api) and dev runtime.
+### `forge up`
+Start the local stack: containers (monitor, api) and dev runtime.
+
 ```bash
 forge up \
   [--workspace|-w <workspace>] \
@@ -38,24 +52,24 @@ forge up \
   [--no-dev] [--dev-only] [--build] \
   [--open-ui/--no-open-ui]
 ```
-Notes:
-- If `--dev-only` is set, containers are skipped and only the dev runtime is started.
-- If `--no-dev` is set, only containers are started.
-- The API is served at `http://localhost:8000`, Monitor at `http://localhost:8321`.
-- UI assets, if present in `<workspace>/ui/<agent>`, are served under `http://localhost:8000/ui/`.
+- `--dev-only`: Only start dev runtime, skip containers.
+- `--no-dev`: Only start containers, skip dev runtime.
+- `--build`: Build images before starting containers.
+- `--open-ui`: Open the UI in your browser after start.
 
-#### forge down
+### `forge down`
 Stop the local container stack.
+
 ```bash
 forge down [--compose-file|-f <path>] [--volumes|-v]
 ```
+- `--volumes`: Remove named volumes.
 
----
+## Agent Scaffolding
 
-### Agent scaffolding
+### `forge create agent`
+Create a new agent from a template. Supports provider, model, template, memory provider, and compose file inclusion.
 
-#### forge create agent
-Create a new agent from a template and optionally generate a compose file.
 ```bash
 forge create agent <agent> \
   [--workspace <workspace>] \
@@ -66,30 +80,33 @@ forge create agent <agent> \
   [--include-compose/--no-include-compose] \
   [--memory-provider qdrant|memory]
 ```
-Examples:
+Example:
 ```bash
 forge create agent my-assistant --template assistant --provider ollama --model llama3.2:3b
 forge create agent my-echo --template basic --include-compose --memory-provider memory
 ```
+[Source](https://github.com/l6e-ai/forge/blob/a23d7609ed652edab7a9bd1d092d2effcb9f2d33/docs/cli.md)
 
-#### forge template list
+### `forge template list`
 List available templates and supported providers.
+
 ```bash
 forge template list
 ```
 
----
+## Development & Chat
 
-### Development & Chat
-
-#### forge dev
+### `forge dev`
 Start dev mode (hot reload) or validate the workspace.
+
 ```bash
 forge dev [--workspace|-w <workspace>] [--check]
 ```
+- `--check`: Validate workspace and exit.
 
-#### forge chat
-Chat with an agent. Supports direct-provider mode (Ollama/LM Studio) or routed runtime mode.
+### `forge chat`
+Chat with an agent. Supports interactive and single-message modes, direct-provider or routed runtime.
+
 ```bash
 forge chat <agent> \
   [--message|-m "hello"] \
@@ -105,28 +122,28 @@ Examples:
 forge chat my-assistant -w ./workspace
 forge chat my-assistant -w ./workspace -m "Summarize our plan"
 ```
+- Interactive mode uses prompt history and autosuggest.
+- Direct-provider mode supports streaming responses for Ollama/LM Studio.
 
-Direct provider mode is active when your agent config sets `agent.provider = "ollama"|"lmstudio"` and a `model`.
-Use `OLLAMA_HOST` or `LMSTUDIO_HOST` to point to providers.
+## Model Management
 
----
-
-### Models
-
-#### forge models list
+### `forge models list`
 List available models across providers.
+
 ```bash
 forge models list [--provider ollama|lmstudio|all] [--endpoint <url>]
 ```
 
-#### forge models doctor
+### `forge models doctor`
 Show system profile relevant to local model selection.
+
 ```bash
 forge models doctor
 ```
 
-#### forge models suggest
+### `forge models suggest`
 Show suggested chat models with estimated memory usage and fit.
+
 ```bash
 forge models suggest \
   [--provider "ollama,lmstudio"] \
@@ -135,8 +152,9 @@ forge models suggest \
   [--quant auto|q4|q5|q8|mxfp4|8bit]
 ```
 
-#### forge models bootstrap
+### `forge models bootstrap`
 Interactively select and configure a model for an agent; pulls models for Ollama if needed.
+
 ```bash
 forge models bootstrap <agent_dir> \
   [--provider-order "ollama,lmstudio"] \
@@ -147,13 +165,13 @@ forge models bootstrap <agent_dir> \
   [--accept-best] \
   [--dry-run]
 ```
+[Source](https://github.com/l6e-ai/forge/blob/a23d7609ed652edab7a9bd1d092d2effcb9f2d33/docs/cli.md)
 
----
+## Packaging
 
-### Packaging
-
-#### forge pkg build
+### `forge pkg build`
 Create a `.l6e` package from an agent directory. Supports bundling UI and wheels for offline installs.
+
 ```bash
 forge pkg build <agent_dir> \
   [--out|-o dist] [--name <name>] [--version|-v 0.1.0] [--description <text>] \
@@ -168,56 +186,63 @@ forge pkg build <agent_dir> \
   [--ui-git-username <name>] [--ui-git-password <pwd>] [--ui-git-token <token>]
 ```
 
-#### forge pkg inspect
-Display metadata and (optionally) embedded agent config.
+### `forge pkg inspect`
+Display metadata and optionally embedded agent config.
+
 ```bash
 forge pkg inspect <package.l6e> [--show-config] [--manifest-only]
 ```
 
-#### forge pkg contents
+### `forge pkg contents`
 List files inside a `.l6e` and summarize artifacts.
+
 ```bash
 forge pkg contents <package.l6e> [--tree/--no-tree] [--limit <n>] [--stats/--no-stats] [--artifacts/--no-artifacts]
 ```
 
-#### forge pkg install
+### `forge pkg install`
 Install a package into a workspace; optional wheel install into a venv.
+
 ```bash
 forge pkg install <package.l6e> \
   [--workspace|-w <workspace>] [--overwrite] \
   [--verify/--no-verify] [--verify-sig] [--public-key <path>] \
   [--install-wheels/--no-install-wheels] [--venv-path <path>]
 ```
+[Source](https://github.com/l6e-ai/forge/blob/a23d7609ed652edab7a9bd1d092d2effcb9f2d33/docs/cli.md)
 
----
-
-### Memory (API helper)
+## Memory API Helpers
 
 These commands call the local API (`AF_API_URL`, default `http://localhost:8000`).
 
-#### forge memory upsert
+### `forge memory upsert`
+Upsert memory content.
+
 ```bash
 forge memory upsert --ns <namespace> --key <key> --content "text"
 ```
 
-#### forge memory search
+### `forge memory search`
+Search memory content.
+
 ```bash
 forge memory search --ns <namespace> --query "question" [--limit 5]
 ```
+[Source](https://github.com/l6e-ai/forge/blob/a23d7609ed652edab7a9bd1d092d2effcb9f2d33/docs/cli.md)
 
----
+## Tips & Caveats
 
-### Environment variables
-- `AF_COMPOSE_FILE`: Path to the compose file used by `forge up/down`. If not set, the CLI searches upward for a compose file.
-- `AF_MONITOR_URL`: Base URL for the monitor service; used by dev runtime and chat.
-- `AF_API_URL`: Base URL for the API used by `forge memory` commands (default `http://localhost:8000`).
-- `OLLAMA_HOST`: Provider endpoint for Ollama (default `http://localhost:11434`).
-- `LMSTUDIO_HOST`: Provider endpoint for LM Studio (default `http://localhost:1234/v1`).
-
----
-
-### Tips
-- If `forge models suggest` shows no results, ensure providers are running and reachable via the env vars above.
+- If `forge models suggest` shows no results, ensure providers are running and reachable via the relevant environment variables.
 - When packaging a UI with `--ui-git` or `--ui-dir`, assets are embedded under `artifacts/ui/` and extracted to `<workspace>/ui/<agent>` on install.
+- Many commands rely on external services (Ollama, LM Studio, Qdrant, Docker, Poetry, etc.) being available and correctly configured.
+- Error handling uses colored output for clarity; use `--debug` for tracebacks.
+- Features, options, and behaviors may change rapidly during alpha. Consult the CLI help output and codebase for the latest details.
 
+## Best Practices
 
+- Always validate your workspace with `forge dev --check` before starting development.
+- Use environment variables to customize endpoints and compose file locations for local or containerized setups.
+- Prefer interactive model selection for best fit, but use `--accept-best` or `--dry-run` for automation.
+- When packaging agents, use signing and verification options for integrity, especially in collaborative or production environments.
+
+For further details, see the [CLI source code and documentation](https://github.com/l6e-ai/forge/blob/a23d7609ed652edab7a9bd1d092d2effcb9f2d33/docs/cli.md).
