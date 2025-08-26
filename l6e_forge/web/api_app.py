@@ -91,7 +91,7 @@ def create_app() -> FastAPI:
     async def chat(payload: dict[str, Any]) -> dict[str, Any]:
         agent_name = str(payload.get("agent", "default"))
         text = str(payload.get("message", "")).strip()
-        print(f"/api/chat start agent={agent_name} text={text!r}")
+        # Start log removed to reduce duplicate noise; we log only the end
         workspace = str(payload.get("workspace", os.environ.get("AF_WORKSPACE", "/workspace")))
         if not text:
             return {"error": "empty message"}
@@ -121,6 +121,17 @@ def create_app() -> FastAPI:
         else:
             session_uuid = str(uuid.uuid4())
             conversation_id = f"{agent_name}:{session_uuid}"
+        # Idempotency: optional request_id from client; cache simple last result per (conversation_id, request_id)
+        request_id = str(payload.get("request_id") or "").strip()
+        _idem_key = f"{conversation_id}:{request_id}" if request_id else None
+        # naive process-wide cache
+        if not hasattr(chat, "_idem_cache"):
+            setattr(chat, "_idem_cache", {})
+        idem_cache: dict[str, Any] = getattr(chat, "_idem_cache")
+
+        if _idem_key and _idem_key in idem_cache:
+            return idem_cache[_idem_key]
+
         ctx = AgentContext(conversation_id=conversation_id, session_id=session_uuid)
         mon = get_monitoring()
         mon.add_chat_log(conversation_id=conversation_id, role="user", content=text)
@@ -129,7 +140,10 @@ def create_app() -> FastAPI:
         print(f"/api/chat end agent_id={aid} content={resp.content!r}")
         mon.add_chat_log(conversation_id=conversation_id, role="assistant", content=resp.content, agent_id=str(aid))
         await mon.record_event("chat.message", {"direction": "out", "agent": str(aid)})
-        return {"content": resp.content, "conversation_id": conversation_id, "session_id": session_uuid, "agent_id": str(aid)}
+        out = {"content": resp.content, "conversation_id": conversation_id, "session_id": session_uuid, "agent_id": str(aid)}
+        if _idem_key:
+            idem_cache[_idem_key] = out
+        return out
 
     # Memory endpoints (MVP)
     @app.post("/api/memory/upsert")
@@ -166,75 +180,16 @@ def create_app() -> FastAPI:
         ]
         return {"results": out}
 
-    # Lightweight HTTP proxy to Monitor for production (mirrors dev Vite proxy)
-    try:
-        import httpx
+    # Serve monitor data directly under API namespace. Monitor service remains internal-only.
+    @app.get("/api/perf")
+    async def api_perf() -> dict[str, Any]:
+        mon = get_monitoring()
+        return mon.get_perf_summary()
 
-        async def _proxy_monitor(request: Request) -> Response:
-            monitor = os.environ.get("AF_MONITOR_URL", "http://localhost:8321").rstrip("/")
-            path = request.path_params.get("path", "")
-            target = f"{monitor}/api/{path}"
-            method = request.method.upper()
-            headers = dict(request.headers)
-            headers.pop("host", None)
-            body = await request.body()
-            async with httpx.AsyncClient(timeout=None) as client:
-                resp = await client.request(method, target, headers=headers, content=body)
-                return Response(content=resp.content, status_code=resp.status_code, headers={k: v for k, v in resp.headers.items() if k.lower() not in {"content-encoding", "transfer-encoding", "connection"}})
-
-        app.add_api_route("/monitor/api/{path:path}", _proxy_monitor, methods=["GET", "POST", "PUT", "PATCH", "DELETE"])  # type: ignore[arg-type]
-
-        async def _proxy_monitor_ingest(request: Request) -> Response:
-            monitor = os.environ.get("AF_MONITOR_URL", "http://localhost:8321").rstrip("/")
-            path = request.path_params.get("path", "")
-            target = f"{monitor}/ingest/{path}"
-            method = request.method.upper()
-            headers = dict(request.headers)
-            headers.pop("host", None)
-            body = await request.body()
-            async with httpx.AsyncClient(timeout=None) as client:
-                resp = await client.request(method, target, headers=headers, content=body)
-                return Response(content=resp.content, status_code=resp.status_code, headers={k: v for k, v in resp.headers.items() if k.lower() not in {"content-encoding", "transfer-encoding", "connection"}})
-
-        app.add_api_route("/monitor/ingest/{path:path}", _proxy_monitor_ingest, methods=["GET", "POST", "PUT", "PATCH", "DELETE"])  # type: ignore[arg-type]
-    except Exception:
-        pass
-
-    # WebSocket proxy to Monitor
-    try:
-        import asyncio
-        import websockets
-
-        @app.websocket("/monitor/ws")
-        async def monitor_ws_proxy(client_ws: WebSocket) -> None:
-            await client_ws.accept()
-            monitor = os.environ.get("AF_MONITOR_URL", "http://localhost:8321").rstrip("/")
-            monitor_ws = monitor.replace("http://", "ws://").replace("https://", "wss://") + "/ws"
-            async with websockets.connect(monitor_ws) as server_ws:
-                async def _c2s() -> None:
-                    try:
-                        while True:
-                            data = await client_ws.receive_text()
-                            await server_ws.send(data)
-                    except Exception:
-                        try:
-                            await server_ws.close()
-                        except Exception:
-                            pass
-
-                async def _s2c() -> None:
-                    try:
-                        async for msg in server_ws:
-                            await client_ws.send_text(msg)
-                    except Exception:
-                        try:
-                            await client_ws.close()
-                        except Exception:
-                            pass
-
-                await asyncio.gather(_c2s(), _s2c())
-    except Exception:
-        pass
+    @app.get("/api/chats")
+    async def api_chats(limit: int = 200) -> list[dict[str, Any]]:
+        mon = get_monitoring()
+        return mon.get_chat_logs(limit)
 
     # Mount optional static UI at /ui (not / to avoid WS conflicts). Place assets in AF_UI_DIR or /app/static/ui
     try:

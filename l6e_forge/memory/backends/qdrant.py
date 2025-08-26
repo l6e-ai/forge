@@ -7,6 +7,7 @@ import httpx
 
 from l6e_forge.types.error import HealthStatus
 
+# TODO support multiple collections
 
 class QdrantVectorStore:
     """Qdrant HTTP backend for vector upsert/search (MVP).

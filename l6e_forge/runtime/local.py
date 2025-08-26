@@ -111,11 +111,10 @@ class LocalRuntime:
         except Exception:
             # Best-effort only in MVP
             pass
-        # Update monitoring
+        # Update monitoring (status only). The monitor service emits agent.registered on ready.
         try:
             mon = get_monitoring()
             mon.set_agent_status(str(agent_id), agent_name, status="ready", config=config_data)
-            await mon.record_event("agent.registered", {"agent_id": str(agent_id), "name": agent_name})
         except Exception:
             pass
         return agent_id
@@ -128,7 +127,6 @@ class LocalRuntime:
         try:
             mon = get_monitoring()
             mon.remove_agent(str(agent_id))
-            await mon.record_event("agent.unregistered", {"agent_id": str(agent_id), "name": name})
         except Exception:
             pass
 
@@ -170,13 +168,7 @@ class LocalRuntime:
         from l6e_forge.types.core import AgentContext  # local import to avoid cycles
 
         ctx = AgentContext(conversation_id=conversation_id or "local", session_id=session_id or "local")
-        # Log request
-        try:
-            mon = get_monitoring()
-            mon.add_chat_log(conversation_id=ctx.conversation_id or "local", role=message.role, content=message.content)
-            await mon.record_event("chat.message", {"direction": "in", "role": message.role})
-        except Exception:
-            pass
+        # Request logging moved to API layer to avoid duplicates
         # Best-effort: store conversation message in memory
         try:
             mm = self.get_memory_manager()
@@ -195,12 +187,10 @@ class LocalRuntime:
         except Exception:
             pass
         _elapsed_ms = (_time.perf_counter() - _start) * 1000.0
-        # Log response
+        # Record performance metric only; chat/event logging handled at API layer
         try:
             mon = get_monitoring()
-            mon.add_chat_log(conversation_id=ctx.conversation_id or "local", role="assistant", content=resp.content, agent_id=resp.agent_id)
             await mon.record_metric("response_time_ms", _elapsed_ms, tags={"agent": resp.agent_id})
-            await mon.record_event("chat.message", {"direction": "out", "agent": resp.agent_id})
         except Exception:
             pass
         return resp

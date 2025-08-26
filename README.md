@@ -1,170 +1,136 @@
-# Forge Alpha (l6e-forge)
-
-Forge helps you build and ship local-first AI agents with an optional full stack: API, monitoring, chat UI, and pluggable memory. Ship MVPs fast on your laptop, then adapt to your stack as you scale.
+Forge (l6e-forge) is an open source toolkit for building and shipping local-first AI agents. It provides an optional full stack—including API, monitoring, chat UI, and pluggable memory—designed to help you rapidly prototype and deploy AI agent MVPs on your laptop, then adapt and scale as your needs grow. Forge emphasizes an adapters-first, extensible architecture, enabling you to swap out components like runners, memory, and databases without lock-in or rewrites. Learn more about Forge's features on our [site](https://l6e.ai).
 
 ## Highlights
-- Agents on Rails: opinionated defaults without lock‑in (adapters-first)
-- Optional Docker stack: API, monitor, chat UI; mount from your workspace
-- Local models: LM Studio and Ollama supported; Auto Models with memory estimates
-- Packaging: single `.l6e` bundle with UI and optional wheelhouse for offline installs
+
+* Agents on Rails: opinionated defaults, adapters-first, no lock-in
+* Optional Docker stack: API, monitor, chat UI
+* Local models: supports LM Studio and Ollama, with auto model selection
+* Packaging: ships as a single `.l6e` bundle, with optional UI and Python wheels for offline installs
 
 ## Prerequisites
-- Python 3.13 (Poetry recommended)
-- Node 18+ (only if you plan to build a UI)
-- Optional: Docker (to run the stack), Ollama/LM Studio (for local LLMs)
 
-## Install and Quickstart
-```bash
+* Python 3.13 (Poetry recommended)
+* Node 18+ (only if building a UI)
+* Optional: Docker (for running the stack), Ollama/LM Studio (for local LLMs)
+
+## Installation and Quickstart
+
+Install the CLI, initialize a workspace, create an agent, and chat locally:
+
+```
 # Install CLI (recommended: Poetry group cli)
 poetry install --only cli
 
 # Create a new workspace
 poetry run forge init ./my-workspace
 
-# Create an agent (then edit agents/my-agent/agent.py as needed)
+# Create an agent from a template
 poetry run forge create agent my-agent --template assistant
 
 # Chat locally (no stack needed)
 poetry run forge chat my-agent -w ./my-workspace
 ```
 
-See the full Getting Started guide: `docs/getting-started.md`.
+See the [Getting Started guide](https://github.com/l6e-ai/forge/blob/1aa28f9787f41928d96535fccf61609ac39826bc/docs/getting-started.md) for more details.
 
-## Models (Suggest and Bootstrap)
-```bash
-# Show suggested models (VRAM/RAM-aware, with memory % and installed status)
+## Usage Examples
+
+### Model Management
+
+Suggest models based on available VRAM/RAM and bootstrap models interactively:
+
+```
 poetry run forge models suggest --provider ollama,lmstudio --quant auto --top 5
-
-# Bootstrap interactively and update agent config
-poetry run forge models bootstrap agents/my-agent \
-  --provider-order ollama,lmstudio --interactive
+poetry run forge models bootstrap agents/my-agent --provider-order ollama,lmstudio --interactive
 ```
 
-Notes:
-- Quant options: `auto|q4|q5|q8|mxfp4|8bit`
-- GPT‑OSS 20B/120B supported (provider‑specific sizes used when available)
+### Memory API
 
-## Memory via API (MVP)
-The API exposes memory upsert and search.
+Store and search agent memory via HTTP:
 
-- Upsert
-```bash
+```
+# Upsert memory
 curl -X POST http://localhost:8000/api/memory/upsert \
   -H 'Content-Type: application/json' \
-  -d '{
-    "namespace": "my-agent",
-    "key": "note-1",
-    "content": "Daisy is allergic to peanuts",
-    "metadata": {"type": "note"}
-  }'
-```
+  -d '{"namespace": "my-agent", "key": "note-1", "content": "Daisy is allergic to peanuts", "metadata": {"type": "note"}}'
 
-- Search
-```bash
+# Search memory
 curl -X POST http://localhost:8000/api/memory/search \
   -H 'Content-Type: application/json' \
-  -d '{
-    "namespace": "my-agent",
-    "query": "What is Daisy allergic to?",
-    "limit": 5
-  }'
+  -d '{"namespace": "my-agent", "query": "What is Daisy allergic to?", "limit": 5}'
 ```
 
-## Packaging
-Build a portable `.l6e` bundle. You can include a web UI and Python wheels for offline install.
+### Packaging
 
-### UI Packaging
-- From Git
-```bash
+Build a portable `.l6e` bundle, optionally including a UI and Python wheels for offline installs:
+
+```
+# Build with UI from Git
 poetry run forge pkg build agents/my-agent -o dist \
-  --ui-git git@github.com:l6e-ai/forge.git \
-  --ui-ref main --ui-subdir site/agent-ui --ui-build --ui-dist dist \
-  --ui-git-ssh-key ~/.ssh/id_ed25519
-```
-- From Local Dir
-```bash
+  --ui-git git@github.com:l6e-ai/forge.git --ui-ref main --ui-subdir site/agent-ui --ui-build --ui-dist dist
+
+# Build with your own custom agent UI
 poetry run forge pkg build agents/my-agent -o dist \
-  --ui-dir /path/to/ui --ui-build --ui-dist dist
-```
-UI assets are embedded under `artifacts/ui/`.
+  --ui-build --ui-dir agents/my-agent/ui --ui-dist dist
 
-### Wheel Bundling (Offline Installs)
-You have two options:
-- With requirements file
-```bash
-echo "requests==2.32.3" > /tmp/req.txt
-poetry run forge pkg build agents/my-agent -o dist \
-  --bundle-wheels --requirements /tmp/req.txt
-```
-- With Poetry project (exported requirements)
-```bash
-# From repo root or set --poetry-root <dir>
-poetry run forge pkg build agents/my-agent -o dist \
-  --bundle-wheels --poetry-config --poetry-root .
-```
-Wheels are embedded under `artifacts/wheels/`. The exported requirements are embedded as `artifacts/requirements.txt`.
-
-### Inspect a Bundle
-```bash
-forge pkg contents dist/my-agent-0.1.0.l6e
+# Bundle wheels for offline install
+poetry run forge pkg build agents/my-agent -o dist --bundle-wheels --requirements /tmp/req.txt
 ```
 
-## Installing a Package
-```bash
-# Initialize or pick a workspace
-poetry run forge init ./workspace
+### Running the Local Stack
 
-# Install package (verifies checksums)
-poetry run forge pkg install dist/my-agent-0.1.0.l6e --workspace ./workspace --verify
+Run the full stack with Docker:
 
-# Optional: install the wheel bundle into a venv
-poetry run forge pkg install dist/my-agent-0.1.0.l6e --workspace ./workspace \
-  --install-wheels --venv-path ./workspace/.venv_agents/my-agent
 ```
-On install, if the package includes a UI, it’s extracted to `workspace/ui/<agent_name>`.
-
-## Run the Local Stack (Docker)
-The default compose template mounts `./ui` into the API at `/app/static/ui`.
-```bash
-# From the workspace
+# From the workspace directory
 poetry run forge up
-# API http://localhost:8000  Monitor http://localhost:8321  UI http://localhost:8000/ui/
+# API: http://localhost:8000
+# Monitor: http://localhost:8321
+# UI: http://localhost:8000/ui/
 ```
-
-## CLI Reference
-For detailed CLI commands and flags (init, dev, chat, models, pkg, memory, templates), see `docs/cli.md`.
 
 ## Environment Variables
-- `AF_COMPOSE_FILE`: Path to compose file for `forge up/down`.
-- `AF_MONITOR_URL`: Monitor base URL (used by dev runtime and chat).
-- `AF_API_URL`: API base URL for `forge memory` (default `http://localhost:8000`).
-- `OLLAMA_HOST`: Provider endpoint for Ollama (default `http://localhost:11434`).
-- `LMSTUDIO_HOST`: Provider endpoint for LM Studio (default `http://localhost:1234/v1`).
- - `VITE_API_BASE`: Agent UI API base URL (e.g., `http://localhost:8000`).
- - `VITE_MONITOR_BASE`: Agent UI Monitor base URL (e.g., `http://localhost:8321/monitor`).
 
-## Scaling and Adapters
-- Base Docker stack is single‑user and not horizontally scalable
-- To scale: deploy shared providers (Qdrant/Postgres/etc.) and switch adapters in the agent
-- Adapters-first design enables swapping runners/memory/DBs without rewrites
+Configure compose files, monitor/API URLs, and provider endpoints:
 
-## Troubleshooting
-- Wheels missing in bundle: ensure `--requirements` has entries or use `--poetry-config/--poetry-root`
-- Git UI build prompts for auth: use `--ui-git-ssh-key` or HTTPS with `--ui-git-token`
-- UI not visible: confirm files exist in `workspace/ui/<agent_name>`; `AF_UI_DIR` is `/app/static/ui` in compose
-- Models suggest empty: ensure providers are running (Ollama/LM Studio) and reachable
+* `AF_COMPOSE_FILE`: Path to compose file for `forge up/down`
+* `AF_MONITOR_URL`: Monitor base URL
+* `AF_API_URL`: API base URL (default `http://localhost:8000`)
+* `OLLAMA_HOST`: Ollama endpoint (default `http://localhost:11434`)
+* `LMSTUDIO_HOST`: LM Studio endpoint (default `http://localhost:1234/v1`)
 
-## Documentation Site (optional)
-If you prefer a full docs site, use MkDocs (Material theme) with the `docs/` folder:
-```bash
+## Scaling and Extensibility
+
+The default Docker stack is single-user and not horizontally scalable. To scale, deploy shared providers (e.g., Qdrant, Postgres) and switch adapters in your agent configuration. The adapters-first design lets you swap runners, memory, and databases without rewriting your agent logic.
+
+## Documentation
+
+For full documentation, see the [docs/](https://github.com/l6e-ai/forge/tree/1aa28f9787f41928d96535fccf61609ac39826bc/docs) folder. You can generate a documentation site using MkDocs:
+
+```
 pip install mkdocs mkdocs-material
-mkdocs new .  # or create docs/mkdocs.yml manually
 mkdocs serve -f docs/mkdocs.yml
 ```
-Publish via GitHub Pages or your preferred host. Keep this README concise and link to deeper pages in `docs/`.
 
 ## Contributing
-PRs welcome! See `CONTRIBUTING.md`. This is an alpha; APIs and CLIs may change.
+
+We welcome contributions! See the [CONTRIBUTING.md](https://github.com/l6e-ai/forge/blob/1aa28f9787f41928d96535fccf61609ac39826bc/CONTRIBUTING.md) guide for details. Note: The project is in alpha; APIs and CLIs may change.
+
+## Roadmap
+
+Forge is in active development. Our goals include:
+
+* Extensibility: adapters-first architecture for easy swapping of runners, memory, and databases
+* Packaging: robust, portable `.l6e` bundles with UI and offline install support
+* Scale-out: support for multi-user and distributed deployments
+* Memory and Model Providers: improved integrations and options
+* Developer Experience: streamlined CLI, better error handling, and improved documentation
+* Contributor Infrastructure: more comprehensive guides and automated tests
 
 ## License
+
 MIT
+
+---
+
+For more details, usage patterns, and advanced configuration, see the [Getting Started guide](https://github.com/l6e-ai/forge/blob/1aa28f9787f41928d96535fccf61609ac39826bc/docs/getting-started.md) and [CLI reference](https://github.com/l6e-ai/forge/blob/1aa28f9787f41928d96535fccf61609ac39826bc/docs/cli.md).

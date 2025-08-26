@@ -6,12 +6,22 @@ from typing import Any
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
 
 from l6e_forge.monitor.base import IMonitoringService
 
 
 def create_app(monitor: IMonitoringService) -> FastAPI:
     app = FastAPI(title="l6e forge Monitor", version="0.1")
+
+    # CORS for local dev and proxy usage
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
     # Static UI
     @app.get("/")

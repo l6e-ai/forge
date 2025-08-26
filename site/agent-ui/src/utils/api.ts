@@ -1,20 +1,13 @@
-export const getEnv = (key: string): string | undefined => {
-  const v = (import.meta as any)?.env?.[key]
-  if (typeof v === 'string' && v.length > 0) return v
-  return undefined
-}
+const API_BASE_ENV = import.meta.env.VITE_API_BASE || '/api'
+const MONITOR_BASE_ENV = import.meta.env.VITE_MONITOR_BASE || '/monitor'
 
 // API base (FastAPI) and Monitor base (monitor service)
 export const API_BASE: string = (() => {
-  const fromEnv = getEnv('VITE_API_BASE') || getEnv('VITE_APP_API_BASE')
-  if (fromEnv) return fromEnv.replace(/\/$/, '')
-  return ''
-})()
+  return API_BASE_ENV.replace(/\/$/, '')
+})()  
 
 export const MONITOR_BASE: string = (() => {
-  const fromEnv = getEnv('VITE_MONITOR_BASE') || getEnv('VITE_APP_MONITOR_BASE')
-  if (fromEnv) return fromEnv.replace(/\/$/, '')
-  return ''
+  return MONITOR_BASE_ENV.replace(/\/$/, '')
 })()
 
 export const apiUrl = (path: string) => `${API_BASE}${path.startsWith('/') ? path : '/' + path}`

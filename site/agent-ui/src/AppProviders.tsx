@@ -1,10 +1,13 @@
 import React from 'react'
 import { MonitorProvider } from './utils/useMonitor'
+import { AgentsProvider } from './utils/useAgents'
 
 export const AppProviders: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
     <MonitorProvider>
-      {children}
+      <AgentsProvider>
+        {children}
+      </AgentsProvider>
     </MonitorProvider>
   )
 }

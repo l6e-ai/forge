@@ -24,7 +24,6 @@ COPY l6e_forge/ /app/l6e_forge/
 COPY --from=ui-build /app/site/agent-ui/dist/ /app/static/ui/
 
 ENV PYTHONUNBUFFERED=1 \
-    AF_MONITOR_URL=http://monitor:8321 \
     AF_UI_DIR=/app/static/ui
 
 EXPOSE 8000

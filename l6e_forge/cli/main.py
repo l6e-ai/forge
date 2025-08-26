@@ -163,6 +163,8 @@ def up(
             raise typer.Exit(code=1)
         os.environ["AF_MONITOR_URL"] = monitor_url
         rprint(f"[cyan]AF_MONITOR_URL=[/cyan] {monitor_url}")
+        os.environ["AF_UI_URL"] = "http://localhost:5173"
+        rprint(f"[cyan]AF_UI_URL=[/cyan] {os.environ['AF_UI_URL']}")
         service = DevService(root)
         code = service.start()
         raise typer.Exit(code=code)

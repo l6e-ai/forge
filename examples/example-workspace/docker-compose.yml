@@ -5,21 +5,33 @@ services:
       - "8321:8321"
             
   api:
-    image: l6eai/l6e-forge-api:latest
+    build:
+      context: ../../
+      dockerfile: infra/docker/Dockerfile.api
     environment:
-      - AF_MONITOR_URL=http://monitor:8321
+      # Do not set AF_MONITOR_URL so API serves monitor endpoints locally
       - AF_WORKSPACE=/workspace
       - OLLAMA_HOST=http://host.docker.internal:11434
       - LMSTUDIO_HOST=http://host.docker.internal:1234/v1
       - AF_MEMORY_PROVIDER=qdrant
       - QDRANT_URL=http://qdrant:6333
       - AF_MEMORY_COLLECTION=agent_memory
+    volumes:
+      - ./:/workspace
     ports:
       - "8000:8000"
             
   ui:
-    image: l6eai/l6e-forge-ui:latest
-    
+    #image: l6eai/l6e-forge-ui:latest
+    build:
+      context: ../../
+      dockerfile: infra/docker/Dockerfile.ui
+    volumes:
+      - ../../site/agent-ui:/app/static/ui
+    environment:
+      - VITE_API_BASE=/api
+      - VITE_MONITOR_BASE=/monitor
+      - VITE_PROXY_API_TARGET=http://api:8000
     ports:
       - "5173:5173"
             
@@ -29,4 +41,3 @@ services:
       - "6333:6333"
     volumes:
       - ./data/qdrant:/qdrant/storage
-            

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { monitorUrl, MONITOR_BASE } from './api'
+import { apiUrl } from './api'
 
 type AgentStatus = { agent_id: string; name: string; status: string }
 type Perf = { avg_ms: number; p95_ms: number; count: number }
@@ -9,21 +9,18 @@ type MonitorState = {
   agents: AgentStatus[] | null
   perf: Perf | null
   chats: ChatLog[] | null
-  sendChat: (text: string) => Promise<void>
 }
 
 const MonitorContext = React.createContext<MonitorState>({
   agents: null,
   perf: null,
   chats: null,
-  sendChat: async () => {},
 })
 
 export const MonitorProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [agents, setAgents] = useState<AgentStatus[] | null>(null)
   const [perf, setPerf] = useState<Perf | null>(null)
   const [chats, setChats] = useState<ChatLog[] | null>(null)
-  const wsRef = useRef<WebSocket | null>(null)
   const didInitialRefreshRef = useRef(false)
 
   // Debounce/throttle helpers
@@ -46,128 +43,32 @@ export const MonitorProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   }
 
-  const refresh = useCallback(async () => {
-    const [a, p, c] = await Promise.all([
-      fetch(monitorUrl('/api/agents')).then(r => r.json()),
-      fetch(monitorUrl('/api/perf')).then(r => r.json()),
-      fetch(monitorUrl('/api/chats')).then(r => r.json()),
-    ])
-    setIfChanged(agents, a, setAgents)
-    setIfChanged(perf, p, setPerf)
-    setIfChanged(chats, c, setChats)
-  }, [agents, perf, chats])
-
   useEffect(() => {
-    // Guard against React.StrictMode double-invocation in dev
-    if (didInitialRefreshRef.current) return
-    didInitialRefreshRef.current = true
-    refresh()
-  }, [refresh])
-
-  useEffect(() => {
-    let shouldReconnect = true
-    let reconnectDelayMs = 500
-
-    const connect = () => {
-      if (!shouldReconnect) return
-      // Avoid opening a second connection
-      if (wsRef.current && wsRef.current.readyState < 2) return
-
-      const base = MONITOR_BASE || ''
-      let wsUrl: string
-      if (base) {
-        // If MONITOR_BASE is absolute (http/https), convert to ws/wss
-        try {
-          const u = new URL(base)
-          u.protocol = u.protocol === 'https:' ? 'wss:' : 'ws:'
-          u.pathname = (u.pathname.replace(/\/$/, '')) + '/ws'
-          wsUrl = u.toString()
-        } catch {
-          // Fallback to relative
-          wsUrl = '/monitor/ws'
+    // Replace WS with periodic polling from API proxy
+    let cancelled = false
+    const intervalMs = 2000
+    const tick = async () => {
+      if (cancelled) return
+      try {
+        const now = Date.now()
+        if (now - lastPerfFetchRef.current >= MIN_INTERVAL_MS) {
+          lastPerfFetchRef.current = now
+          const p = await fetch(apiUrl('/perf')).then(r => r.json())
+          setIfChanged(perf, p, setPerf)
         }
-      } else {
-        const proto = location.protocol === 'https:' ? 'wss' : 'ws'
-        wsUrl = `${proto}://${location.host}/monitor/ws`
-      }
-      const ws = new WebSocket(wsUrl)
-      wsRef.current = ws
-
-      ws.onopen = () => {
-        // reset backoff on successful connect
-        reconnectDelayMs = 500
-      }
-
-      ws.onmessage = (ev) => {
-        try {
-          const msg = JSON.parse(ev.data)
-          if (msg.type === 'snapshot') {
-            setIfChanged(agents, msg.agents, setAgents)
-            setIfChanged(perf, msg.perf, setPerf)
-            return
-          }
-          if (msg.type === 'metric' && msg.data?.name === 'response_time_ms') {
-            const now = Date.now()
-            if (now - lastPerfFetchRef.current < MIN_INTERVAL_MS) return
-            lastPerfFetchRef.current = now
-            if (perfTimerRef.current) window.clearTimeout(perfTimerRef.current)
-            perfTimerRef.current = window.setTimeout(() => {
-              fetch(monitorUrl('/api/perf')).then(r => r.json()).then((p) => setIfChanged(perf, p, setPerf))
-            }, 200)
-          }
-          if (msg.type === 'event') {
-            const et = msg.data?.event_type
-            if (et === 'chat.message') {
-              const now = Date.now()
-              if (now - lastChatsFetchRef.current < MIN_INTERVAL_MS) return
-              lastChatsFetchRef.current = now
-              if (chatsTimerRef.current) window.clearTimeout(chatsTimerRef.current)
-              chatsTimerRef.current = window.setTimeout(() => {
-                fetch('/monitor/api/chats').then(r => r.json()).then((c) => setIfChanged(chats, c, setChats))
-              }, 200)
-            }
-            if (et === 'agent.registered' || et === 'agent.unregistered') {
-              const now = Date.now()
-              if (now - lastAgentsFetchRef.current < MIN_INTERVAL_MS) return
-              lastAgentsFetchRef.current = now
-              if (agentsTimerRef.current) window.clearTimeout(agentsTimerRef.current)
-              agentsTimerRef.current = window.setTimeout(() => {
-                fetch(monitorUrl('/api/agents')).then(r => r.json()).then((a) => setIfChanged(agents, a, setAgents))
-              }, 200)
-            }
-          }
-        } catch {
-          // ignore
+        if (now - lastChatsFetchRef.current >= MIN_INTERVAL_MS) {
+          lastChatsFetchRef.current = now
+          const c = await fetch(apiUrl('/chats')).then(r => r.json())
+          setIfChanged(chats, c, setChats)
         }
-      }
-
-      ws.onclose = () => {
-        if (!shouldReconnect) return
-        setTimeout(() => {
-          // Exponential backoff up to 10s
-          reconnectDelayMs = Math.min(reconnectDelayMs * 2, 10_000)
-          connect()
-        }, reconnectDelayMs)
-      }
+      } catch {}
     }
-
-    connect()
-    return () => {
-      shouldReconnect = false
-      try { wsRef.current?.close() } catch {}
-      wsRef.current = null
-    }
+    const id = window.setInterval(tick, intervalMs)
+    tick()
+    return () => { cancelled = true; window.clearInterval(id) }
   }, [])
 
-  const sendChat = useCallback(async (text: string) => {
-    await fetch(monitorUrl('/ingest/chat'), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ role: 'user', content: text, conversation_id: 'local' })
-    })
-  }, [])
-
-  const value = useMemo(() => ({ agents, perf, chats, sendChat }), [agents, perf, chats, sendChat])
+  const value = useMemo(() => ({ agents, perf, chats }), [agents, perf, chats])
   return <MonitorContext.Provider value={value}>{children}</MonitorContext.Provider>
 }
 

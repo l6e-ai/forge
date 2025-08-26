@@ -1,29 +1,34 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useMonitor } from '../utils/useMonitor'
 import { apiUrl } from '../utils/api'
+import { useAgents } from '../utils/useAgents'
 
 export const ChatPanel: React.FC = () => {
-  const { chats, sendChat } = useMonitor()
+  const { chats } = useMonitor()
+  const { agentNames } = useAgents()
   const [input, setInput] = useState('')
   const [agentOptions, setAgentOptions] = useState<string[]>([])
   const [selectedAgent, setSelectedAgent] = useState<string>('')
   const [persistent, setPersistent] = useState<boolean>(true)
   const [conversationId, setConversationId] = useState<string>('')
   const endRef = useRef<HTMLDivElement | null>(null)
+  const [isSending, setIsSending] = useState(false)
+  const reqSeqRef = useRef(0)
+  const isSendingRef = useRef(false)
+
+  const stableHash = (s: string) => {
+    let h = 5381
+    for (let i = 0; i < s.length; i++) {
+      h = ((h << 5) + h) ^ s.charCodeAt(i)
+    }
+    return (h >>> 0).toString(36)
+  }
 
   useEffect(() => {
-    ;(async () => {
-      try {
-        const r = await fetch(apiUrl('/api/agents'))
-        const data = await r.json()
-        const discovered: string[] = data?.discovered || []
-        const active: string[] = (data?.active || []).map((a: any) => a.name)
-        const opts = Array.from(new Set([...(active || []), ...(discovered || [])]))
-        setAgentOptions(opts)
-        if (!selectedAgent && opts.length > 0) setSelectedAgent(opts[0])
-      } catch {}
-    })()
-  }, [selectedAgent])
+    const opts = agentNames
+    setAgentOptions(opts)
+    if (!selectedAgent && opts.length > 0) setSelectedAgent(opts[0])
+  }, [agentNames, selectedAgent])
 
   const grouped = useMemo(() => {
     const groups: Record<string, any[]> = {}
@@ -40,9 +45,13 @@ export const ChatPanel: React.FC = () => {
   }, [chats])
 
   const onSend = async () => {
+    console.log('onSend', isSendingRef.current)
+    if (isSendingRef.current) return
     const text = input.trim()
     if (!text) return
     try {
+      isSendingRef.current = true
+      setIsSending(true)
       const body: any = { agent: selectedAgent || 'demo', message: text }
       if (persistent) {
         if (!conversationId) {
@@ -54,7 +63,10 @@ export const ChatPanel: React.FC = () => {
           body.conversation_id = conversationId
         }
       }
-      const resp = await fetch(apiUrl('/api/chat'), {
+      const seq = ++reqSeqRef.current
+      const request_id = `${body.conversation_id || 'local'}:${stableHash(text)}:${seq}`
+      body.request_id = request_id
+      const resp = await fetch(apiUrl('/chat'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
@@ -66,7 +78,11 @@ export const ChatPanel: React.FC = () => {
     } catch {}
     setInput('')
     endRef.current?.scrollIntoView({ behavior: 'smooth' })
+    setIsSending(false)
+    isSendingRef.current = false
   }
+
+  // Monitor is read-only; all sends go through API
 
   return (
     <div>
@@ -98,9 +114,9 @@ export const ChatPanel: React.FC = () => {
         {persistent && conversationId && (
           <span className="text-slate-500 text-xs">conv: {conversationId}</span>
         )}
-        <input className="flex-1 rounded-md border border-slate-700 bg-slate-950 px-3 py-2" value={input} onChange={e => setInput(e.target.value)} placeholder="Say something…" onKeyDown={e => { if (e.key === 'Enter') onSend() }} />
-        <button className="rounded-md border border-slate-700 bg-slate-800 hover:bg-slate-700 px-3 py-2" onClick={async () => { const text = input.trim(); if (!text) return; await sendChat(text); setInput(''); }}>Log</button>
-        <button className="rounded-md border border-emerald-600 bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-2" onClick={onSend}>Send via API</button>
+        <input className="flex-1 rounded-md border border-slate-700 bg-slate-950 px-3 py-2" value={input} onChange={e => setInput(e.target.value)} placeholder="Say something…" onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey && !e.repeat) { e.preventDefault(); if (!isSendingRef.current) onSend() } }} />
+        {/* Removed monitor send to avoid duplicate pathways */}
+        <button className="rounded-md border border-emerald-600 bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-2 disabled:opacity-50" disabled={isSending} onClick={onSend}>Send via API</button>
       </div>
     </div>
   )

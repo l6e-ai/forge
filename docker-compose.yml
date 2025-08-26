@@ -34,8 +34,10 @@ services:
     ports:
       - "5173:5173"
     environment:
-      - VITE_MONITOR_URL=http://monitor:8321
-      - VITE_API_URL=http://api:8000
+      # We must tunnel through localhost since we are running in our browser
+      # (instead of using api/monitor service names in docker network)
+      - VITE_MONITOR_URL=http://localhost:8321
+      - VITE_API_URL=http://localhost:8000
     volumes:
       - .:/app
     depends_on:

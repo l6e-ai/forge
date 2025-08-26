@@ -67,6 +67,8 @@ class ComposeTemplateService:
       - AF_MEMORY_PROVIDER={{ memory_provider | default('memory') }}
       - QDRANT_URL=http://qdrant:6333
       - AF_MEMORY_COLLECTION=agent_memory
+    volumes:
+      - ./:/workspace
     ports:
       - "{{ port | default('8000') }}:{{ port | default('8000') }}"
             """
@@ -75,9 +77,11 @@ class ComposeTemplateService:
             """
   ui:
     image: l6eai/l6e-forge-ui:{{ tag | default('latest') }}
+    # We must tunnel through localhost since we are running in our browser
+    # (instead of using api/monitor service names in docker network)
     environment:
-      - VITE_API_BASE={{ api_base | default('http://api:8000') }}
-      - VITE_MONITOR_BASE={{ monitor_base | default('http://monitor:8321/monitor') }}
+      - VITE_API_BASE={{ api_base | default('http://localhost:8000') }}
+      - VITE_MONITOR_BASE={{ monitor_base | default('http://localhost:8321/monitor') }}
     {% if ui_mount is defined and ui_mount %}
     volumes:
       - "{{ ui_mount }}:/app/static/ui:ro"
