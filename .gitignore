@@ -35,3 +35,6 @@ notes/
 # Ignore personal docs
 
 docs/personal/
+
+# Data from example workspaces
+examples/**/data
