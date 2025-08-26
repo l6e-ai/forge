@@ -70,9 +70,20 @@ def agent(
                 ]
                 if memory_provider == "qdrant":
                     services.append(ComposeServiceSpec(name="qdrant"))
-                compose_text = _asyncio.run(svc.generate(services))
-                (root / "docker-compose.yml").write_text(compose_text, encoding="utf-8")
-                rprint("[green]Wrote docker-compose.yml with memory provider.[/green]")
+
+                compose_path = root / "docker-compose.yml"
+                if compose_path.exists():
+                    existing = compose_path.read_text(encoding="utf-8")
+                    merged = _asyncio.run(svc.merge(existing, services))
+                    if merged != existing:
+                        compose_path.write_text(merged, encoding="utf-8")
+                        rprint("[green]Updated docker-compose.yml with missing services.[/green]")
+                    else:
+                        rprint("[green]docker-compose.yml already includes required services.[/green]")
+                else:
+                    compose_text = _asyncio.run(svc.generate(services))
+                    compose_path.write_text(compose_text, encoding="utf-8")
+                    rprint("[green]Wrote docker-compose.yml with memory provider.[/green]")
             except Exception as exc:
                 rprint(f"[yellow]Compose generation skipped:[/yellow] {exc}")
     except FileExistsError:

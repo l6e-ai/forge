@@ -31,13 +31,6 @@ class ComposeTemplateService:
       - "{{ port | default('6333') }}:{{ port | default('6333') }}"
     volumes:
       - ./data/qdrant:/qdrant/storage
-
-  qdrant:
-    image: qdrant/qdrant:latest
-    ports:
-      - "6333:6333"
-    volumes:
-      - ./data/qdrant:/qdrant/storage
     restart: unless-stopped
             """
         ).strip("\n"),
@@ -137,6 +130,86 @@ class ComposeTemplateService:
             fragments.append(rendered.strip("\n"))
         body = "\n".join(fragments)
         return header + body + "\n"
+
+    def _parse_services_block_bounds(self, text: str) -> tuple[int | None, int]:
+        """Find the start and end line indexes (exclusive end) of the top-level services block.
+
+        Returns a tuple (start_index, end_index). If services is not found at the
+        top level, start_index will be None and end_index will be len(lines).
+        """
+        lines = text.splitlines()
+        services_start: int | None = None
+        for idx, line in enumerate(lines):
+            # Top-level 'services:' line has no leading indentation
+            if line.strip() == "services:" and (len(line) == len(line.lstrip())):
+                services_start = idx
+                break
+        if services_start is None:
+            return None, len(lines)
+        # Find next top-level key after services
+        for j in range(services_start + 1, len(lines)):
+            lj = lines[j]
+            if not lj.strip():
+                continue
+            if len(lj) == len(lj.lstrip()) and not lj.startswith("#"):
+                # Found next top-level key
+                return services_start, j
+        return services_start, len(lines)
+
+    def _existing_service_names(self, text: str) -> set[str]:
+        """Parse existing service names from a compose text without YAML deps.
+
+        Looks for lines with two-space indentation directly under the top-level
+        services block, shaped like '  name:'.
+        """
+        names: set[str] = set()
+        start, end = self._parse_services_block_bounds(text)
+        if start is None:
+            return names
+        lines = text.splitlines()
+        for k in range(start + 1, end):
+            line = lines[k]
+            if line.startswith("  ") and (not line.startswith("    ")):
+                stripped = line.strip()
+                if stripped.endswith(":") and " " not in stripped[:-1]:
+                    # Capture token before ':'
+                    names.add(stripped[:-1])
+        return names
+
+    async def merge(self, existing_text: str, services: List[ComposeServiceSpec]) -> str:
+        """Merge missing services into an existing docker-compose text.
+
+        - If a top-level services block exists, append only the missing services
+          into that block.
+        - If it does not, return the existing text unchanged.
+        """
+        existing_names = self._existing_service_names(existing_text)
+        # Determine which specs are missing
+        missing_specs: List[ComposeServiceSpec] = [s for s in services if s.name not in existing_names]
+        if not missing_specs:
+            return existing_text
+
+        # Render missing fragments
+        rendered_fragments: List[str] = []
+        for spec in missing_specs:
+            tmpl = self._templates.get(spec.name)
+            if not tmpl:
+                continue
+            rendered = await self._engine.render_template(tmpl, spec.context)
+            rendered_fragments.append(rendered.strip("\n"))
+        if not rendered_fragments:
+            return existing_text
+
+        start, end = self._parse_services_block_bounds(existing_text)
+        if start is None:
+            # Cannot safely merge without a services block; return existing as-is
+            return existing_text
+
+        insertion = ("\n" if not existing_text.endswith("\n") else "") + "\n".join(rendered_fragments) + "\n"
+        lines = existing_text.splitlines()
+        # Insert fragments right before end of services block (or EOF)
+        new_lines = lines[:end] + insertion.splitlines() + lines[end:]
+        return "\n".join(new_lines) + ("\n" if not existing_text.endswith("\n") else "")
 
 
 __all__ = ["ComposeTemplateService", "ComposeServiceSpec"]
