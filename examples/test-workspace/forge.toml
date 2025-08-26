@@ -1,0 +1,10 @@
+# l6e-forge Workspace Configuration
+
+# This compose file has been modified to allow testing the dev experience with hot-reloads in the main l6eai/l6e-forge repository
+
+[workspace]
+name = "test-workspace"
+version = "0.1.0"
+
+[runtime]
+hot_reload = true

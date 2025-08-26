@@ -1,6 +1,14 @@
+# This compose file has been modified to allow testing the dev experience with hot-reloads in the main l6eai/l6e-forge repository
+
+# Do not use this as an example of how to run forge in your environment (it differs from the template generated compose file)
+
 services:
   monitor:
-    image: l6eai/l6e-forge-monitor:latest
+    build:
+      context: ../../
+      dockerfile: infra/docker/Dockerfile.monitor
+    volumes:
+      - ../../l6e_forge/monitor:/app/l6e_forge/monitor
     ports:
       - "8321:8321"
             
@@ -10,6 +18,7 @@ services:
       dockerfile: infra/docker/Dockerfile.api
     environment:
       # Do not set AF_MONITOR_URL so API serves monitor endpoints locally
+      - AF_MONITOR_URL=http://monitor:8321
       - AF_WORKSPACE=/workspace
       - OLLAMA_HOST=http://host.docker.internal:11434
       - LMSTUDIO_HOST=http://host.docker.internal:1234/v1
@@ -22,7 +31,6 @@ services:
       - "8000:8000"
             
   ui:
-    #image: l6eai/l6e-forge-ui:latest
     build:
       context: ../../
       dockerfile: infra/docker/Dockerfile.ui
