@@ -2,13 +2,14 @@
 """Core data types for l6e-forge system"""
 
 from dataclasses import dataclass, field
-from typing import Any, Literal
+from typing import Any, Literal, TYPE_CHECKING
 from datetime import datetime
 from pathlib import Path
 import uuid
 
 from l6e_forge.types.error import AgentError
 from l6e_forge.types.tool import ToolCall
+
 
 # ============================================================================
 # ID Types
@@ -71,6 +72,11 @@ class AgentContext:
     
     # User preferences and settings
     user_preferences: dict[str, Any] = field(default_factory=dict)
+
+    # Conversation history and access provider
+    conversation_history: list["Message"] = field(default_factory=list)
+    # TODO fix typing here to use the ConversationHistoryProvider
+    history_provider: Any | None = None
 
 @dataclass
 class AgentResponse:

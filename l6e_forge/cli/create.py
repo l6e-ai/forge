@@ -52,6 +52,27 @@ def agent(
         for tf in spec.files:
             rendered = _asyncio.run(engine.render_template(tf.content.strip(), variables))
             (target / tf.path).write_text(rendered, encoding=tf.encoding)
+        # Create a default templates/ with chat.j2
+        try:
+            tdir = target / "templates"
+            tdir.mkdir(parents=True, exist_ok=True)
+            default_chat = (
+                "{%- set k = 6 -%}\n"
+                "You are an assistant.\n\n"
+                "Recent conversation (last {{ k }}):\n"
+                "{%- for m in history_k(k) %}\n"
+                "- [{{ m.role }}] {{ m.content }}\n"
+                "{%- endfor %}\n\n"
+                "{%- if recall %}\n"
+                "Related memory:\n"
+                "{{ recall }}\n\n"
+                "{%- endif %}\n"
+                "User says: {{ user_input }}\n"
+                "Provide a concise answer.\n"
+            )
+            (tdir / "chat.j2").write_text(default_chat, encoding="utf-8")
+        except Exception:
+            pass
         rprint(f"[green]Created agent at {target}[/green]")
         # Optionally write/append compose with memory provider
         if include_compose:

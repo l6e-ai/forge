@@ -29,8 +29,10 @@ class LocalWorkspaceManager(IWorkspaceManager):
         ui_dir = internal_dir / "ui"
         shared_dir = root / "shared"
         tools_dir = root / "tools"
+        templates_dir = root / "templates"
+        prompts_dir = root / "prompts"
 
-        for d in (agents_dir, logs_dir, data_dir, shared_dir, tools_dir, ui_dir):
+        for d in (agents_dir, logs_dir, data_dir, shared_dir, tools_dir, ui_dir, templates_dir, prompts_dir):
             d.mkdir(parents=True, exist_ok=True)
 
         # Create default forge.toml if it doesn't exist

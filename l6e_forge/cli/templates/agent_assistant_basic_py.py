@@ -8,6 +8,7 @@ from l6e_forge.types.core import AgentContext, AgentResponse, Message
 from l6e_forge.types.error import HealthStatus
 from l6e_forge.runtime.base import IRuntime
 from l6e_forge.core.agents.base import IAgent
+from l6e_forge.prompt import PromptBuilder
 
 
 class Agent(IAgent):
@@ -20,6 +21,7 @@ class Agent(IAgent):
 
     async def initialize(self, runtime: IRuntime) -> None:
         self.runtime = runtime
+        self._prompt_builder = PromptBuilder()
 
     async def shutdown(self) -> None:
         pass
@@ -38,9 +40,30 @@ class Agent(IAgent):
             await mm.store_vector(namespace="{{ name }}", key=str(message.message_id), content=message.content, metadata={"role": message.role})
         except Exception:
             pass
-        # Minimal assistant behavior: acknowledge and reflect with recalled context
-        ctx_text = f"\\n\\nRelated memory:\\n{recall}" if recall else ""
-        reply = f"I can help. You said: {message.content}{ctx_text}"
+        # Build a response using conversation history (last 6 messages) via Jinja2
+        template = (
+{% raw %}
+            "{%- set k = 6 -%}\\n"
+            "You are a helpful assistant.\\n\\n"
+            "Recent conversation (last {{ k }}):\\n"
+            "{%- for m in history_k(k) %}\\n"
+            "- [{{ m.role }}] {{ m.content }}\\n"
+            "{%- endfor %}\\n\\n"
+            "{%- if recall %}\\n"
+            "Related memory:\\n"
+            "{{ recall }}\\n\\n"
+            "{%- endif %}\\n"
+            "User says: {{ user_input }}\\n"
+            "Provide a concise answer.\\n"
+{% endraw %}
+        )
+        rendered = await self._prompt_builder.render(
+            template,
+            context,
+            extra_vars={"user_input": message.content, "recall": recall},
+            k_limit=6,
+        )
+        reply = rendered
         return AgentResponse(content=reply, agent_id=self.name, response_time=0.0)
 
     async def can_handle(self, message: Message, context: AgentContext) -> bool:

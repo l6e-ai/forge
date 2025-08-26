@@ -225,6 +225,7 @@ def build(
     ui_git_username: str | None = typer.Option(None, "--ui-git-username", help="Basic auth username for HTTPS git clone"),
     ui_git_password: str | None = typer.Option(None, "--ui-git-password", help="Basic auth password for HTTPS git clone (or pass token here)"),
     ui_git_token: str | None = typer.Option(None, "--ui-git-token", help="Personal access token for HTTPS git clone (used as password; username can be anything)"),
+    prompts_dir: str | None = typer.Option(None, "--prompts-dir", help="Path to a directory of prompt templates to include under artifacts/prompts"),
 ) -> None:
     """Create a minimal public .l6e from an agent directory."""
     agent_dir = Path(agent_path).expanduser().resolve()
@@ -402,6 +403,22 @@ def build(
                 shutil.rmtree(wheel_tmp, ignore_errors=True)
             except Exception:
                 pass
+
+    # Optional Prompt templates packaging
+    if prompts_dir:
+        pr_dir = Path(prompts_dir).expanduser().resolve()
+        if pr_dir.exists() and pr_dir.is_dir():
+            base_len_pr = len(str(pr_dir)) + 1
+            count_prompts = 0
+            for p in pr_dir.rglob("*"):
+                if p.is_file():
+                    arcname = os.path.join("artifacts", "prompts", str(p)[base_len_pr:])
+                    extras.append((arcname, p.read_bytes()))
+                    count_prompts += 1
+            if count_prompts:
+                artifacts_meta["prompts"] = "artifacts/prompts"
+        else:
+            rprint(f"[yellow]Prompts dir not found or not a directory:[/yellow] {pr_dir}")
 
     # Optional UI packaging from git (preferred) or local directory
     def _package_ui_from_path(root: Path) -> None:
@@ -626,11 +643,13 @@ def contents(
 
             if artifacts:
                 has_ui = any(n.startswith("artifacts/ui/") for n in names)
+                has_prompts = any(n.startswith("artifacts/prompts/") for n in names)
                 has_wheels = any(n.startswith("artifacts/wheels/") for n in names)
                 ui_count = sum(1 for n in names if n.startswith("artifacts/ui/") and not n.endswith("/"))
                 wheel_files = [n for n in names if n.startswith("artifacts/wheels/") and n.endswith(".whl")]
                 rprint("\n[cyan]Artifacts Summary[/cyan]")
                 rprint(f"  UI: {'present' if has_ui else 'absent'}  files={ui_count}")
+                rprint(f"  Prompts: {'present' if has_prompts else 'absent'}")
                 rprint(f"  Wheels: {'present' if has_wheels else 'absent'}  count={len(wheel_files)}")
                 if wheel_files and (not limit or limit > 0):
                     show = wheel_files[: min(10, len(wheel_files))]
@@ -761,6 +780,27 @@ def install(
                             dst.write(src.read())
                     rprint(f"[green]Extracted UI assets to:[/green] {ui_root}")
                     rprint("[cyan]To serve UI via API, set AF_UI_DIR to this path or mount it in compose (defaults to /app/static/ui in compose template).[/cyan]")
+            except Exception:
+                pass
+            # Optionally extract prompts to workspace-level directory
+            try:
+                has_prompts = any(n.startswith("artifacts/prompts/") for n in zf.namelist())
+                if has_prompts:
+                    prompts_root = root / "prompts" / str(agent_name)
+                    for info in zf.infolist():
+                        if not info.filename.startswith("artifacts/prompts/"):
+                            continue
+                        rel = info.filename[len("artifacts/prompts/") :]
+                        if not rel:
+                            continue
+                        dest = prompts_root / rel
+                        if info.is_dir() or info.filename.endswith("/"):
+                            dest.mkdir(parents=True, exist_ok=True)
+                            continue
+                        dest.parent.mkdir(parents=True, exist_ok=True)
+                        with zf.open(info.filename) as src, dest.open("wb") as dst:
+                            dst.write(src.read())
+                    rprint(f"[green]Extracted prompt templates to:[/green] {prompts_root}")
             except Exception:
                 pass
             # Optionally extract wheels to workspace and (optionally) install into a venv

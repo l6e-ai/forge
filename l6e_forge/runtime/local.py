@@ -172,10 +172,18 @@ class LocalRuntime:
 
         ctx = AgentContext(conversation_id=conversation_id or uuid.uuid4(), session_id=session_id or "local")
         # Request logging moved to API layer to avoid duplicates
-        # Best-effort: store conversation message in memory
+        # Best-effort: store conversation message in memory and attach history/provider to context
         try:
             mm = self.get_memory_manager()
             await mm.store_conversation(ctx.conversation_id, message)
+            # Attach conversation history and provider for agent use
+            from l6e_forge.memory.conversation.provider import ConversationHistoryProvider
+
+            try:
+                ctx.conversation_history = await mm.get_conversation(ctx.conversation_id, limit=50)
+            except Exception:
+                ctx.conversation_history = []
+            ctx.history_provider = ConversationHistoryProvider(mm)
         except Exception:
             pass
         import time as _time

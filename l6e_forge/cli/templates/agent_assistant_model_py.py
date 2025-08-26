@@ -9,6 +9,7 @@ from l6e_forge.types.error import HealthStatus
 from l6e_forge.runtime.base import IRuntime
 from l6e_forge.core.agents.base import IAgent
 from l6e_forge.types.model import ModelSpec
+from l6e_forge.prompt import PromptBuilder
 
 
 class Agent(IAgent):
@@ -25,6 +26,7 @@ class Agent(IAgent):
 
     async def initialize(self, runtime: IRuntime) -> None:
         self.runtime = runtime
+        self._prompt_builder = PromptBuilder()
 
     async def shutdown(self) -> None:
         pass
@@ -48,9 +50,30 @@ class Agent(IAgent):
             memory_requirement_gb=0.0,
         )
         model_id = await manager.load_model(spec)
-        # Prepend recalled context as a system/user preface
-        sys_preface = f"You may use this related memory to answer:\\n{recall}\\n\\n" if recall else ""
-        prompt_msg = Message(role="user", content=sys_preface + message.content)
+        # Build a prompt using conversation history (last 8 messages) via Jinja2
+        template = (
+{% raw %}
+            "{% set k = 8 %}\\n"
+            "You are an assistant.\\n\\n"
+            "Recent conversation (last {{ k }} messages):\\n"
+            "{% for m in history_k(k) %}\\n"
+            "- [{{ m.role }}] {{ m.content }}\\n"
+            "{% endfor %}\\n\\n"
+            "{% if recall %}\\n"
+            "Related memory:\\n"
+            "{{ recall }}\\n"
+            "{% endif %}\\n\\n"
+            "User says: {{ user_input }}\\n"
+            "Respond helpfully.\\n"
+{% endraw %}
+        )
+        rendered = await self._prompt_builder.render(
+            template,
+            context,
+            extra_vars={"user_input": message.content, "recall": recall},
+            k_limit=8,
+        )
+        prompt_msg = Message(role="user", content=rendered)
         chat = await manager.chat(model_id, [prompt_msg])
         return AgentResponse(content=chat.message.content, agent_id=self.name, response_time=0.0)
 

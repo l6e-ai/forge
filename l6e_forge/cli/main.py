@@ -47,6 +47,12 @@ def init(
         import asyncio
 
         asyncio.run(manager.create_workspace(path, with_compose=with_compose, conversation_store=conversation_store))
+        # Ensure new default directories exist (robustness if manager changes)
+        try:
+            (path / "templates").mkdir(parents=True, exist_ok=True)
+            (path / "prompts").mkdir(parents=True, exist_ok=True)
+        except Exception:
+            pass
         # Optionally scaffold an example agent to get started quickly
         if with_example:
             try:
