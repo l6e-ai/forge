@@ -2,36 +2,42 @@
 sidebar_position: 1
 ---
 
-# L6E Forge Quickstart
+# L6E Forge: Getting Started
 
-Kickstart building, packaging, and running AI agents locally.
+Build, package, and run AI agents locally with Forge.
 
 ## Prerequisites
 
-- Python 3.13 with Poetry
-- Optional: Docker (for running the full stack)
-- Optional: Ollama or LM Studio (for local LLMs)
+- Python 3.13 (Poetry recommended)
+- Optional: Docker (API/monitor/UI stack)
+- Optional: Ollama or LM Studio (local LLMs)
 
-## Install CLI
+## Install
 
 ```bash
 poetry install l6e-forge
 ```
 
-## Create a workspace
+## Create a Workspace
 
 ```bash
 poetry run forge init ./my-workspace
 cd my-workspace
 ```
 
-## Create an agent
+## Create an Agent
 
 ```bash
 poetry run forge create agent my-ollama --provider=ollama --model llama3.2:3b
 ```
 
-## Run the stack (optional)
+## Bootstrap Models (optional)
+
+```bash
+poetry run forge models bootstrap agents/my-ollama --provider-order ollama,lmstudio --interactive
+```
+
+## Run the Stack (optional)
 
 ```bash
 poetry run forge up
@@ -47,4 +53,4 @@ poetry run forge up
 poetry run forge chat my-ollama -w ./my-workspace
 ```
 
-For details, see the full Getting Started guide in the repository.
+See the full docs for CLI, packaging, installing, and prompt building.

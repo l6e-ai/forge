@@ -4,6 +4,8 @@ import type * as Preset from '@docusaurus/preset-classic';
 
 // This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
 
+const DISCORD_INVITE_URL = 'https://discord.gg/AX9t8jNR2J';
+
 const config: Config = {
   title: 'L6E Forge',
   tagline: 'Build, package, and run AI agents.',
@@ -47,21 +49,6 @@ const config: Config = {
           editUrl:
             'https://github.com/l6e-ai/forge/tree/main/site/docs/',
         },
-        blog: {
-          showReadingTime: true,
-          feedOptions: {
-            type: ['rss', 'atom'],
-            xslt: true,
-          },
-          // Please change this to your repo.
-          // Remove this to remove the "edit this page" links.
-          editUrl:
-            'https://github.com/l6e-ai/forge/tree/main/site/docs/',
-          // Useful options to enforce blogging best practices
-          onInlineTags: 'warn',
-          onInlineAuthors: 'warn',
-          onUntruncatedBlogPosts: 'warn',
-        },
         theme: {
           customCss: './src/css/custom.css',
         },
@@ -72,6 +59,11 @@ const config: Config = {
   themeConfig: {
     // Replace with your project's social card
     image: 'img/docusaurus-social-card.jpg',
+    colorMode: {
+      defaultMode: 'dark',
+      respectPrefersColorScheme: true,
+      disableSwitch: false,
+    },
     navbar: {
       title: 'L6E Forge',
       logo: {
@@ -85,7 +77,8 @@ const config: Config = {
           position: 'left',
           label: 'Docs',
         },
-        {to: '/blog', label: 'Blog', position: 'left'},
+        {href: 'https://pypi.org/project/l6e-forge/', label: 'PyPI', position: 'right'},
+        {href: DISCORD_INVITE_URL, label: 'Discord', position: 'right'},
         {
           href: 'https://github.com/l6e-ai/forge',
           label: 'GitHub',
@@ -103,23 +96,34 @@ const config: Config = {
               label: 'Getting Started',
               to: '/docs/intro',
             },
+            {
+              label: 'CLI Reference',
+              href: 'https://github.com/l6e-ai/forge/blob/main/docs/cli.md',
+            },
+          ],
+        },
+        {
+          title: 'Community',
+          items: [
+            {label: 'Discussions', href: 'https://github.com/l6e-ai/forge/discussions'},
+            {label: 'Issues', href: 'https://github.com/l6e-ai/forge/issues'},
           ],
         },
         {
           title: 'More',
           items: [
             {
-              label: 'Blog',
-              to: '/blog',
-            },
-            {
               label: 'GitHub',
               href: 'https://github.com/l6e-ai/forge',
+            },
+            {
+              label: 'Discord',
+              href: DISCORD_INVITE_URL,
             },
           ],
         },
       ],
-      copyright: `Copyright © ${new Date().getFullYear()} L6E Forge. Built with Docusaurus.`,
+      copyright: `Copyright © ${new Date().getFullYear()} L6E Forge. Apache 2.0 Licensed.`,
     },
     prism: {
       theme: prismThemes.github,

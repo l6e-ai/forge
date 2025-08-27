@@ -1,9 +1,0 @@
-hello:
-  label: Hello
-  permalink: /hello
-  description: Hello from L6E
-
-l6e:
-  label: L6E
-  permalink: /l6e
-  description: L6E related posts
