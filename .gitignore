@@ -38,3 +38,6 @@ docs/personal/
 
 # Data from example workspaces
 examples/**/data
+
+# Local env files
+**/.env.local
