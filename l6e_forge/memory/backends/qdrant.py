@@ -5,11 +5,12 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import httpx
 
+from l6e_forge.memory.backends.base import IMemoryBackend
 from l6e_forge.types.error import HealthStatus
 
 # TODO support multiple collections
 
-class QdrantVectorStore:
+class QdrantVectorStore(IMemoryBackend):
     """Qdrant HTTP backend for vector upsert/search (MVP).
 
     Creates the collection lazily on first upsert with the observed vector size.
@@ -65,6 +66,16 @@ class QdrantVectorStore:
             # Best-effort in MVP
             pass
 
+    def _split_collection_namespace(self, namespace: str) -> tuple[str, str]:
+        # Support override format: "collection::namespace"
+        try:
+            if "::" in namespace:
+                col, ns = namespace.split("::", 1)
+                return col or self.collection, ns
+        except Exception:
+            pass
+        return self.collection, namespace
+
     async def upsert(
         self,
         namespace: str,
@@ -74,33 +85,36 @@ class QdrantVectorStore:
         metadata: Dict[str, Any] | None = None,
         ttl_seconds: Optional[int] = None,
     ) -> None:
-        # Qdrant doesn't have namespaces; emulate by including namespace in payload
+        # Allow collection override via "collection::namespace"
+        collection, ns = self._split_collection_namespace(namespace)
+        # Qdrant doesn't have namespaces; emulate by including ns in payload
         self._ensure_collection(len(embedding))
         payload = {
             "points": [
                 {
                     "id": key,
                     "vector": embedding,
-                    "payload": {"content": content, "metadata": metadata or {}, "namespace": namespace},
+                    "payload": {"content": content, "metadata": metadata or {}, "namespace": ns},
                 }
             ]
         }
         try:
-            url = f"{self.endpoint}/collections/{self.collection}/points?wait=true"
+            url = f"{self.endpoint}/collections/{collection}/points?wait=true"
             httpx.put(url, json=payload, headers=self._headers(), timeout=self.timeout).raise_for_status()
         except Exception:
             pass
 
     async def query(self, namespace: str, query_embedding: List[float], limit: int = 10) -> List[Tuple[str, float, Any]]:
+        collection, ns = self._split_collection_namespace(namespace)
         self._ensure_collection(len(query_embedding))
         payload = {
             "vector": query_embedding,
             "limit": max(1, limit),
             "with_payload": True,
-            "filter": {"must": [{"key": "namespace", "match": {"value": namespace}}]},
+            "filter": {"must": [{"key": "namespace", "match": {"value": ns}}]},
         }
         try:
-            url = f"{self.endpoint}/collections/{self.collection}/points/search"
+            url = f"{self.endpoint}/collections/{collection}/points/search"
             r = httpx.post(url, json=payload, headers=self._headers(), timeout=self.timeout)
             r.raise_for_status()
             items = r.json().get("result") or []

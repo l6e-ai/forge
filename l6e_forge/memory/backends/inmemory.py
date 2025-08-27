@@ -5,6 +5,7 @@ import time
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
 
+from l6e_forge.memory.backends.base import IMemoryBackend
 from l6e_forge.types.error import HealthStatus
 
 
@@ -28,7 +29,7 @@ class _VecItem:
     ttl_s: Optional[int]
 
 
-class InMemoryVectorStore:
+class InMemoryVectorStore(IMemoryBackend):
     """Simple in-memory vector store with per-namespace collections.
 
     Not for production use. Provides basic upsert and similarity search.
@@ -47,12 +48,23 @@ class InMemoryVectorStore:
     async def health_check(self) -> HealthStatus:
         return HealthStatus(healthy=True, status="healthy")  # type: ignore[arg-type]
 
+    def _split_collection_namespace(self, namespace: str) -> Tuple[str, str]:
+        try:
+            if "::" in namespace:
+                col, ns = namespace.split("::", 1)
+                return (col or "default"), ns
+        except Exception:
+            pass
+        return ("default", namespace)
+
     async def upsert(self, namespace: str, key: str, embedding: List[float], content: str, metadata: Dict[str, Any] | None = None, ttl_seconds: Optional[int] = None) -> None:
-        ns = self._namespaces.setdefault(namespace, {})
+        _collection, ns_name = self._split_collection_namespace(namespace)
+        ns = self._namespaces.setdefault(ns_name, {})
         ns[key] = _VecItem(embedding=embedding, content=content, metadata=metadata or {}, created_at=time.time(), ttl_s=ttl_seconds if ttl_seconds is not None else self._default_ttl)
 
     async def query(self, namespace: str, query_embedding: List[float], limit: int = 10) -> List[Tuple[str, float, _VecItem]]:
-        ns = self._namespaces.get(namespace) or {}
+        _collection, ns_name = self._split_collection_namespace(namespace)
+        ns = self._namespaces.get(ns_name) or {}
         now = time.time()
         results: List[Tuple[str, float, _VecItem]] = []
         for key, item in list(ns.items()):
