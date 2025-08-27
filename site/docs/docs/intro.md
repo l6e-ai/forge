@@ -2,6 +2,7 @@
 sidebar_position: 0
 title: Introduction
 description: Overview of L6E Forge and quick links to setup, CLI, packaging, and prompting.
+slug: /
 ---
 
 ## L6E Forge at a Glance
