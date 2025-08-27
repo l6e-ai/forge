@@ -46,7 +46,7 @@ poetry run forge models bootstrap agents/my-agent --provider-order ollama,lmstud
 
 ### Memory API
 
-Store and search agent memory via HTTP:
+Store and search agent memory via HTTP (optionally target a specific collection with `collection`):
 
 ```
 # Upsert memory
@@ -54,10 +54,20 @@ curl -X POST http://localhost:8000/api/memory/upsert \
   -H 'Content-Type: application/json' \
   -d '{"namespace": "my-agent", "key": "note-1", "content": "Daisy is allergic to peanuts", "metadata": {"type": "note"}}'
 
+# Upsert into a specific collection
+curl -X POST http://localhost:8000/api/memory/upsert \
+  -H 'Content-Type: application/json' \
+  -d '{"collection": "my-collection", "namespace": "my-agent", "key": "note-1", "content": "Daisy is allergic to peanuts"}'
+
 # Search memory
 curl -X POST http://localhost:8000/api/memory/search \
   -H 'Content-Type: application/json' \
   -d '{"namespace": "my-agent", "query": "What is Daisy allergic to?", "limit": 5}'
+
+# Search within a specific collection
+curl -X POST http://localhost:8000/api/memory/search \
+  -H 'Content-Type: application/json' \
+  -d '{"collection": "my-collection", "namespace": "my-agent", "query": "What is Daisy allergic to?", "limit": 5}'
 ```
 
 ### Packaging

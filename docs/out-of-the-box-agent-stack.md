@@ -29,10 +29,20 @@ curl -X POST http://localhost:8000/api/memory/upsert \
   -H 'Content-Type: application/json' \
   -d '{"namespace": "my-agent", "key": "note-1", "content": "Daisy is allergic to peanuts", "metadata": {"type": "note"}}'
 
+# Upsert into a specific collection
+curl -X POST http://localhost:8000/api/memory/upsert \
+  -H 'Content-Type: application/json' \
+  -d '{"collection": "my-collection", "namespace": "my-agent", "key": "note-1", "content": "Daisy is allergic to peanuts"}'
+
 # Search memory
 curl -X POST http://localhost:8000/api/memory/search \
   -H 'Content-Type: application/json' \
   -d '{"namespace": "my-agent", "query": "What is Daisy allergic to?", "limit": 5}'
+
+# Search within a specific collection
+curl -X POST http://localhost:8000/api/memory/search \
+  -H 'Content-Type: application/json' \
+  -d '{"collection": "my-collection", "namespace": "my-agent", "query": "What is Daisy allergic to?", "limit": 5}'
 ```
 
 For more information on packaging agents and shipping with Compose files, see the [packaging guide](https://github.com/l6e-ai/forge/blob/main/site/l6e/README.md).

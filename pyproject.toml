@@ -47,7 +47,6 @@ fastapi = ">=0.115.0,<0.116.0"
 uvicorn = ">=0.30.0,<0.31.0"
 asyncpg = ">=0.30.0,<0.31.0"
 
-
 [tool.poetry.group.dev.dependencies]
 pytest = "8.4.1"
 mypy = "^1.17.1"

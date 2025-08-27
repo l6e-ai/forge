@@ -57,12 +57,17 @@ class InMemoryVectorStore(IMemoryBackend):
             pass
         return ("default", namespace)
 
-    async def upsert(self, namespace: str, key: str, embedding: List[float], content: str, metadata: Dict[str, Any] | None = None, ttl_seconds: Optional[int] = None) -> None:
+    async def upsert(self, namespace: str, key: str, embedding: List[float], content: str, metadata: Dict[str, Any] | None = None, ttl_seconds: Optional[int] = None, *, collection: Optional[str] = None) -> None:
+        # Prefer explicit collection if provided
+        if collection and "::" not in namespace:
+            namespace = f"{collection}::{namespace}"
         _collection, ns_name = self._split_collection_namespace(namespace)
         ns = self._namespaces.setdefault(ns_name, {})
         ns[key] = _VecItem(embedding=embedding, content=content, metadata=metadata or {}, created_at=time.time(), ttl_s=ttl_seconds if ttl_seconds is not None else self._default_ttl)
 
-    async def query(self, namespace: str, query_embedding: List[float], limit: int = 10) -> List[Tuple[str, float, _VecItem]]:
+    async def query(self, namespace: str, query_embedding: List[float], limit: int = 10, *, collection: Optional[str] = None) -> List[Tuple[str, float, _VecItem]]:
+        if collection and "::" not in namespace:
+            namespace = f"{collection}::{namespace}"
         _collection, ns_name = self._split_collection_namespace(namespace)
         ns = self._namespaces.get(ns_name) or {}
         now = time.time()

@@ -22,13 +22,13 @@ class InMemoryMemoryManager(IMemoryManager):
         self._sessions: Dict[str, Dict[str, Any]] = {}
         self._conversation_store = conversation_store
 
-    async def store_vector(self, namespace: str, key: str, content: str, metadata: dict[str, Any] | None = None) -> None:
+    async def store_vector(self, namespace: str, key: str, content: str, metadata: dict[str, Any] | None = None, *, collection: str | None = None) -> None:
         emb = self._embedder.embed(content)
-        await self._store.upsert(namespace, key, emb, content, metadata)
+        await self._store.upsert(namespace, key, emb, content, metadata, collection=collection)
 
-    async def search_vectors(self, namespace: str, query: str, limit: int = 10) -> list[MemoryResult]:
+    async def search_vectors(self, namespace: str, query: str, limit: int = 10, *, collection: str | None = None) -> list[MemoryResult]:
         q = self._embedder.embed(query)
-        rows = await self._store.query(namespace, q, limit=limit)
+        rows = await self._store.query(namespace, q, limit=limit, collection=collection)
         out: list[MemoryResult] = []
         for idx, (key, score, item) in enumerate(rows, start=1):
             out.append(MemoryResult(

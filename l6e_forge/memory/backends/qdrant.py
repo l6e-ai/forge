@@ -84,8 +84,12 @@ class QdrantVectorStore(IMemoryBackend):
         content: str,
         metadata: Dict[str, Any] | None = None,
         ttl_seconds: Optional[int] = None,
+        *,
+        collection: Optional[str] = None,
     ) -> None:
         # Allow collection override via "collection::namespace"
+        if collection and "::" not in namespace:
+            namespace = f"{collection}::{namespace}"
         collection, ns = self._split_collection_namespace(namespace)
         # Qdrant doesn't have namespaces; emulate by including ns in payload
         self._ensure_collection(len(embedding))
@@ -104,7 +108,9 @@ class QdrantVectorStore(IMemoryBackend):
         except Exception:
             pass
 
-    async def query(self, namespace: str, query_embedding: List[float], limit: int = 10) -> List[Tuple[str, float, Any]]:
+    async def query(self, namespace: str, query_embedding: List[float], limit: int = 10, *, collection: Optional[str] = None) -> List[Tuple[str, float, Any]]:
+        if collection and "::" not in namespace:
+            namespace = f"{collection}::{namespace}"
         collection, ns = self._split_collection_namespace(namespace)
         self._ensure_collection(len(query_embedding))
         payload = {

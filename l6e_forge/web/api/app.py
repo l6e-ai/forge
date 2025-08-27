@@ -158,24 +158,26 @@ def create_app() -> FastAPI:
     @app.post("/api/memory/upsert")
     async def memory_upsert(payload: dict[str, Any]) -> dict[str, Any]:
         ns = str(payload.get("namespace", "default"))
+        collection = str(payload.get("collection") or "").strip()
         key = str(payload.get("key"))
         content = str(payload.get("content", ""))
         metadata = payload.get("metadata") or {}
         if not key or not content:
             return {"error": "key and content are required"}
         mm = _runtime().get_memory_manager()
-        await mm.store_vector(ns, key, content, metadata)
+        await mm.store_vector(ns, key, content, metadata, collection=collection or None)
         return {"ok": True}
 
     @app.post("/api/memory/search")
     async def memory_search(payload: dict[str, Any]) -> dict[str, Any]:
         ns = str(payload.get("namespace", "default"))
+        collection = str(payload.get("collection") or "").strip()
         query = str(payload.get("query", ""))
         limit = int(payload.get("limit", 5))
         if not query:
             return {"error": "query is required"}
         mm = _runtime().get_memory_manager()
-        results = await mm.search_vectors(ns, query, limit=limit)
+        results = await mm.search_vectors(ns, query, limit=limit, collection=collection or None)
         out = [
             {
                 "namespace": r.namespace,

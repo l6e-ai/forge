@@ -150,9 +150,22 @@ forge pkg install <package.l6e> [--workspace|-w <workspace>] [--overwrite] \
 
 ## Memory Helpers
 
+Collections let you target different backing stores or logical buckets in addition to namespaces. Use `--collection` (or `-c`) to override the backend default collection.
+
+The API also accepts a `collection` field directly; the CLI passes it through as provided.
+
 ```bash
+# Upsert into a namespace under the default collection
 forge memory upsert --ns <namespace> --key <key> --content "text"
+
+# Upsert into a specific collection
+forge memory upsert --collection <collection> --ns <namespace> --key <key> --content "text"
+
+# Search within a namespace
 forge memory search --ns <namespace> --query "question" [--limit 5]
+
+# Search within a specific collection + namespace
+forge memory search --collection <collection> --ns <namespace> --query "question" [--limit 5]
 ```
 
 

@@ -9,11 +9,11 @@ class IMemoryManager(Protocol):
     """Memory manager interface protocol"""
     
     # Vector memory (for embeddings, semantic search)
-    async def store_vector(self, namespace: str, key: str, content: str, metadata: dict[str, Any] | None = None) -> None:
+    async def store_vector(self, namespace: str, key: str, content: str, metadata: dict[str, Any] | None = None, *, collection: str | None = None) -> None:
         """Store content with vector embedding"""
         ...
     
-    async def search_vectors(self, namespace: str, query: str, limit: int = 10) -> list[MemoryResult]:
+    async def search_vectors(self, namespace: str, query: str, limit: int = 10, *, collection: str | None = None) -> list[MemoryResult]:
         """Search for similar content using vector similarity"""
         ...
     

@@ -36,6 +36,8 @@ class IMemoryBackend(Protocol):
         content: str,
         metadata: Dict[str, Any] | None = None,
         ttl_seconds: Optional[int] = None,
+        *,
+        collection: Optional[str] = None,
     ) -> None:
         """Insert or update a vector with associated content and metadata.
 
@@ -48,6 +50,8 @@ class IMemoryBackend(Protocol):
         namespace: str,
         query_embedding: List[float],
         limit: int = 10,
+        *,
+        collection: Optional[str] = None,
     ) -> List[Tuple[str, float, Any]]:
         """Return list of (key, score, item) tuples sorted by score desc.
 
