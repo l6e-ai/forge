@@ -213,20 +213,28 @@ forge pkg install <package.l6e> \
 
 ## Memory API Helpers
 
-These commands call the local API (`AF_API_URL`, default `http://localhost:8000/api`).
+These commands call the local API (`AF_API_URL`, default `http://localhost:8000/api`). You can optionally specify a collection using `--collection` (or `-c`) in addition to the namespace. This targets a specific backing collection where supported (e.g., Qdrant) while keeping namespace semantics. The API also accepts a `collection` field directly; the CLI passes it through as provided.
 
 ### `forge memory upsert`
 Upsert memory content.
 
 ```bash
+# Default collection
 forge memory upsert --ns <namespace> --key <key> --content "text"
+
+# Specific collection
+forge memory upsert --collection <collection> --ns <namespace> --key <key> --content "text"
 ```
 
 ### `forge memory search`
 Search memory content.
 
 ```bash
+# Default collection
 forge memory search --ns <namespace> --query "question" [--limit 5]
+
+# Specific collection
+forge memory search --collection <collection> --ns <namespace> --query "question" [--limit 5]
 ```
 [Source](https://github.com/l6e-ai/forge/blob/a23d7609ed652edab7a9bd1d092d2effcb9f2d33/docs/cli.md)
 
