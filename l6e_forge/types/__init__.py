@@ -327,7 +327,7 @@ def is_error_type(type_name: str) -> bool:
 
 __version__ = "0.1.0"
 __author__ = "l6e-forge Team"
-__license__ = "MIT"
+__license__ = "Apache 2.0"
 
 # Type system metadata
 TYPE_SYSTEM_VERSION = "1.0.0"

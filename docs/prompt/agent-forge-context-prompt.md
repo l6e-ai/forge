@@ -46,7 +46,7 @@ Build the fastest, most developer-friendly way to create, run, and share local A
 - Helpful, actionable error messages and docs quickstart.
 
 ### Implementation Preferences
-- Python 3.13+, MIT license.
+- Python 3.13+, Apache 2.0.
 - Libraries: `typer`, `rich`, `watchdog`, `httpx`, `sqlite3`/`aiosqlite`, `tomllib`/`tomli`.
 - Keep dependencies minimal; defer complex features until post‑MVP.
 - Favor clear, verbose, well-typed code over cleverness.

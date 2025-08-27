@@ -180,7 +180,7 @@ class AgentInfo:
     description: str
     version: str = "1.0.0"
     author: str = ""
-    license: str = "MIT"
+    license: str = "Apache 2.0"
 
 @dataclass
 class AgentConfig:

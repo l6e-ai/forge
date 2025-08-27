@@ -18,7 +18,7 @@ class WorkspaceMetadata:
     version: str = "1.0.0"
     description: str = ""
     author: str = ""
-    license: str = "MIT"
+    license: str = "Apache 2.0"
     
     # Workspace info
     created_at: datetime = field(default_factory=datetime.now)
@@ -170,7 +170,7 @@ class TemplateSpec:
     
     # Template metadata
     author: str = ""
-    license: str = "MIT"
+    license: str = "Apache 2.0"
     tags: List[str] = field(default_factory=list)
     homepage: str = ""
     
@@ -234,7 +234,7 @@ class ProjectManifest:
     
     # Project metadata
     author: str = ""
-    license: str = "MIT"
+    license: str = "Apache 2.0"
     homepage: str = ""
     repository: str = ""
     

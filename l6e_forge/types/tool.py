@@ -40,7 +40,7 @@ class ToolSpec:
     
     # Metadata
     author: str = ""
-    license: str = "MIT"
+    license: str = "Apache 2.0"
     tags: list[str] = field(default_factory=list)
     homepage: str = ""
     
@@ -364,7 +364,7 @@ class ToolPlugin:
     # Plugin info
     version: str = "1.0.0"
     author: str = ""
-    license: str = "MIT"
+    license: str = "Apache 2.0"
     
     # Plugin capabilities
     extends_tools: list[str] = field(default_factory=list)
