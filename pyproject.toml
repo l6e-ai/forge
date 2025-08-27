@@ -3,11 +3,17 @@ name = "l6e-forge"
 version = "0.1.0"
 description = "Build & Deploy local agents with ease - alpha"
 authors = [
-    {name = "Bennett Dixon",email = "bennettdixon16@gmail.com"}
+    {name = "l6e AI",email = "hello@l6e.ai"}
 ]
 license = {text = "Apache 2.0"}
+license-files = ["LICEN[CS]E*"]
 readme = "README.md"
 requires-python = ">=3.13,<4.0"
+
+[project.urls]
+Homepage = "https://l6e.ai"
+Issues = "https://github.com/l6eai/forge/issues"
+Docs = "https://docs.l6e.ai"
 
 [tool.poetry]
 name = "l6e-forge"
