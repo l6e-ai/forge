@@ -1,6 +1,7 @@
 ---
 sidebar_position: 1
 title: Getting Started
+description: Create a workspace, scaffold an agent, bootstrap models, and run the stack.
 ---
 
 <!-- Adapted from repo docs/getting-started.md -->

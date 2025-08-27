@@ -1,6 +1,7 @@
 ---
 sidebar_position: 3
 title: Packaging Agents
+description: Build `.l6e` packages with optional compose overlays, UI assets, wheels, and signing.
 ---
 
 <!-- Adapted from repo docs/packaging-agents.md -->

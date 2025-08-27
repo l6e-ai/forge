@@ -1,5 +1,6 @@
 ---
 title: Using Memory Collections
+description: Namespaced vector and text storage for agents with upsert and search helpers.
 ---
 
 <!-- Imported from repo docs/memory/using-collections.md (condensed) -->

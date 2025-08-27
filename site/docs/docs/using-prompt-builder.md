@@ -1,6 +1,7 @@
 ---
 sidebar_position: 6
 title: Using Prompt Builder
+description: Render prompts via Jinja2 with AgentContext and recent conversation history helpers.
 ---
 
 <!-- Adapted from repo docs/using-prompt-builder.md -->

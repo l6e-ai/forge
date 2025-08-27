@@ -1,8 +1,10 @@
 ---
-sidebar_position: 1
+sidebar_position: 0
+title: Introduction
+description: Overview of L6E Forge and quick links to setup, CLI, packaging, and prompting.
 ---
 
-# L6E Forge: Getting Started
+## L6E Forge: Getting Started
 
 Build, package, and run AI agents locally with Forge.
 

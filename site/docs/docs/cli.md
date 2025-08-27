@@ -1,6 +1,7 @@
 ---
 sidebar_position: 2
 title: CLI Reference
+description: Commands for initializing workspaces, running dev stack, chatting, models, and packaging.
 ---
 
 <!-- Sourced from repo docs/cli.md; trimmed for site formatting -->

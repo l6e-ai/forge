@@ -1,6 +1,7 @@
 ---
 sidebar_position: 4
 title: Installing Agents
+description: Install `.l6e` packages with checksum and signature verification; optional venv wheels install.
 ---
 
 <!-- Adapted from repo docs/installing-agents.md -->
