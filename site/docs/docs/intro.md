@@ -2,46 +2,49 @@
 sidebar_position: 1
 ---
 
-# Tutorial Intro
+# L6E Forge Quickstart
 
-Let's discover **Docusaurus in less than 5 minutes**.
+Kickstart building, packaging, and running AI agents locally.
 
-## Getting Started
+## Prerequisites
 
-Get started by **creating a new site**.
+- Python 3.13 with Poetry
+- Optional: Docker (for running the full stack)
+- Optional: Ollama or LM Studio (for local LLMs)
 
-Or **try Docusaurus immediately** with **[docusaurus.new](https://docusaurus.new)**.
-
-### What you'll need
-
-- [Node.js](https://nodejs.org/en/download/) version 18.0 or above:
-  - When installing Node.js, you are recommended to check all checkboxes related to dependencies.
-
-## Generate a new site
-
-Generate a new Docusaurus site using the **classic template**.
-
-The classic template will automatically be added to your project after you run the command:
+## Install CLI
 
 ```bash
-npm init docusaurus@latest my-website classic
+poetry install l6e-forge
 ```
 
-You can type this command into Command Prompt, Powershell, Terminal, or any other integrated terminal of your code editor.
-
-The command also installs all necessary dependencies you need to run Docusaurus.
-
-## Start your site
-
-Run the development server:
+## Create a workspace
 
 ```bash
-cd my-website
-npm run start
+poetry run forge init ./my-workspace
+cd my-workspace
 ```
 
-The `cd` command changes the directory you're working with. In order to work with your newly created Docusaurus site, you'll need to navigate the terminal there.
+## Create an agent
 
-The `npm run start` command builds your website locally and serves it through a development server, ready for you to view at http://localhost:3000/.
+```bash
+poetry run forge create agent my-ollama --provider=ollama --model llama3.2:3b
+```
 
-Open `docs/intro.md` (this page) and edit some lines: the site **reloads automatically** and displays your changes.
+## Run the stack (optional)
+
+```bash
+poetry run forge up
+```
+
+- API: http://localhost:8000
+- Monitor: http://localhost:8321
+- UI: http://localhost:8000/ui/
+
+## Chat with your agent
+
+```bash
+poetry run forge chat my-ollama -w ./my-workspace
+```
+
+For details, see the full Getting Started guide in the repository.

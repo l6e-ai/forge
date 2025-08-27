@@ -21,7 +21,13 @@ function HomepageHeader() {
           <Link
             className="button button--secondary button--lg"
             to="/docs/intro">
-            Docusaurus Tutorial - 5min ⏱️
+            Get Started
+          </Link>
+          <Link
+            className="button button--link button--lg"
+            to="https://github.com/l6e-ai/forge"
+            style={{marginLeft: '0.5rem'}}>
+            GitHub
           </Link>
         </div>
       </div>
