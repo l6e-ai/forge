@@ -77,9 +77,7 @@ Use Forge if:
 - ✅ You want a modern, local‑first agent toolkit
 - ✅ You value portability and packaging (`.l6e` bundles)
 - ✅ You want to tinker with and swap providers via adapters
-
-Consider other tools if:
-- ❌ You require a hosted, cloud‑first orchestration platform out‑of‑the‑box
+- ✅ You are OK with the alpha API & SDK evolving - we will release a stable version soon, but right now we are iterating to make sure we get forge right.
 
 ### Learn More
 - **Getting Started**: end‑to‑end walkthrough
