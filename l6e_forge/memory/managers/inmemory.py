@@ -44,6 +44,32 @@ class InMemoryMemoryManager(IMemoryManager):
             ))
         return out
 
+    async def search_vectors_multi(self, namespaces: list[str], query: str, per_namespace_limit: int = 5, overall_limit: int | None = None) -> list[MemoryResult]:
+        q = self._embedder.embed(query)
+        merged: list[MemoryResult] = []
+        rank_counter = 1
+        for ns in namespaces:
+            rows = await self._store.query(ns, q, limit=per_namespace_limit)
+            for (_key, score, item) in rows:
+                merged.append(MemoryResult(
+                    content=item.content,
+                    score=score,
+                    metadata=item.metadata,
+                    namespace=ns,
+                    key=_key,
+                    timestamp=None,  # type: ignore[arg-type]
+                    embedding=None,
+                    distance=None,
+                    rank=0,
+                ))
+        # Sort by score desc and assign rank
+        merged.sort(key=lambda m: (m.score if m.score is not None else 0.0), reverse=True)
+        if overall_limit is not None:
+            merged = merged[: overall_limit]
+        for i, m in enumerate(merged, start=1):
+            m.rank = i
+        return merged
+
     async def store_kv(self, namespace: str, key: str, value: Any) -> None:
         ns = self._kv.setdefault(namespace, {})
         ns[key] = value

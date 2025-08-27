@@ -17,6 +17,14 @@ class IMemoryManager(Protocol):
         """Search for similar content using vector similarity"""
         ...
     
+    async def search_vectors_multi(self, namespaces: list[str], query: str, per_namespace_limit: int = 5, overall_limit: int | None = None) -> list[MemoryResult]:
+        """Search across multiple namespaces and return merged results sorted by score.
+
+        - per_namespace_limit controls how many results to fetch from each namespace.
+        - overall_limit (if provided) caps total results after merging/sorting.
+        """
+        ...
+    
     # Key-value memory (for structured data)
     async def store_kv(self, namespace: str, key: str, value: Any) -> None:
         """Store key-value data"""
