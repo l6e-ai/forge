@@ -52,8 +52,9 @@ jobs:
           TAG="${GITHUB_REF_NAME}"
           EXPECTED="v${{ steps.version.outputs.version }}"
           EXPECTED_TRIMMED=$(echo "$EXPECTED" | sed 's/-.*//')
-          echo "Tag: $TAG; Expected: $EXPECTED_TRIMMED"
-          if [ "$TAG" != "$EXPECTED_TRIMMED" ]; then
+          TAG_TRIMMED=$(echo "$TAG" | sed 's/-.*//')
+          echo "Tag: $TAG_TRIMMED; Expected: $EXPECTED_TRIMMED"
+          if [ "$TAG_TRIMMED" != "$EXPECTED_TRIMMED" ]; then
             echo 'Tag does not match version. Aborting.' >&2
             exit 1
           fi
