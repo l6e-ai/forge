@@ -15,53 +15,56 @@ import type {SidebarsConfig} from '@docusaurus/plugin-content-docs';
 const sidebars: SidebarsConfig = {
   tutorialSidebar: [
     'intro',
+    'getting-started',
+    'cli',
     {
       type: 'category',
-      label: 'Getting Started',
-      collapsible: false,
+      label: 'Models',
       items: [
-        'getting-started',
+        'models/local-llm-providers',
+        'models/auto-selection-and-bootstrap',
       ],
     },
     {
       type: 'category',
-      label: 'Guides',
+      label: 'Agents',
       items: [
-        'cli',
-        {
-          type: 'category',
-          label: 'Runtime',
-          items: [
-            'runtime/local-runtime',
-          ],
-        },
-        {
-          type: 'category',
-          label: 'Packaging',
-          items: [
-            'packaging-agents',
-            'installing-agents',
-            'inspecting-l6e-packages',
-          ],
-        },
-        {
-          type: 'category',
-          label: 'Prompting',
-          items: [
-            'using-prompt-builder',
-            'prompt/agent-forge-context-prompt',
-          ],
-        },
-        {
-          type: 'category',
-          label: 'Memory',
-          items: [
-            'memory/sdk-overview',
-            'memory/vector-search',
-            'memory/conversation-history',
-            'memory/using-collections',
-          ],
-        },
+        'agents/customize-agent',
+        'agents/logic-chain',
+      ],
+    },
+    {
+      type: 'category',
+      label: 'Runtime',
+      items: [
+        'runtime/local-runtime',
+      ],
+    },
+    {
+      type: 'category',
+      label: 'Packaging',
+      items: [
+        'packaging-agents',
+        'installing-agents',
+        'inspecting-l6e-packages',
+      ],
+    },
+    {
+      type: 'category',
+      label: 'Prompting',
+      items: [
+        'using-prompt-builder',
+        'prompt/agent-forge-context-prompt',
+      ],
+    },
+    {
+      type: 'category',
+      label: 'Memory',
+      items: [
+        'memory/sdk-overview',
+        'memory/vector-search',
+        'memory/conversation-history',
+        'memory/using-collections',
       ],
     },
   ],

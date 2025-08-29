@@ -11,6 +11,8 @@ description: Create a workspace, scaffold an agent, bootstrap models, and run th
 - Python 3.13 (Poetry recommended)
 - Optional: Docker, Ollama or LM Studio
 
+Set up a local LLM provider (recommended): [Local LLM providers](models/local-llm-providers)
+
 ## Install
 
 ```bash
@@ -54,6 +56,8 @@ poetry run forge create agent my-ollama --provider=ollama --model llama3.2:3b
 poetry run forge models bootstrap agents/my-ollama --provider-order ollama,lmstudio --interactive
 ```
 
+See more details on recommendations, flags, and how it updates your agent: [Auto model selection & bootstrapping](models/auto-selection-and-bootstrap)
+
 ## Run the Stack
 
 ```bash
@@ -82,5 +86,10 @@ my-workspace/
     ├── logs/
     └── data/
 ```
+
+
+## Next steps
+
+- Customize your agent and add few‑shot examples: [Customize your agent](agents/customize-agent)
 
 
