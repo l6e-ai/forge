@@ -80,7 +80,7 @@ services:
     environment:
       - VITE_API_BASE=http://localhost:8000/api
     ports:
-      - "5173:5173"
+      - "8173:8173"
     depends_on:
       api:
         condition: service_healthy

@@ -118,7 +118,7 @@ Run the full stack with Docker:
 poetry run forge up
 # API: http://localhost:8000
 # Monitor: http://localhost:8321
-# UI: http://localhost:8000/ui/
+# UI: http://localhost:8173
 ```
 
 ## Environment Variables
@@ -147,9 +147,8 @@ We welcome contributions! See the [CONTRIBUTING.md](https://github.com/l6e-ai/fo
 
 Forge is in active development. Our goals include:
 
-* Extensibility: adapters-first architecture for easy swapping of runners, memory, and databases
-* Packaging: robust, portable `.l6e` bundles with UI and offline install support
 * Scale-out: support for multi-user and distributed deployments
+* Multi-agents: support EventBus & handle multi-agent workspace inter-agent communication
 * Memory and Model Providers: improved integrations and options
 * Developer Experience: streamlined CLI, better error handling, and improved documentation
 * Contributor Infrastructure: more comprehensive guides and automated tests

@@ -92,7 +92,7 @@ class ComposeTemplateService:
       - "{{ ui_mount }}:/app/static/ui:ro"
     {% endif %}
     ports:
-      - "{{ port | default('5173') }}:{{ port | default('5173') }}"
+      - "{{ port | default('8173') }}:{{ port | default('8173') }}"
     restart: unless-stopped
             """
         ).strip("\n"),

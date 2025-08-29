@@ -32,7 +32,7 @@ services:
       context: .
       dockerfile: infra/docker/Dockerfile.ui
     ports:
-      - "5173:5173"
+      - "8173:8173"
     environment:
       # We must tunnel through localhost since we are running in our browser
       # (instead of using api/monitor service names in docker network)
