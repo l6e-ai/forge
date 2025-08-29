@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from .base import IProviderTemplate
-
 
 class OllamaProviderTemplate:
     name = "ollama"

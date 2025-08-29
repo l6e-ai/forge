@@ -2,7 +2,7 @@
 """Core data types for l6e-forge system"""
 
 from dataclasses import dataclass, field
-from typing import Any, Literal, TYPE_CHECKING
+from typing import Any, Literal
 from datetime import datetime
 from pathlib import Path
 import uuid

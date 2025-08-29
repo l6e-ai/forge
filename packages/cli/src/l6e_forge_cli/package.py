@@ -1094,9 +1094,6 @@ def install(
                             ["python", "-m", "venv", str(venv_dir)], check=False
                         )
                     bin_dir = "Scripts" if os.name == "nt" else "bin"
-                    pip_exe = (
-                        venv_dir / bin_dir / ("pip.exe" if os.name == "nt" else "pip")
-                    )
                     python_exe = (
                         venv_dir
                         / bin_dir

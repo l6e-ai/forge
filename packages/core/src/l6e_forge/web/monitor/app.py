@@ -3,9 +3,8 @@ from __future__ import annotations
 import asyncio
 from typing import Any
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse, JSONResponse
-from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 
 from l6e_forge.monitor.base import IMonitoringService

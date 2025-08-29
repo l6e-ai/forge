@@ -5,7 +5,6 @@ import typer
 from rich import print as rprint
 from pathlib import Path
 from rich.table import Table
-from typing import cast, Literal
 
 try:
     from questionary import select as qselect  # type: ignore
@@ -18,10 +17,8 @@ from l6e_forge.models.managers.lmstudio import LMStudioModelManager
 from l6e_forge.models.auto import (
     get_system_profile,
     AutoHints,
-    AutoHintTask,
     AutoHintQuality,
     AutoHintQuantization,
-    recommend_models,
     ensure_ollama_models,
     apply_recommendations_to_agent_config,
     suggest_models,

@@ -1,5 +1,3 @@
-import asyncio
-
 import pytest
 
 from l6e_forge.memory.backends.inmemory import InMemoryVectorStore

@@ -4,7 +4,7 @@ import os
 import uuid
 from typing import Any
 
-from fastapi import FastAPI, Request, Response, WebSocket
+from fastapi import FastAPI, Response, WebSocket
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 import asyncio
@@ -12,7 +12,7 @@ import os as _os
 
 from l6e_forge.runtime.local import LocalRuntime
 from l6e_forge.runtime.monitoring import get_monitoring
-from l6e_forge.types.core import Message, AgentContext
+from l6e_forge.types.core import Message
 
 import logging
 
@@ -158,7 +158,6 @@ def create_app() -> FastAPI:
         if _idem_key and _idem_key in idem_cache:
             return idem_cache[_idem_key]
 
-        ctx = AgentContext(conversation_id=conversation_uuid, session_id=session_uuid)
         mon = get_monitoring()
         mon.add_chat_log(
             conversation_id=str(conversation_uuid), role="user", content=text

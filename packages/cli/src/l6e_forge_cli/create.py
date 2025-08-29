@@ -5,7 +5,6 @@ from pathlib import Path
 import typer
 from rich import print as rprint
 
-from l6e_forge_cli.templates import AGENT_ECHO_PY, AGENT_OLLAMA_PY, CONFIG_TOML
 from l6e_forge.workspace.template_engine.jinja import JinjaTemplateEngine
 from l6e_forge_cli.templates.specs import get_template_spec
 

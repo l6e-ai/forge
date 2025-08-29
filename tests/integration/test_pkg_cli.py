@@ -95,7 +95,9 @@ model = "llama3.2:3b"
     assert pkg_path2.exists()
 
     # Open the manifest and check for agent_config fields
-    import zipfile, io as _io, tomllib as _tomllib
+    import zipfile
+    import io as _io
+    import tomllib as _tomllib
 
     with zipfile.ZipFile(pkg_path2, "r") as zf:
         with zf.open("package.toml") as f:

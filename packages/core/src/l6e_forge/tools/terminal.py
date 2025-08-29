@@ -4,7 +4,6 @@ from dataclasses import dataclass
 from typing import Any
 import asyncio
 import shlex
-import subprocess
 
 from l6e_forge.tools.base import ITool
 from l6e_forge.types.tool import ToolContext, ToolResult
