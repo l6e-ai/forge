@@ -118,14 +118,14 @@ class OllamaModelManager(IModelManager):
         specs: list[ModelSpec] = []
         for item in tags:
             name = item.get("name") or item.get("model") or "unknown"
-            size = (item.get("size"),)
+            size = item.get("size", None)
             specs.append(
                 ModelSpec(
                     model_id=name,
                     provider="ollama",
                     model_name=name,
                     memory_requirement_gb=0.0,
-                    size_bytes=item.get("size"),
+                    size_bytes=size,
                     description=item.get("details", {}).get("family", ""),
                     provider_metadata=item,
                 )

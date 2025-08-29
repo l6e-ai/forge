@@ -4,7 +4,6 @@ from pathlib import Path
 import sys
 import os
 import subprocess
-from typing import Literal
 
 import typer
 from rich import print as rprint
@@ -13,7 +12,6 @@ from rich.table import Table
 from l6e_forge.workspace.manager.local import LocalWorkspaceManager
 from l6e_forge_cli import create as create_cmd
 from l6e_forge_cli import dev as dev_cmd
-from l6e_forge_cli import chat as chat_cmd
 from l6e_forge_cli.chat import chat as chat_command
 from l6e_forge_cli import template as template_cmd
 from l6e_forge_cli import models as models_cmd

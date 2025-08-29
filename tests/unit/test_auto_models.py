@@ -5,7 +5,6 @@ from typer.testing import CliRunner
 
 from l6e_forge.models.auto import (
     ensure_ollama_models,
-    apply_recommendations_to_agent_config,
 )
 from l6e_forge_cli.main import app as main_app
 

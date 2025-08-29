@@ -12,7 +12,6 @@ from l6e_forge.dev.reloader import AgentReloader
 from l6e_forge.dev.handler import DevEventHandler
 from l6e_forge.runtime.local import LocalRuntime
 import asyncio
-import time
 from l6e_forge.config_managers.toml import TomlConfigManager
 from l6e_forge.runtime.monitoring import get_monitoring
 
@@ -143,7 +142,6 @@ class DevService:
 
         async def _run():
             # Unregister previous if exists
-            from l6e_forge.types.core import AgentID
 
             prev = self._agent_ids.get(agent_name)
             if prev:

@@ -12,17 +12,13 @@ from l6e_forge.types.agent import AgentSpec
 from l6e_forge.runtime.monitoring import get_monitoring
 from l6e_forge.logging import get_logger
 
-logger = get_logger()
-
 # Type-only import to avoid circulars
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:  # pragma: no cover
     from l6e_forge.core.agents.base import IAgent
-    from l6e_forge.events.bus.base import IEventBus
-    from l6e_forge.memory.managers.base import IMemoryManager
-    from l6e_forge.models.managers.base import IModelManager
-    from l6e_forge.tools.registry.base import IToolRegistry
+
+logger = get_logger()
 
 
 class LocalRuntime:

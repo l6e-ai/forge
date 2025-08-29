@@ -415,11 +415,6 @@ def chat(
             async def _run_one_msg(text: str) -> int:
                 msg = Message(content=text, role="user")
                 conversation_id = uuid.uuid4()
-                ctx = AgentContext(
-                    conversation_id=conversation_id,
-                    session_id=session_uuid,
-                    workspace_path=root,
-                )
                 try:
                     if use_direct_model:
                         conversation.append(msg)

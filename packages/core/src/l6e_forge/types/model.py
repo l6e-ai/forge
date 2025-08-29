@@ -2,7 +2,7 @@
 """Model and LLM types for l6e-forge system"""
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Any, Optional, Literal, AsyncIterator
+from typing import Dict, List, Any, Optional, Literal
 from datetime import datetime
 import uuid
 

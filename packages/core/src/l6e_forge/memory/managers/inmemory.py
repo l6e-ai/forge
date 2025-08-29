@@ -78,7 +78,6 @@ class InMemoryMemoryManager(IMemoryManager):
     ) -> list[MemoryResult]:
         q = self._embedder.embed(query)
         merged: list[MemoryResult] = []
-        rank_counter = 1
         for ns in namespaces:
             rows = await self._store.query(ns, q, limit=per_namespace_limit)
             for _key, score, item in rows:
