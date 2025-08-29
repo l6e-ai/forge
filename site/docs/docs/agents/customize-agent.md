@@ -117,6 +117,6 @@ poetry run forge chat my-assistant -w ./my-workspace
 
 - Read the Prompt Builder guide: `using-prompt-builder`
 - Explore memory features: `memory/sdk-overview`
- - Build a multi-step logic chain agent: [Build a logic chain agent](agents/logic-chain)
+ - Build a multi-step logic chain agent: [Build a logic chain agent](/agents/logic-chain)
 
 
