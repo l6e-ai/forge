@@ -3,12 +3,6 @@ name: pytest
 on:
   pull_request:
     branches: [ main ]
-    paths:
-      - 'pyproject.toml'
-      - 'poetry.lock'
-      - 'packages/**'
-      - 'tests/**'
-      - '.github/workflows/pytest.yml'
 
 permissions:
   contents: read
