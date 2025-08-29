@@ -1,4 +1,4 @@
-name: CI
+name: pytest
 
 on:
   pull_request:
@@ -8,7 +8,7 @@ on:
       - 'poetry.lock'
       - 'packages/**'
       - 'tests/**'
-      - '.github/workflows/ci.yml'
+      - '.github/workflows/pytest.yml'
 
 permissions:
   contents: read
@@ -16,7 +16,7 @@ permissions:
 
 jobs:
   ci-poetry:
-    name: Setup Poetry & Run Tests
+    name: Run pytest
     strategy:
       fail-fast: false
       matrix:
