@@ -41,3 +41,5 @@ examples/**/data
 
 # Local env files
 **/.env.local
+
+.venv/

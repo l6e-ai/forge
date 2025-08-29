@@ -1,0 +1,41 @@
+[project]
+name = "l6e-forge"
+version = "0.1.0"
+description = "Build & Deploy local agents with ease - alpha"
+authors = [{ name = "l6e AI", email = "hello@l6e.ai" }]
+readme = "README.md"
+license = { text = "Apache 2.0" }
+license-files = ["LICEN[CS]E*"]
+requires-python = ">=3.13,<4.0"
+
+[project.urls]
+Homepage = "https://l6e.ai"
+Issues = "https://github.com/l6eai/forge/issues"
+Docs = "https://docs.l6e.ai"
+
+[tool.poetry]
+packages = [{ include = "l6e_forge", from = "src" }]
+
+[tool.poetry.group.agent]
+optional = true
+[tool.poetry.group.agent.dependencies]
+jinja2 = ">=3.1.0,<4.0.0"
+
+[tool.poetry.group.monitor]
+optional = true
+[tool.poetry.group.monitor.dependencies]
+fastapi = ">=0.115.0,<0.116.0"
+uvicorn = ">=0.30.0,<0.31.0"
+asyncpg = ">=0.30.0,<0.31.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "8.4.1"
+mypy = "^1.17.1"
+pytest-asyncio = "^1.1.0"
+pynacl = "^1.5.0"
+redis = ">=6.4.0,<7.0.0"
+twine = "^6.1.0"
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"

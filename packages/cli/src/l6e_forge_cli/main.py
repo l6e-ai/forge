@@ -11,15 +11,15 @@ from rich import print as rprint
 from rich.table import Table
 
 from l6e_forge.workspace.manager.local import LocalWorkspaceManager
-from l6e_forge.cli import create as create_cmd
-from l6e_forge.cli import dev as dev_cmd
-from l6e_forge.cli import chat as chat_cmd
-from l6e_forge.cli.chat import chat as chat_command
-from l6e_forge.cli import template as template_cmd
-from l6e_forge.cli import models as models_cmd
+from l6e_forge_cli import create as create_cmd
+from l6e_forge_cli import dev as dev_cmd
+from l6e_forge_cli import chat as chat_cmd
+from l6e_forge_cli.chat import chat as chat_command
+from l6e_forge_cli import template as template_cmd
+from l6e_forge_cli import models as models_cmd
 from l6e_forge.dev.service import DevService
-from l6e_forge.cli import package as package_cmd
-from l6e_forge.cli import memory as memory_cmd
+from l6e_forge_cli import package as package_cmd
+from l6e_forge_cli import memory as memory_cmd
 
 app = typer.Typer(help="l6e-forge CLI")
 app.add_typer(create_cmd.app, name="create")
@@ -58,7 +58,7 @@ def init(
         # Optionally scaffold an example agent to get started quickly
         if with_example:
             try:
-                from l6e_forge.cli.create import agent as create_agent
+                from l6e_forge_cli.create import agent as create_agent
                 create_agent.callback  # type: ignore[attr-defined]
                 # run the command function directly
                 create_agent(
