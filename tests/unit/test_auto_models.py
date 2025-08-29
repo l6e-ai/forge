@@ -7,7 +7,7 @@ from l6e_forge.models.auto import (
     ensure_ollama_models,
     apply_recommendations_to_agent_config,
 )
-from l6e_forge.cli.main import app as main_app
+from l6e_forge_cli.main import app as main_app
 
 
 def test_ensure_ollama_models_pulls_and_adjusts_when_none_available(

@@ -83,21 +83,3 @@ class IMonitoringService(Protocol):
     async def unsubscribe(self, q) -> None:  # q: asyncio.Queue
         """Unsubscribe from live updates. May not be supported by remote implementations."""
         ...
-
-    def get_agent_status(self) -> list[dict[str, Any]]:
-        """Get agent status"""
-        ...
-
-    def set_agent_status(
-        self,
-        agent_id: str,
-        name: str,
-        status: str,
-        config: dict[str, Any] | None = None,
-    ) -> None:
-        """Set agent status"""
-        ...
-
-    def remove_agent(self, agent_id: str) -> None:
-        """Remove an agent"""
-        ...

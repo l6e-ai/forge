@@ -12,6 +12,7 @@ from rich import print as rprint
 from rich.console import Console
 from rich.markdown import Markdown
 
+from l6e_forge.models.managers.base import IModelManager
 from l6e_forge.types.core import Message, AgentContext
 from prompt_toolkit import PromptSession
 from prompt_toolkit.history import FileHistory
@@ -282,6 +283,7 @@ def chat(
                         )
                         await _stream_lmstudio_chat(endpoint, str(use_model), [msg])  # type: ignore[arg-type]
                 else:
+                    manager: IModelManager | None = None
                     if use_provider == "ollama":
                         endpoint = endpoints.get(
                             "ollama",
@@ -296,6 +298,8 @@ def chat(
                         )
                         rprint(f"[cyan]Using provider:[/cyan] lmstudio at {endpoint}")
                         manager = LMStudioModelManager(endpoint=endpoint)
+                    if not use_model:
+                        raise ValueError("Model not set")
                     spec = ModelSpec(
                         model_id=use_model,
                         provider=use_provider,
@@ -350,8 +354,8 @@ def chat(
             import traceback
 
             err_type = type(exc).__name__
-            msg = str(exc) or repr(exc)
-            rprint(f"[red]Error ({err_type}):[/red] {msg}")
+            err_msg = str(exc) or repr(exc)
+            rprint(f"[red]Error ({err_type}):[/red] {err_msg}")
             if debug:
                 rprint(traceback.format_exc())
             return 1
@@ -379,7 +383,7 @@ def chat(
         history_dir.mkdir(parents=True, exist_ok=True)
         history_file = history_dir / f"chat-history-{agent}.txt"
 
-        session = PromptSession(
+        prompt_session: PromptSession = PromptSession(
             message=f"{agent}> ",
             history=FileHistory(str(history_file)),
             auto_suggest=AutoSuggestFromHistory(),
@@ -396,7 +400,7 @@ def chat(
             )
         while True:
             try:
-                user_input = session.prompt()
+                user_input = prompt_session.prompt()
             except KeyboardInterrupt:
                 # Clear the current line
                 continue
@@ -441,6 +445,7 @@ def chat(
                                     endpoint, str(use_model), conversation
                                 )  # type: ignore[arg-type]
                         else:
+                            manager: IModelManager | None = None
                             if use_provider == "ollama":
                                 endpoint = endpoints.get(
                                     "ollama",
@@ -463,15 +468,17 @@ def chat(
                                     f"[cyan]Using provider:[/cyan] lmstudio at {endpoint}"
                                 )
                                 manager = LMStudioModelManager(endpoint=endpoint)
+                            if not use_model:
+                                raise ValueError("Model not set")
+                            spec = ModelSpec(
+                                model_id=use_model,
+                                provider=use_provider,
+                                model_name=use_model,
+                                memory_requirement_gb=0.0,
+                            )  # type: ignore[arg-type]
+                            model_id = await manager.load_model(spec)
                             resp = await manager.chat(
-                                await manager.load_model(
-                                    ModelSpec(
-                                        model_id=use_model,
-                                        provider=use_provider,
-                                        model_name=use_model,
-                                        memory_requirement_gb=0.0,
-                                    )
-                                ),
+                                model_id,
                                 conversation,
                                 timeout=timeout,
                             )  # type: ignore[arg-type]
@@ -490,8 +497,8 @@ def chat(
                     import traceback
 
                     err_type = type(exc).__name__
-                    msg = str(exc) or repr(exc)
-                    rprint(f"[red]Error ({err_type}):[/red] {msg}")
+                    err_msg = str(exc) or repr(exc)
+                    rprint(f"[red]Error ({err_type}):[/red] {err_msg}")
                     if debug:
                         rprint(traceback.format_exc())
                     return 1

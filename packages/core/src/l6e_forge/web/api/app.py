@@ -56,11 +56,11 @@ def create_app() -> FastAPI:
         try:
             from pathlib import Path
 
-            ws = (
-                Path(workspace or os.environ.get("AF_WORKSPACE", "/workspace"))
-                .expanduser()
-                .resolve()
-            )
+            ws_path = workspace or os.environ.get("AF_WORKSPACE", "/workspace")
+            if not ws_path:
+                return {"error": "workspace not set"}
+
+            ws = Path(ws_path).expanduser().resolve()
             agents_dir = ws / "agents"
             if agents_dir.exists():
                 for p in agents_dir.iterdir():
@@ -133,7 +133,7 @@ def create_app() -> FastAPI:
         incoming_conv = payload.get("conversation_id")
         incoming_sess = payload.get("session_id")
         # Enforce UUID conversation ids. If client provides a non-UUID, ignore and generate a new one
-        conversation_uuid: str
+        conversation_uuid: uuid.UUID
         if isinstance(incoming_conv, str) and incoming_conv.strip():
             try:
                 conversation_uuid = uuid.UUID(incoming_conv.strip())
@@ -270,7 +270,7 @@ def create_app() -> FastAPI:
                     async with websockets.connect(remote_ws) as rws:
                         async for msg in rws:
                             try:
-                                await ws.send_text(msg)
+                                await ws.send_text(str(msg))
                             except Exception:
                                 break
                     logger.info(f"Bridge to remote monitor at {remote_ws} closed")

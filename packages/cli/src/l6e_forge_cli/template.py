@@ -10,8 +10,8 @@ from l6e_forge_cli.templates.specs import get_template_spec
 app = typer.Typer(help="Template utilities")
 
 
-@app.command()
-def list() -> None:  # noqa: A003 - CLI verb
+@app.command(name="list")
+def list_command() -> None:
     """List available templates and supported providers."""
     templates = ["basic", "assistant"]
     providers = ["local", "ollama", "lmstudio"]

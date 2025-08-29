@@ -168,7 +168,7 @@ class DevService:
         Runs in a background thread so that file watching continues.
         """
         try:
-            from l6e_forge.web.monitor_app import create_app
+            from l6e_forge.web.monitor.app import create_app
             import uvicorn
 
             app = create_app(get_monitoring())

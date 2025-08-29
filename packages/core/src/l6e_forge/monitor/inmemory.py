@@ -71,7 +71,7 @@ class InMemoryMonitoringService(IMonitoringService):
 
         def _isin(p: dict[str, Any]) -> bool:
             try:
-                ts = datetime.fromisoformat(p.get("timestamp"))
+                ts = datetime.fromisoformat(str(p.get("timestamp")))
             except Exception:
                 return False
             return start <= ts <= end

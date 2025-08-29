@@ -4,7 +4,7 @@ from pathlib import Path
 
 from typer.testing import CliRunner
 
-from l6e_forge.cli.main import app as main_app
+from l6e_forge_cli.main import app as main_app
 
 
 def _write_min_agent(dir_path: Path, name: str = "demo") -> Path:

@@ -51,15 +51,11 @@ class PromptBuilder:
 
         # Resolve history via provider if k_limit is set; otherwise use context.conversation_history
         history: list[Message] = context.conversation_history
-        if (
-            k_limit is not None
-            and getattr(context, "history_provider", None) is not None
-        ):
+        provider = getattr(context, "history_provider", None)
+        if k_limit is not None and provider is not None:
             try:
                 # Get last k messages
-                full = await context.history_provider.get_recent(
-                    context.conversation_id, limit=k_limit
-                )
+                full = await provider.get_recent(context.conversation_id, limit=k_limit)
                 history = full[-k_limit:]
             except Exception:
                 # Fallback to whatever is on context

@@ -4,7 +4,7 @@ from pathlib import Path
 
 from typer.testing import CliRunner
 
-from l6e_forge.cli.main import app as main_app
+from l6e_forge_cli.main import app as main_app
 from l6e_forge.runtime.local import LocalRuntime
 from l6e_forge.types.core import Message
 
@@ -215,7 +215,7 @@ class Agent:
 
     result = runner.invoke(
         main_app,
-        ["chat", "chat", "demo", "--workspace", str(ws_path), "--message", "hello"],
+        ["chat", "demo", "--workspace", str(ws_path), "--message", "hello"],
         catch_exceptions=False,
     )
     assert result.exit_code == 0, result.output
@@ -260,12 +260,12 @@ lmstudio = "http://127.0.0.1:9"
 
     # Without lmstudio server running, expect a helpful error (not a crash)
     from typer.testing import CliRunner
-    from l6e_forge.cli.main import app as main_app
+    from l6e_forge_cli.main import app as main_app
 
     runner = CliRunner()
     result = runner.invoke(
         main_app,
-        ["chat", "chat", "demo", "--workspace", str(ws_path), "--message", "hi"],
+        ["chat", "demo", "--workspace", str(ws_path), "--message", "hi"],
         catch_exceptions=False,
     )
     # Exit code non-zero due to provider unreachable

@@ -105,7 +105,7 @@ class TerminalTool(ITool):
                         pass
                     return 124, "", "Command timed out"
                 return (
-                    proc.returncode,
+                    proc.returncode or 0,
                     out.decode("utf-8", errors="replace"),
                     err.decode("utf-8", errors="replace"),
                 )

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from enum import StrEnum
 from typing import Literal, Tuple, Optional, List, Dict
 import os
 import platform
@@ -83,7 +84,7 @@ def _detect_gpu(sys_name: str, ram_gb: float) -> Tuple[bool, float]:
     # macOS: use system_profiler to detect Metal GPU and unified memory VRAM report
     if sys_name == "darwin":
         try:
-            out = subprocess.check_output(
+            profiler_output = subprocess.check_output(
                 [
                     "/usr/sbin/system_profiler",
                     "-json",
@@ -91,7 +92,7 @@ def _detect_gpu(sys_name: str, ram_gb: float) -> Tuple[bool, float]:
                 ],
                 stderr=subprocess.DEVNULL,
             )
-            data = json.loads(out.decode())
+            data = json.loads(profiler_output.decode())
             displays = data.get("SPDisplaysDataType", [])
             # Look for VRAM fields
             vram_gb = 0.0
@@ -140,13 +141,34 @@ def get_system_profile() -> SystemProfile:
     )
 
 
+class AutoHintTask(StrEnum):
+    ASSISTANT = "assistant"
+    CODER = "coder"
+    TOOL_USE = "tool-use"
+
+
+class AutoHintQuality(StrEnum):
+    SPEED = "speed"
+    BALANCED = "balanced"
+    QUALITY = "quality"
+
+
+class AutoHintQuantization(StrEnum):
+    AUTO = "auto"
+    Q4 = "q4"
+    Q5 = "q5"
+    Q8 = "q8"
+    MXFP4 = "mxfp4"
+    BIT = "8bit"
+
+
 @dataclass
 class AutoHints:
     provider_order: list[str]
-    task: Literal["assistant", "coder", "tool-use"] = "assistant"
-    quality: Literal["speed", "balanced", "quality"] = "balanced"
+    task: AutoHintTask = AutoHintTask.ASSISTANT
+    quality: AutoHintQuality = AutoHintQuality.BALANCED
     context: int = 8192
-    quantization: Literal["auto", "q4", "q5", "q8", "mxfp4", "8bit"] = "auto"
+    quantization: AutoHintQuantization = AutoHintQuantization.AUTO
 
 
 def recommend_models(sys: SystemProfile, hints: AutoHints) -> dict[str, str]:
@@ -174,7 +196,9 @@ class ModelCatalogEntry:
     # Approx artifact size in GB if known (quantized). If provided, we prefer using this.
     artifact_size_gb: Optional[float] = None
     # Provider mapping: provider -> tag/id used by that provider
-    providers: Dict[str, str] = None  # e.g., {"ollama": "llama3.2:3b"}
+    providers: Dict[str, str] = field(
+        default_factory=dict
+    )  # e.g., {"ollama": "llama3.2:3b"}
     notes: Optional[str] = None
     # Optional quantized artifact sizes (GB) if known
     quantized_artifacts_gb: Optional[Dict[str, float]] = (
@@ -325,7 +349,7 @@ def get_model_catalog() -> List[ModelCatalogEntry]:
 
 def estimate_memory_gb(
     entry: ModelCatalogEntry,
-    quantization: Literal["auto", "q4", "q5", "q8", "mxfp4", "8bit"] = "auto",
+    quantization: AutoHintQuantization = AutoHintQuantization.AUTO,
     overhead_ratio: float = 0.25,
     provider: Optional[str] = None,
 ) -> float:
@@ -549,7 +573,7 @@ def suggest_models(
     return suggestions[:top_n]
 
 
-def _ollama_list_models(endpoint: str = None) -> list[str]:
+def _ollama_list_models(endpoint: str | None = None) -> list[str]:
     if not endpoint:
         endpoint = os.environ.get("OLLAMA_HOST", "http://localhost:11434")
     try:
@@ -568,7 +592,7 @@ def _ollama_list_models(endpoint: str = None) -> list[str]:
         return []
 
 
-def _ollama_list_models_with_sizes(endpoint: str = None) -> Dict[str, float]:
+def _ollama_list_models_with_sizes(endpoint: str | None = None) -> Dict[str, float]:
     """Return a mapping of model tag -> size in GB for installed models (best effort)."""
     if not endpoint:
         endpoint = os.environ.get("OLLAMA_HOST", "http://localhost:11434")
@@ -589,7 +613,7 @@ def _ollama_list_models_with_sizes(endpoint: str = None) -> Dict[str, float]:
     return sizes
 
 
-def _lmstudio_list_models(endpoint: str = None) -> List[str]:
+def _lmstudio_list_models(endpoint: str | None = None) -> List[str]:
     """Return list of model IDs visible to LM Studio's OpenAI-compatible API."""
     if not endpoint:
         endpoint = os.environ.get("LMSTUDIO_HOST", "http://localhost:1234/v1")
@@ -659,7 +683,7 @@ def _maybe_pull_model(name: str) -> None:
 
 
 def ensure_ollama_models(
-    models: dict[str, str], endpoint: str = None
+    models: dict[str, str], endpoint: str | None = None
 ) -> dict[str, str]:
     """Ensure models exist; return possibly adjusted names that actually exist.
 

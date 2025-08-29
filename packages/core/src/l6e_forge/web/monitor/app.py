@@ -57,7 +57,7 @@ def create_app(monitor: IMonitoringService) -> FastAPI:
     async def ingest_metric(payload: dict[str, Any]) -> JSONResponse:
         try:
             name = str(payload.get("name"))
-            value = float(payload.get("value"))
+            value = float(payload.get("value") or 0)
             tags = payload.get("tags") or {}
             await monitor.record_metric(name, value, tags=tags)  # type: ignore[arg-type]
             return JSONResponse({"ok": True})

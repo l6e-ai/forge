@@ -5,17 +5,22 @@ import typer
 from rich import print as rprint
 from pathlib import Path
 from rich.table import Table
+from typing import cast, Literal
 
 try:
     from questionary import select as qselect  # type: ignore
 except Exception:  # pragma: no cover
     qselect = None  # type: ignore
 
+from l6e_forge.models.managers.base import IModelManager
 from l6e_forge.models.managers.ollama import OllamaModelManager
 from l6e_forge.models.managers.lmstudio import LMStudioModelManager
 from l6e_forge.models.auto import (
     get_system_profile,
     AutoHints,
+    AutoHintTask,
+    AutoHintQuality,
+    AutoHintQuantization,
     recommend_models,
     ensure_ollama_models,
     apply_recommendations_to_agent_config,
@@ -26,8 +31,8 @@ from l6e_forge.models.auto import (
 app = typer.Typer(help="Model utilities")
 
 
-@app.command()
-def list(
+@app.command(name="list")
+def list_command(
     provider: str | None = typer.Option(
         None, "--provider", help="Provider: ollama|lmstudio|all (default: all)"
     ),
@@ -48,6 +53,7 @@ def list(
     table.add_column("Supports Streaming")
 
     any_rows = False
+    mgr: IModelManager | None = None
     for p in providers:
         if p == "ollama":
             default_ep = os.environ.get("OLLAMA_HOST", "http://localhost:11434")
@@ -126,15 +132,24 @@ def bootstrap(
     dry_run: bool = typer.Option(False, "--dry-run", help="Only print recommendations"),
 ) -> None:
     """Suggest, select, and configure local models; pulls for Ollama when needed."""
+    try:
+        quality = AutoHintQuality(quality)
+    except ValueError:
+        rprint(
+            f"[yellow]Invalid quality: {quality}. Must be speed, balanced, or quality.[/yellow]"
+        )
+        raise typer.Exit(code=1)
+    try:
+        quant = AutoHintQuantization(quant)
+    except ValueError:
+        rprint(
+            f"[yellow]Invalid quantization: {quant}. Must be auto, q4, q5, q8, mxfp4, or 8bit.[/yellow]"
+        )
+        raise typer.Exit(code=1)
+
     sys = get_system_profile()
     order = [p.strip() for p in provider_order.split(",") if p.strip()]
-    hints = AutoHints(
-        provider_order=order,
-        quality=quality if quality in ("speed", "balanced", "quality") else "balanced",
-        quantization=quant
-        if quant in ("auto", "q4", "q5", "q8", "mxfp4", "8bit")
-        else "auto",
-    )
+    hints = AutoHints(provider_order=order, quality=quality, quantization=quant)
 
     suggestions = suggest_models(sys, hints, top_n=top_n)
     if not suggestions:
@@ -260,14 +275,28 @@ def suggest(
 
     This presents a short list with our estimated memory (including overhead) so users can pick.
     """
+
+    try:
+        quality = AutoHintQuality(quality)
+    except ValueError:
+        rprint(
+            f"[yellow]Invalid quality: {quality}. Must be speed, balanced, or quality.[/yellow]"
+        )
+        raise typer.Exit(code=1)
+    try:
+        quant = AutoHintQuantization(quant)
+    except ValueError:
+        rprint(
+            f"[yellow]Invalid quantization: {quant}. Must be auto, q4, q5, q8, mxfp4, or 8bit.[/yellow]"
+        )
+        raise typer.Exit(code=1)
+
     sys = get_system_profile()
     order = [p.strip() for p in (provider or "ollama,lmstudio").split(",") if p.strip()]
     hints = AutoHints(
         provider_order=order,
-        quality=quality if quality in ("speed", "balanced", "quality") else "balanced",
-        quantization=quant
-        if quant in ("auto", "q4", "q5", "q8", "mxfp4", "8bit")
-        else "auto",
+        quality=quality,
+        quantization=quant,
     )
     suggestions = suggest_models(sys, hints, top_n=top_n)
 

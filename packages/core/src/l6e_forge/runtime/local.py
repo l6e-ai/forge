@@ -10,6 +10,9 @@ import os
 from l6e_forge.types.core import AgentID, AgentResponse, Message, ConversationID
 from l6e_forge.types.agent import AgentSpec
 from l6e_forge.runtime.monitoring import get_monitoring
+from l6e_forge.logging import get_logger
+
+logger = get_logger()
 
 # Type-only import to avoid circulars
 from typing import TYPE_CHECKING
@@ -103,15 +106,17 @@ class LocalRuntime:
             from l6e_forge.tools.web import WebFetchTool
             from l6e_forge.tools.code import CodeUtilsTool
 
-            fs_id = self._tool_registry.register_tool(FilesystemTool())
-            term_id = self._tool_registry.register_tool(TerminalTool())
-            web_id = self._tool_registry.register_tool(WebFetchTool())
-            code_id = self._tool_registry.register_tool(CodeUtilsTool())
-            self._tool_registry.assign_tools_to_agent(
-                agent_id, [fs_id, term_id, web_id, code_id]
-            )
-        except Exception:
+            if self._tool_registry is not None:
+                fs_id = self._tool_registry.register_tool(FilesystemTool())
+                term_id = self._tool_registry.register_tool(TerminalTool())
+                web_id = self._tool_registry.register_tool(WebFetchTool())
+                code_id = self._tool_registry.register_tool(CodeUtilsTool())
+                self._tool_registry.assign_tools_to_agent(
+                    agent_id, [fs_id, term_id, web_id, code_id]
+                )
+        except Exception as e:  # noqa: BLE001
             # Best-effort only in MVP
+            logger.error(f"Error registering tools for agent {agent_id}: {e}")
             pass
         # Update monitoring (status only). The monitor service emits agent.registered on ready.
         try:

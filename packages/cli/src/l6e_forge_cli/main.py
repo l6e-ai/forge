@@ -92,8 +92,8 @@ def init(
         raise typer.Exit(code=1)
 
 
-@app.command()
-def list() -> None:  # noqa: A003 - intentional CLI verb
+@app.command(name="list")
+def list_command() -> None:  # noqa: A003 - intentional CLI verb
     """List agents in the current workspace."""
     manager = LocalWorkspaceManager()
     import asyncio
@@ -244,8 +244,8 @@ def down(
     raise typer.Exit(code=code)
 
 
-def main() -> None:
-    app()
+def main() -> int:
+    return app()
 
 
 if __name__ == "__main__":
