@@ -129,6 +129,15 @@ def bootstrap(
     dry_run: bool = typer.Option(False, "--dry-run", help="Only print recommendations"),
 ) -> None:
     """Suggest, select, and configure local models; pulls for Ollama when needed."""
+    # Early exit if the agent directory is invalid
+    agent_dir = Path(agent)
+    if not agent_dir.exists() or not agent_dir.is_dir():
+        rprint(f"[red]Agent directory not found:[/red] {agent_dir}")
+        raise typer.Exit(code=1)
+    if not (agent_dir / "config.toml").exists():
+        rprint(f"[red]Missing config.toml in agent directory:[/red] {agent_dir}")
+        raise typer.Exit(code=1)
+
     try:
         quality = AutoHintQuality(quality)
     except ValueError:
