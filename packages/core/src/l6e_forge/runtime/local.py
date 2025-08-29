@@ -317,9 +317,7 @@ class LocalRuntime:
                     conversation_store = PostgresConversationStore(db_url)
             except Exception:
                 conversation_store = None
-            self._memory_manager = MemoryManager(
-                store, embedder, conversation_store
-            )
+            self._memory_manager = MemoryManager(store, embedder, conversation_store)
         return self._memory_manager
 
     def get_model_manager(self):  # -> IModelManager
