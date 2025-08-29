@@ -10,7 +10,8 @@ Before installing an l6e packaged agent, ensure your environment meets the follo
 - **Node.js 18+** (only required if you plan to build a UI)
 - **Ollama** (for local LLMs; must be installed manually)
 - **Docker** (required to run the full stack or if the agent uses advanced features like memory)
-- **l6e-forge CLI** (install via Poetry)
+- **l6e-forge core** (project dependency)
+- **l6e-forge-cli** (install as dev dependency via Poetry)
 
 Official installation instructions:
 - [Ollama](https://ollama.com/download)

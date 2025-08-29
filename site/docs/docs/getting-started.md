@@ -14,7 +14,24 @@ description: Create a workspace, scaffold an agent, bootstrap models, and run th
 ## Install
 
 ```bash
-poetry install l6e-forge
+# Add core library to your project
+poetry add l6e-forge
+
+# Add CLI as a dev dependency
+poetry add --group dev l6e-forge-cli
+```
+
+Using uv:
+
+```bash
+uv add l6e-forge
+uv add --dev l6e-forge-cli
+```
+
+Using pip:
+
+```bash
+pip install l6e-forge l6e-forge-cli
 ```
 
 ## Create a Workspace

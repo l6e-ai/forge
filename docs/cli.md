@@ -2,11 +2,31 @@
 
 ## Installation
 
-Install the CLI using Poetry:
+Install the core library to your project and the CLI as a dev dependency using Poetry:
 
 ```bash
-poetry install --only cli
+# Project dependency
+poetry add l6e-forge
+
+# Dev dependency
+poetry add --group dev l6e-forge-cli
+
 poetry run forge --help
+```
+
+Using uv:
+
+```bash
+uv add l6e-forge
+uv add --dev l6e-forge-cli
+uv run forge --help
+```
+
+Using pip:
+
+```bash
+pip install l6e-forge l6e-forge-cli
+forge --help
 ```
 [Source](https://github.com/l6e-ai/forge/blob/a23d7609ed652edab7a9bd1d092d2effcb9f2d33/docs/cli.md)
 
