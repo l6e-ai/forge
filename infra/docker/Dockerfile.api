@@ -1,10 +1,3 @@
-FROM node:22-alpine AS ui-build
-WORKDIR /app/site/agent-ui
-COPY site/agent-ui/package*.json ./
-RUN npm ci
-COPY site/agent-ui/ ./
-RUN npm run build
-
 FROM python:3.13-slim
 
 # Install system dependencies
@@ -29,12 +22,6 @@ RUN pip install --no-cache-dir "uvicorn[standard]"
 
 # Install the local packages (core and cli) into the image
 RUN poetry run pip install -e /app/packages/core -e /app/packages/cli
-
-# Copy built UI into image
-COPY --from=ui-build /app/site/agent-ui/dist/ /app/static/ui/
-
-ENV PYTHONUNBUFFERED=1 \
-    AF_UI_DIR=/app/static/ui
 
 EXPOSE 8000
 

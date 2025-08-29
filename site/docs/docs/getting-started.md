@@ -60,7 +60,7 @@ poetry run forge models bootstrap agents/my-ollama --provider-order ollama,lmstu
 poetry run forge up
 ```
 
-API: http://localhost:8000 — Monitor: http://localhost:8321 — UI: http://localhost:8000/ui/
+API: http://localhost:8000 — Monitor: http://localhost:8321 — UI: http://localhost:8173
 
 ## Chat
 

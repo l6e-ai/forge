@@ -1,4 +1,4 @@
-# This compose file has been modified to allow testing the dev experience with hot-reloads in the main l6eai/l6e-forge repository
+# This compose file has been modified to allow testing the dev experience with hot-reloads in the main l6e-ai/l6e-forge repository
 
 # Do not use this as an example of how to run forge in your environment (it differs from the template generated compose file)
 
@@ -50,7 +50,6 @@ services:
       - LMSTUDIO_HOST=http://host.docker.internal:1234/v1
       - AF_MEMORY_PROVIDER=qdrant
       - QDRANT_URL=http://qdrant:6333
-      - AF_MEMORY_COLLECTION=agent_memory
       - AF_DB_URL=postgresql://forge:forge@postgres:5432/forge
     volumes:
       - ./:/workspace
@@ -81,7 +80,7 @@ services:
     environment:
       - VITE_API_BASE=http://localhost:8000/api
     ports:
-      - "5173:5173"
+      - "8173:8173"
     depends_on:
       api:
         condition: service_healthy

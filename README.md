@@ -53,7 +53,7 @@ pip install l6e-forge l6e-forge-cli
 forge --help
 ```
 
-See the [Getting Started guide](https://github.com/l6e-ai/forge/blob/1aa28f9787f41928d96535fccf61609ac39826bc/docs/getting-started.md) for more details.
+See the [Getting Started guide](https://docs.l6e.ai/getting-started) for more details.
 
 ## Usage Examples
 
@@ -68,7 +68,7 @@ poetry run forge models bootstrap agents/my-agent --provider-order ollama,lmstud
 
 ### Memory API
 
-Store and search agent memory via HTTP (optionally target a specific collection with `collection`):
+Store and search agent memory via HTTP using namespaces. Some backends support multiple collections; you can optionally specify one.
 
 ```
 # Upsert memory
@@ -76,7 +76,7 @@ curl -X POST http://localhost:8000/api/memory/upsert \
   -H 'Content-Type: application/json' \
   -d '{"namespace": "my-agent", "key": "note-1", "content": "Daisy is allergic to peanuts", "metadata": {"type": "note"}}'
 
-# Upsert into a specific collection
+# Upsert into a specific collection (if supported by backend)
 curl -X POST http://localhost:8000/api/memory/upsert \
   -H 'Content-Type: application/json' \
   -d '{"collection": "my-collection", "namespace": "my-agent", "key": "note-1", "content": "Daisy is allergic to peanuts"}'
@@ -86,7 +86,7 @@ curl -X POST http://localhost:8000/api/memory/search \
   -H 'Content-Type: application/json' \
   -d '{"namespace": "my-agent", "query": "What is Daisy allergic to?", "limit": 5}'
 
-# Search within a specific collection
+# Search within a specific collection (if supported)
 curl -X POST http://localhost:8000/api/memory/search \
   -H 'Content-Type: application/json' \
   -d '{"collection": "my-collection", "namespace": "my-agent", "query": "What is Daisy allergic to?", "limit": 5}'
@@ -118,7 +118,7 @@ Run the full stack with Docker:
 poetry run forge up
 # API: http://localhost:8000
 # Monitor: http://localhost:8321
-# UI: http://localhost:8000/ui/
+# UI: http://localhost:8173
 ```
 
 ## Environment Variables
@@ -137,12 +137,7 @@ The default Docker stack is single-user and not horizontally scalable. To scale,
 
 ## Documentation
 
-For full documentation, see the [docs/](https://github.com/l6e-ai/forge/tree/1aa28f9787f41928d96535fccf61609ac39826bc/docs) folder. You can generate a documentation site using MkDocs:
-
-```
-pip install mkdocs mkdocs-material
-mkdocs serve -f docs/mkdocs.yml
-```
+For full documentation, see the [docs](https://docs.l6e.ai/) site
 
 ## Contributing
 
@@ -152,9 +147,8 @@ We welcome contributions! See the [CONTRIBUTING.md](https://github.com/l6e-ai/fo
 
 Forge is in active development. Our goals include:
 
-* Extensibility: adapters-first architecture for easy swapping of runners, memory, and databases
-* Packaging: robust, portable `.l6e` bundles with UI and offline install support
 * Scale-out: support for multi-user and distributed deployments
+* Multi-agents: support EventBus & handle multi-agent workspace inter-agent communication
 * Memory and Model Providers: improved integrations and options
 * Developer Experience: streamlined CLI, better error handling, and improved documentation
 * Contributor Infrastructure: more comprehensive guides and automated tests
@@ -165,4 +159,4 @@ Apache 2.0
 
 ---
 
-For more details, usage patterns, and advanced configuration, see the [Getting Started guide](https://github.com/l6e-ai/forge/blob/1aa28f9787f41928d96535fccf61609ac39826bc/docs/getting-started.md) and [CLI reference](https://github.com/l6e-ai/forge/blob/1aa28f9787f41928d96535fccf61609ac39826bc/docs/cli.md).
+For more details, usage patterns, and advanced configuration, see the [Getting Started guide](https://docs.l6e.ai/getting-started) and [CLI reference](https://docs.l6e.ai/cli).

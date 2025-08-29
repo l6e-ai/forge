@@ -66,7 +66,7 @@ Optional: start the local stack with API, monitor, and UI.
 poetry run forge up
 # API: http://localhost:8000
 # Monitor: http://localhost:8321
-# UI: http://localhost:8000/ui/
+# UI: http://localhost:8173
 ```
 
 :::tip

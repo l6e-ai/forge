@@ -1,14 +1,14 @@
 import pytest
 
 from l6e_forge.memory.backends.inmemory import InMemoryVectorStore
-from l6e_forge.memory.managers.inmemory import InMemoryMemoryManager
+from l6e_forge.memory.managers.memory import MemoryManager
 from l6e_forge.memory.embeddings.mock import MockEmbeddingProvider
 
 
 @pytest.mark.asyncio
 async def test_search_vectors_multi_merges_and_sorts() -> None:
     store = InMemoryVectorStore()
-    mm = InMemoryMemoryManager(store, embedder=MockEmbeddingProvider(dim=16))
+    mm = MemoryManager(store, embedder=MockEmbeddingProvider(dim=16))
     # Two namespaces
     await mm.store_vector("nsA", "a1", "alpha beta", {})
     await mm.store_vector("nsA", "a2", "gamma delta", {})
@@ -28,7 +28,7 @@ async def test_search_vectors_multi_merges_and_sorts() -> None:
 @pytest.mark.asyncio
 async def test_manager_explicit_collection_passthrough() -> None:
     store = InMemoryVectorStore()
-    mm = InMemoryMemoryManager(store, embedder=MockEmbeddingProvider(dim=8))
+    mm = MemoryManager(store, embedder=MockEmbeddingProvider(dim=8))
     # Write and read using explicit collection
     await mm.store_vector(
         namespace="agentX:short",

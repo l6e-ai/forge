@@ -196,7 +196,7 @@ def up(
             try:
                 import webbrowser
 
-                webbrowser.open("http://localhost:5173", new=2)
+                webbrowser.open("http://localhost:8173", new=2)
             except Exception:
                 pass
 
@@ -210,7 +210,7 @@ def up(
             raise typer.Exit(code=1)
         os.environ["AF_MONITOR_URL"] = monitor_url
         rprint(f"[cyan]AF_MONITOR_URL=[/cyan] {monitor_url}")
-        os.environ["AF_UI_URL"] = "http://localhost:5173"
+        os.environ["AF_UI_URL"] = "http://localhost:8173"
         rprint(f"[cyan]AF_UI_URL=[/cyan] {os.environ['AF_UI_URL']}")
         service = DevService(root)
         code = service.start()
