@@ -1,0 +1,80 @@
+name: Publish l6e-forge (core) to PyPI
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/l6e-forge/
+    permissions:
+      id-token: write # IMPORTANT: required for trusted publishing via PyPI
+
+    defaults:
+      run:
+        working-directory: ./packages/core
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Extract version from pyproject.toml
+        id: version
+        run: |
+          VERSION=$(python - <<'PY'
+          import tomllib
+          with open('pyproject.toml','rb') as f:
+              data = tomllib.load(f)
+          print((data.get('tool',{}).get('poetry',{}) or {}).get('version') or data.get('project',{}).get('version') or '')
+          PY
+          )
+          if [ -z "$VERSION" ]; then
+            echo 'Version not found in pyproject.toml' >&2
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Verify tag matches version
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          EXPECTED="v${{ steps.version.outputs.version }}"
+          echo "Tag: $TAG; Expected: $EXPECTED"
+          if [ "$TAG" != "$EXPECTED" ]; then
+            echo 'Tag does not match version. Aborting.' >&2
+            exit 1
+          fi
+
+      - name: Install build tooling
+        run: |
+          python -m pip install --upgrade pip
+          pip install build twine
+
+      - name: Build sdist and wheel
+        run: python -m build --sdist --wheel --outdir dist/
+
+      - name: Twine check dist artifacts
+        run: twine check dist/*
+
+      - name: Smoke test install and CLI
+        run: |
+          python -m venv .venv_test
+          source .venv_test/bin/activate
+          python -m pip install --upgrade pip
+          pip install dist/*.whl
+          python -m l6e_forge.cli.main --help | head -n 5 || true
+
+      - name: Publish package distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+

@@ -1,4 +1,4 @@
-name: Publish to PyPI
+name: Publish l6e-forge-cli to PyPI
 
 on:
   push:
@@ -11,7 +11,16 @@ permissions:
 jobs:
   build-and-publish:
     runs-on: ubuntu-latest
-    environment: pypi
+    environment:
+      name: pypi
+      url: https://pypi.org/project/l6e-forge-cli/
+    permissions:
+      id-token: write # IMPORTANT: required for trusted publishing via PyPI
+
+    defaults:
+      run:
+        working-directory: ./packages/cli
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -66,9 +75,6 @@ jobs:
           pip install dist/*.whl
           python -m l6e_forge.cli.main --help | head -n 5 || true
 
-      - name: Publish package to PyPI
+      - name: Publish package distributions to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          password: ${{ secrets.PYPI_API_TOKEN }}
-          skip-existing: true
 
