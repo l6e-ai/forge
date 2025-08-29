@@ -261,7 +261,7 @@ class LocalRuntime:
             # Default to in-memory vector store and provider-backed embedding if available
             from l6e_forge.memory.backends.inmemory import InMemoryVectorStore
             from l6e_forge.memory.backends.qdrant import QdrantVectorStore
-            from l6e_forge.memory.managers.inmemory import MemoryManager
+            from l6e_forge.memory.managers.memory import MemoryManager
             from l6e_forge.memory.embeddings.ollama import OllamaEmbeddingProvider
             from l6e_forge.memory.embeddings.lmstudio import LMStudioEmbeddingProvider
             from l6e_forge.memory.embeddings.mock import MockEmbeddingProvider

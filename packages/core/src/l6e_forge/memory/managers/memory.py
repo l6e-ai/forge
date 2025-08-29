@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
+from l6e_forge.memory.backends.base import IMemoryBackend
 from l6e_forge.memory.managers.base import IMemoryManager
 from l6e_forge.memory.embeddings.base import IEmbeddingProvider
 from l6e_forge.memory.embeddings.mock import MockEmbeddingProvider
@@ -15,7 +16,7 @@ from l6e_forge.types.memory import MemoryResult
 class MemoryManager(IMemoryManager):
     def __init__(
         self,
-        vector_store,
+        vector_store: Optional[IMemoryBackend] = None,
         embedder: IEmbeddingProvider | None = None,
         conversation_store: Optional[IConversationStore] = None,
     ) -> None:
@@ -35,21 +36,26 @@ class MemoryManager(IMemoryManager):
         *,
         collection: str | None = None,
     ) -> None:
+        if self._store is None:
+            raise ValueError("No vector store provided")
         emb = self._embedder.embed(content)
         await self._store.upsert(
-            namespace, key, emb, content, metadata, collection=collection
+            namespace, key, emb, content, collection or "default", metadata=metadata
         )
 
     async def search_vectors(
         self,
         namespace: str,
         query: str,
-        limit: int = 10,
-        *,
         collection: str | None = None,
+        limit: int = 10,
     ) -> list[MemoryResult]:
+        if self._store is None:
+            raise ValueError("No vector store provided")
         q = self._embedder.embed(query)
-        rows = await self._store.query(namespace, q, limit=limit, collection=collection)
+        rows = await self._store.query(
+            namespace, q, limit=limit, collection=collection or "default"
+        )
         out: list[MemoryResult] = []
         for idx, (key, score, item) in enumerate(rows, start=1):
             out.append(
@@ -69,15 +75,23 @@ class MemoryManager(IMemoryManager):
 
     async def search_vectors_multi(
         self,
-        namespaces: list[str],
+        namespaces: list[str] | list[tuple[str, str]],
         query: str,
         per_namespace_limit: int = 5,
         overall_limit: int | None = None,
     ) -> list[MemoryResult]:
+        if self._store is None:
+            raise ValueError("No vector store provided")
         q = self._embedder.embed(query)
         merged: list[MemoryResult] = []
-        for ns in namespaces:
-            rows = await self._store.query(ns, q, limit=per_namespace_limit)
+        for entry in namespaces:
+            if isinstance(entry, tuple):
+                ns, col = entry
+            else:
+                ns, col = entry, "default"
+            rows = await self._store.query(
+                ns, q, limit=per_namespace_limit, collection=col
+            )
             for _key, score, item in rows:
                 merged.append(
                     MemoryResult(

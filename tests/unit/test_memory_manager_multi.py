@@ -1,7 +1,7 @@
 import pytest
 
 from l6e_forge.memory.backends.inmemory import InMemoryVectorStore
-from l6e_forge.memory.managers.inmemory import MemoryManager
+from l6e_forge.memory.managers.memory import MemoryManager
 from l6e_forge.memory.embeddings.mock import MockEmbeddingProvider
 
 

@@ -24,16 +24,15 @@ class IMemoryManager(Protocol):
         self,
         namespace: str,
         query: str,
-        limit: int = 10,
-        *,
         collection: str | None = None,
+        limit: int = 10,
     ) -> list[MemoryResult]:
         """Search for similar content using vector similarity"""
         ...
 
     async def search_vectors_multi(
         self,
-        namespaces: list[str],
+        namespaces: list[str] | list[tuple[str, str]],
         query: str,
         per_namespace_limit: int = 5,
         overall_limit: int | None = None,
