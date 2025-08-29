@@ -19,11 +19,14 @@ Forge (l6e-forge) is an open source toolkit for building and shipping local-firs
 
 ## Installation and Quickstart
 
-Install the CLI, initialize a workspace, create an agent, and chat locally:
+Add the core library to your project and install the CLI as a dev dependency. Then initialize a workspace, create an agent, and chat locally:
 
 ```
-# Install CLI (recommended: Poetry group cli)
-poetry install --only cli
+# Project dependency (Poetry)
+poetry add l6e-forge
+
+# Dev dependency (CLI, Poetry)
+poetry add --group dev l6e-forge-cli
 
 # Create a new workspace
 poetry run forge init ./my-workspace
@@ -33,6 +36,21 @@ poetry run forge create agent my-agent --template assistant
 
 # Chat locally (no stack needed)
 poetry run forge chat my-agent -w ./my-workspace
+```
+
+Using uv:
+
+```
+uv add l6e-forge
+uv add --dev l6e-forge-cli
+uv run forge --help
+```
+
+Using pip:
+
+```
+pip install l6e-forge l6e-forge-cli
+forge --help
 ```
 
 See the [Getting Started guide](https://github.com/l6e-ai/forge/blob/1aa28f9787f41928d96535fccf61609ac39826bc/docs/getting-started.md) for more details.

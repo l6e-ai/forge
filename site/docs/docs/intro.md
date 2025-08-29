@@ -29,8 +29,11 @@ Understand Forge in 5 minutes by trying it locally.
 
 #### Try it
 ```bash
-# Install CLI from the repo (recommended during development)
-poetry install --only cli
+# Add core library to your project
+poetry add l6e-forge
+
+# Add CLI as a dev dependency
+poetry add --group dev l6e-forge-cli
 
 # Create a new workspace
 poetry run forge init ./my-workspace
@@ -41,6 +44,21 @@ poetry run forge create agent my-ollama --provider=ollama --model llama3.2:3b
 
 # Chat locally (no Docker required)
 poetry run forge chat my-ollama -w .
+```
+
+Alternative install methods:
+
+Using uv:
+
+```bash
+uv add l6e-forge
+uv add --dev l6e-forge-cli
+```
+
+Using pip:
+
+```bash
+pip install l6e-forge l6e-forge-cli
 ```
 
 Optional: start the local stack with API, monitor, and UI.

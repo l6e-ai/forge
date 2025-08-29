@@ -11,8 +11,34 @@ description: Commands for initializing workspaces, running dev stack, chatting, 
 ## Installation
 
 ```bash
-poetry install --only cli
+# Install core library (required by your project)
+poetry add l6e-forge
+
+# Install CLI as a dev dependency
+poetry add --group dev l6e-forge-cli
+
 poetry run forge --help
+```
+
+Using uv:
+
+```bash
+# Install core library
+uv add l6e-forge
+
+# Install CLI as a dev dependency
+uv add --dev l6e-forge-cli
+
+uv run forge --help
+```
+
+Using pip:
+
+```bash
+# Install into your (virtual) environment
+pip install l6e-forge l6e-forge-cli
+
+forge --help
 ```
 
 ## Workspace Structure

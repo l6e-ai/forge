@@ -10,7 +10,8 @@ Install a packaged agent from a `.l6e` file.
 
 ## Prerequisites
 
-- Python 3.13, l6e-forge CLI
+- Python 3.13, `l6e-forge` core library (project dependency)
+- `l6e-forge-cli` installed in your development environment
 - Optional: Docker (stack), Ollama (local LLMs)
 
 ## Command

@@ -6,7 +6,7 @@ description: Build `.l6e` packages with optional compose overlays, UI assets, wh
 
 <!-- Adapted from repo docs/packaging-agents.md -->
 
-The `forge pkg build` command creates a `.l6e` package from an agent directory.
+The `forge pkg build` command (from `l6e-forge-cli`) creates a `.l6e` package from an agent directory. Ensure your project depends on `l6e-forge` and your dev environment has `l6e-forge-cli` installed.
 
 ## Basic Usage
 

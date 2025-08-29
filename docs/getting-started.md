@@ -9,10 +9,24 @@ Forge CLI requires Python 3.13 (Poetry is recommended for dependency management)
 
 ## Installation
 
-Install the Forge using Poetry:
+Install Forge using Poetry. Add the core library as a project dependency and the CLI as a dev dependency:
 
 ```
-poetry install l6e-forge
+poetry add l6e-forge
+poetry add --group dev l6e-forge-cli
+```
+
+Using uv:
+
+```
+uv add l6e-forge
+uv add --dev l6e-forge-cli
+```
+
+Using pip:
+
+```
+pip install l6e-forge l6e-forge-cli
 ```
 
 ## Optional Dependencies
