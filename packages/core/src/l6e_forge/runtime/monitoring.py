@@ -25,5 +25,3 @@ def get_monitoring() -> IMonitoringService:
 def set_monitoring(service: IMonitoringService) -> None:
     global _monitoring_singleton
     _monitoring_singleton = service
-
-

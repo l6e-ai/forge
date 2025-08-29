@@ -33,7 +33,9 @@ class OllamaModelManager(IModelManager):
     # Model lifecycle
     async def load_model(self, model_spec: ModelSpec) -> uuid.UUID:
         model_id = uuid.uuid4()
-        self._models[str(model_id)] = _LoadedModel(model_name=model_spec.model_name, spec=model_spec)
+        self._models[str(model_id)] = _LoadedModel(
+            model_name=model_spec.model_name, spec=model_spec
+        )
         return model_id
 
     async def unload_model(self, model_id: uuid.UUID) -> None:  # noqa: ARG002
@@ -48,7 +50,9 @@ class OllamaModelManager(IModelManager):
     async def complete(self, model_id: uuid.UUID, prompt: str, **kwargs) -> Any:  # noqa: D401, ANN401
         raise NotImplementedError
 
-    async def chat(self, model_id: uuid.UUID, messages: list[Message], **kwargs) -> ChatResponse:
+    async def chat(
+        self, model_id: uuid.UUID, messages: list[Message], **kwargs
+    ) -> ChatResponse:
         loaded = self._models.get(str(model_id))
         if not loaded:
             raise RuntimeError("Model not loaded")
@@ -70,7 +74,9 @@ class OllamaModelManager(IModelManager):
                 f"Ollama is not running at {self.endpoint}. Install from https://ollama.com and run 'ollama serve'."
             ) from exc
         except httpx.HTTPStatusError as exc:
-            raise RuntimeError(f"Ollama error: HTTP {exc.response.status_code} - {exc.response.text}") from exc
+            raise RuntimeError(
+                f"Ollama error: HTTP {exc.response.status_code} - {exc.response.text}"
+            ) from exc
 
         data = resp.json()
         # Expected schema: { 'message': {'role': 'assistant', 'content': '...'}, 'total_duration': ns, ... }
@@ -86,7 +92,9 @@ class OllamaModelManager(IModelManager):
             request_id=data.get("id", str(uuid.uuid4())),
             tokens_generated=data.get("eval_count", 0) or 0,
             generation_time=generation_time,
-            tokens_per_second=(data.get("eval_count", 0) or 0) / generation_time if generation_time > 0 else 0.0,
+            tokens_per_second=(data.get("eval_count", 0) or 0) / generation_time
+            if generation_time > 0
+            else 0.0,
             finish_reason="completed",
             prompt_tokens=data.get("prompt_eval_count", 0) or 0,
             context_used=len(messages),
@@ -110,7 +118,7 @@ class OllamaModelManager(IModelManager):
         specs: list[ModelSpec] = []
         for item in tags:
             name = item.get("name") or item.get("model") or "unknown"
-            size = item.get("size"),
+            size = (item.get("size"),)
             specs.append(
                 ModelSpec(
                     model_id=name,
@@ -146,7 +154,9 @@ class OllamaModelManager(IModelManager):
             resp.raise_for_status()
             return HealthStatus(healthy=True, status="healthy")
         except Exception:
-            return HealthStatus(healthy=False, status="unhealthy", errors=["Ollama unreachable"])  # type: ignore[arg-type]
+            return HealthStatus(
+                healthy=False, status="unhealthy", errors=["Ollama unreachable"]
+            )  # type: ignore[arg-type]
 
     # Resource management
     def get_memory_usage(self) -> dict[uuid.UUID, int]:  # noqa: D401
@@ -154,5 +164,3 @@ class OllamaModelManager(IModelManager):
 
     async def optimize_memory(self) -> None:  # noqa: D401
         return None
-
-

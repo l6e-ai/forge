@@ -19,13 +19,19 @@ class RemoteMonitoringService(IMonitoringService):
         self.timeout_seconds = timeout_seconds
 
     # --- IMonitoringService methods ---
-    async def record_metric(self, name: str, value: float, tags: dict[str, str] | None = None) -> None:
-        await self._post("/ingest/metric", {"name": name, "value": value, "tags": tags or {}})
+    async def record_metric(
+        self, name: str, value: float, tags: dict[str, str] | None = None
+    ) -> None:
+        await self._post(
+            "/ingest/metric", {"name": name, "value": value, "tags": tags or {}}
+        )
 
     async def record_event(self, name: str, data: dict[str, Any]) -> None:
         await self._post("/ingest/event", {"name": name, "data": data})
 
-    def get_metrics(self, name: str, time_range: tuple[Any, Any] | None = None) -> list[dict[str, Any]]:  # type: ignore[override]
+    def get_metrics(
+        self, name: str, time_range: tuple[Any, Any] | None = None
+    ) -> list[dict[str, Any]]:  # type: ignore[override]
         # Remote read not implemented; return empty for now
         return []
 
@@ -40,15 +46,39 @@ class RemoteMonitoringService(IMonitoringService):
         await self._post("/ingest/trace/end", {"trace_id": trace_id})
 
     # --- Extended helpers used by LocalRuntime ---
-    def set_agent_status(self, agent_id: str, name: str, status: str, config: dict[str, Any] | None = None) -> None:  # noqa: D401
+    def set_agent_status(
+        self,
+        agent_id: str,
+        name: str,
+        status: str,
+        config: dict[str, Any] | None = None,
+    ) -> None:  # noqa: D401
         # Execute synchronously to ensure registration updates land even if event loop ends
-        self._post_sync("/ingest/agent/status", {"agent_id": agent_id, "name": name, "status": status, "config": config or {}})
+        self._post_sync(
+            "/ingest/agent/status",
+            {
+                "agent_id": agent_id,
+                "name": name,
+                "status": status,
+                "config": config or {},
+            },
+        )
 
     def remove_agent(self, agent_id: str) -> None:  # noqa: D401
         self._post_sync("/ingest/agent/remove", {"agent_id": agent_id})
 
-    def add_chat_log(self, conversation_id: str, role: str, content: str, agent_id: str | None = None) -> None:  # noqa: D401
-        self._post_sync("/ingest/chat", {"conversation_id": str(conversation_id), "role": role, "content": content, "agent_id": agent_id})
+    def add_chat_log(
+        self, conversation_id: str, role: str, content: str, agent_id: str | None = None
+    ) -> None:  # noqa: D401
+        self._post_sync(
+            "/ingest/chat",
+            {
+                "conversation_id": str(conversation_id),
+                "role": role,
+                "content": content,
+                "agent_id": agent_id,
+            },
+        )
 
     # --- Read helpers ---
     def get_recent_events(self, limit: int = 200) -> List[dict[str, Any]]:
@@ -116,7 +146,9 @@ class RemoteMonitoringService(IMonitoringService):
     async def subscribe(self):  # pragma: no cover - not supported for remote
         raise NotImplementedError("subscribe not supported for RemoteMonitoringService")
 
-    async def unsubscribe(self, q) -> None:  # pragma: no cover - not supported for remote
+    async def unsubscribe(
+        self, q
+    ) -> None:  # pragma: no cover - not supported for remote
         return None
 
     # --- HTTP helper ---
@@ -144,5 +176,3 @@ class RemoteMonitoringService(IMonitoringService):
                 return None
         except Exception:
             return None
-
-

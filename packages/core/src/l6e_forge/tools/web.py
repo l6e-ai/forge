@@ -23,8 +23,16 @@ class WebFetchTool(ITool):
             "type": "object",
             "properties": {
                 "url": {"type": "string"},
-                "timeout": {"type": "integer", "minimum": 1, "maximum": 60, "default": 20},
-                "headers": {"type": "object", "additionalProperties": {"type": "string"}},
+                "timeout": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 60,
+                    "default": 20,
+                },
+                "headers": {
+                    "type": "object",
+                    "additionalProperties": {"type": "string"},
+                },
             },
             "required": ["url"],
             "additionalProperties": False,
@@ -44,7 +52,9 @@ class WebFetchTool(ITool):
 
     async def validate_parameters(self, parameters: dict[str, Any]) -> bool:
         url = parameters.get("url")
-        return isinstance(url, str) and (url.startswith("http://") or url.startswith("https://"))
+        return isinstance(url, str) and (
+            url.startswith("http://") or url.startswith("https://")
+        )
 
     async def initialize(self) -> None:  # pragma: no cover
         return None
@@ -52,15 +62,21 @@ class WebFetchTool(ITool):
     async def cleanup(self) -> None:  # pragma: no cover
         return None
 
-    async def execute(self, parameters: dict[str, Any], context: ToolContext) -> ToolResult:
+    async def execute(
+        self, parameters: dict[str, Any], context: ToolContext
+    ) -> ToolResult:
         if not context.allow_network:
-            return ToolResult(success=False, error_message="Network access disabled in context")
+            return ToolResult(
+                success=False, error_message="Network access disabled in context"
+            )
         if not await self.validate_parameters(parameters):
             return ToolResult(success=False, error_message="Invalid parameters")
 
         url: str = parameters["url"]
         timeout: int = int(parameters.get("timeout", 20))
-        headers: dict[str, str] = {str(k): str(v) for k, v in (parameters.get("headers") or {}).items()}
+        headers: dict[str, str] = {
+            str(k): str(v) for k, v in (parameters.get("headers") or {}).items()
+        }
 
         # Domain allow-list enforcement if present
         if context.allowed_domains:
@@ -68,13 +84,18 @@ class WebFetchTool(ITool):
 
             hostname = urlparse(url).hostname or ""
             allowed = any(
-                hostname == d.replace("*.", "") or hostname.endswith(d.replace("*", "")) for d in context.allowed_domains
+                hostname == d.replace("*.", "") or hostname.endswith(d.replace("*", ""))
+                for d in context.allowed_domains
             )
             if not allowed:
-                return ToolResult(success=False, error_message="Domain not allowed by policy")
+                return ToolResult(
+                    success=False, error_message="Domain not allowed by policy"
+                )
 
         def _fetch() -> tuple[int, str, str]:
-            req = urllib.request.Request(url, headers=headers or {"User-Agent": "l6e-forge/0.1"})
+            req = urllib.request.Request(
+                url, headers=headers or {"User-Agent": "l6e-forge/0.1"}
+            )
             try:
                 with urllib.request.urlopen(req, timeout=timeout) as resp:
                     status = resp.getcode() or 0
@@ -92,6 +113,12 @@ class WebFetchTool(ITool):
         if status == 0:
             return ToolResult(success=False, error_message=text)
         text_out = text[: context.max_output_size]
-        return ToolResult(success=True, data={"url": url, "status": status, "content_type": content_type, "text": text_out})
-
-
+        return ToolResult(
+            success=True,
+            data={
+                "url": url,
+                "status": status,
+                "content_type": content_type,
+                "text": text_out,
+            },
+        )

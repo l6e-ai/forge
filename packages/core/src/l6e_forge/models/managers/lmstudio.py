@@ -30,7 +30,9 @@ class LMStudioModelManager(IModelManager):
 
     async def load_model(self, model_spec: ModelSpec) -> uuid.UUID:
         model_id = uuid.uuid4()
-        self._models[str(model_id)] = _LoadedModel(model_name=model_spec.model_name, spec=model_spec)
+        self._models[str(model_id)] = _LoadedModel(
+            model_name=model_spec.model_name, spec=model_spec
+        )
         return model_id
 
     async def unload_model(self, model_id: uuid.UUID) -> None:  # noqa: ARG002
@@ -42,7 +44,9 @@ class LMStudioModelManager(IModelManager):
     async def complete(self, model_id: uuid.UUID, prompt: str, **kwargs) -> Any:  # noqa: D401, ANN401
         raise NotImplementedError
 
-    async def chat(self, model_id: uuid.UUID, messages: list[Message], **kwargs) -> ChatResponse:
+    async def chat(
+        self, model_id: uuid.UUID, messages: list[Message], **kwargs
+    ) -> ChatResponse:
         loaded = self._models.get(str(model_id))
         if not loaded:
             raise RuntimeError("Model not loaded")
@@ -67,12 +71,14 @@ class LMStudioModelManager(IModelManager):
         except httpx.ReadTimeout as exc:
             raise RuntimeError(f"LM Studio request timed out after {timeout}s") from exc
         except httpx.HTTPStatusError as exc:
-            raise RuntimeError(f"LM Studio error: HTTP {exc.response.status_code} - {exc.response.text}") from exc
+            raise RuntimeError(
+                f"LM Studio error: HTTP {exc.response.status_code} - {exc.response.text}"
+            ) from exc
 
         data = resp.json()
         # Expected schema: choices[0].message.content
         choice = (data.get("choices") or [{}])[0]
-        msg = (choice.get("message") or {})
+        msg = choice.get("message") or {}
         content = msg.get("content", "")
         role = msg.get("role", "assistant")
         reply = Message(content=content, role=role)
@@ -137,12 +143,12 @@ class LMStudioModelManager(IModelManager):
             resp.raise_for_status()
             return HealthStatus(healthy=True, status="healthy")
         except Exception:
-            return HealthStatus(healthy=False, status="unhealthy", errors=["LM Studio API unreachable"])  # type: ignore[arg-type]
+            return HealthStatus(
+                healthy=False, status="unhealthy", errors=["LM Studio API unreachable"]
+            )  # type: ignore[arg-type]
 
     def get_memory_usage(self) -> dict[uuid.UUID, int]:
         return {}
 
     async def optimize_memory(self) -> None:
         return None
-
-

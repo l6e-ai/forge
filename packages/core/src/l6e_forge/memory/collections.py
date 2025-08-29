@@ -7,8 +7,12 @@ from typing import Dict, Optional, Tuple
 @dataclass
 class CollectionSpec:
     provider: str = "default"  # e.g., "qdrant", "inmemory"
-    collection_name: Optional[str] = None  # backend collection (e.g., qdrant collection)
-    namespace_prefix: Optional[str] = None  # logical namespace prefix within the collection
+    collection_name: Optional[str] = (
+        None  # backend collection (e.g., qdrant collection)
+    )
+    namespace_prefix: Optional[str] = (
+        None  # logical namespace prefix within the collection
+    )
 
 
 class MemoryCollectionRegistry:
@@ -37,7 +41,11 @@ class MemoryCollectionRegistry:
         namespace_prefix: Optional[str] = None,
     ) -> None:
         agent = self._store.setdefault(agent_name, {})
-        agent[alias] = CollectionSpec(provider=provider, collection_name=collection_name, namespace_prefix=namespace_prefix)
+        agent[alias] = CollectionSpec(
+            provider=provider,
+            collection_name=collection_name,
+            namespace_prefix=namespace_prefix,
+        )
 
     def resolve(self, agent_name: str, alias: str) -> CollectionSpec:
         return self._store.get(agent_name, {}).get(alias, CollectionSpec())
@@ -71,5 +79,3 @@ _default_registry = MemoryCollectionRegistry()
 
 def get_default_registry() -> MemoryCollectionRegistry:
     return _default_registry
-
-

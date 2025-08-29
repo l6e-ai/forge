@@ -3,11 +3,16 @@ from __future__ import annotations
 from pathlib import Path
 from typer.testing import CliRunner
 
-from l6e_forge.models.auto import ensure_ollama_models, apply_recommendations_to_agent_config
+from l6e_forge.models.auto import (
+    ensure_ollama_models,
+    apply_recommendations_to_agent_config,
+)
 from l6e_forge.cli.main import app as main_app
 
 
-def test_ensure_ollama_models_pulls_and_adjusts_when_none_available(monkeypatch) -> None:
+def test_ensure_ollama_models_pulls_and_adjusts_when_none_available(
+    monkeypatch,
+) -> None:
     # Simulate an empty Ollama registry initially, then models appear after pulls
     current: set[str] = set()
 
@@ -35,7 +40,9 @@ def test_ensure_ollama_models_pulls_and_adjusts_when_none_available(monkeypatch)
     assert resolved["embedding"] in current
 
 
-def test_cli_bootstrap_updates_config_when_no_models(tmp_path: Path, monkeypatch) -> None:
+def test_cli_bootstrap_updates_config_when_no_models(
+    tmp_path: Path, monkeypatch
+) -> None:
     # Prepare a minimal agent with config
     agent_dir = tmp_path / "agent"
     agent_dir.mkdir(parents=True)
@@ -67,15 +74,15 @@ providers = ["ollama"]
 
     # Run CLI bootstrap
     runner = CliRunner()
-    result = runner.invoke(main_app, ["models", "bootstrap", str(agent_dir)], catch_exceptions=False)
+    result = runner.invoke(
+        main_app, ["models", "bootstrap", str(agent_dir)], catch_exceptions=False
+    )
     assert result.exit_code == 0, result.output
 
     # Config should now have model/memory entries
     cfg = (agent_dir / "config.toml").read_text(encoding="utf-8")
     assert "[model]" in cfg
-    assert "provider = \"ollama\"" in cfg
-    assert "model = \"" in cfg
+    assert 'provider = "ollama"' in cfg
+    assert 'model = "' in cfg
     assert "[memory]" in cfg
-    assert "embedding_model = \"" in cfg
-
-
+    assert 'embedding_model = "' in cfg

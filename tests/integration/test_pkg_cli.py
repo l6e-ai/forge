@@ -20,7 +20,9 @@ class Agent:
     async def handle_message(self, message: Message, context: AgentContext) -> AgentResponse:
         return AgentResponse(content="ok", agent_id=self.name, response_time=0.0)
 """
-        ).strip().format(name=name),
+        )
+        .strip()
+        .format(name=name),
         encoding="utf-8",
     )
     return agent_dir
@@ -52,7 +54,9 @@ def test_pkg_build_and_inspect(tmp_path: Path) -> None:
     assert pkg_path.exists()
 
     # Inspect
-    result_inspect = runner.invoke(main_app, ["pkg", "inspect", str(pkg_path)], catch_exceptions=False)
+    result_inspect = runner.invoke(
+        main_app, ["pkg", "inspect", str(pkg_path)], catch_exceptions=False
+    )
     assert result_inspect.exit_code == 0, result_inspect.output
     out = result_inspect.output
     assert "name: demo" in out.lower()
@@ -101,12 +105,16 @@ model = "llama3.2:3b"
     assert data["agent_config"]["model"]["provider"] == "ollama"
 
     # Use CLI --show-config to display the embedded config
-    result_show_cfg = runner.invoke(main_app, ["pkg", "inspect", str(pkg_path2), "--show-config"], catch_exceptions=False)
+    result_show_cfg = runner.invoke(
+        main_app,
+        ["pkg", "inspect", str(pkg_path2), "--show-config"],
+        catch_exceptions=False,
+    )
     assert result_show_cfg.exit_code == 0, result_show_cfg.output
     out_cfg = result_show_cfg.output
     assert "[agent_config]" in out_cfg
-    assert "description = \"Config Desc\"" in out_cfg
-    assert "provider = \"ollama\"" in out_cfg
+    assert 'description = "Config Desc"' in out_cfg
+    assert 'provider = "ollama"' in out_cfg
 
 
 def test_pkg_install_into_workspace_and_overwrite(tmp_path: Path) -> None:
@@ -125,7 +133,9 @@ def test_pkg_install_into_workspace_and_overwrite(tmp_path: Path) -> None:
 
     # Prepare a workspace
     ws_path = tmp_path / "ws"
-    result_init = runner.invoke(main_app, ["init", str(ws_path)], catch_exceptions=False)
+    result_init = runner.invoke(
+        main_app, ["init", str(ws_path)], catch_exceptions=False
+    )
     assert result_init.exit_code == 0, result_init.output
 
     # Install into workspace
@@ -172,7 +182,9 @@ def test_pkg_build_requires_agent_py(tmp_path: Path) -> None:
     runner = CliRunner()
     empty_dir = tmp_path / "empty_agent"
     empty_dir.mkdir(parents=True)
-    result = runner.invoke(main_app, ["pkg", "build", str(empty_dir)], catch_exceptions=False)
+    result = runner.invoke(
+        main_app, ["pkg", "build", str(empty_dir)], catch_exceptions=False
+    )
     assert result.exit_code != 0
     assert "agent.py not found" in result.output.lower()
 
@@ -200,7 +212,10 @@ def test_pkg_install_requires_workspace(tmp_path: Path) -> None:
         catch_exceptions=False,
     )
     assert result_install.exit_code != 0
-    assert "not a workspace" in result_install.output.lower() or "missing" in result_install.output.lower()
+    assert (
+        "not a workspace" in result_install.output.lower()
+        or "missing" in result_install.output.lower()
+    )
 
 
 def test_pkg_checksums_present_and_inspect_counts(tmp_path: Path) -> None:
@@ -220,6 +235,7 @@ def test_pkg_checksums_present_and_inspect_counts(tmp_path: Path) -> None:
 
     # Open and check checksums.txt exists and has 2 lines
     import zipfile
+
     with zipfile.ZipFile(pkg_path, "r") as zf:
         with zf.open("checksums.txt") as f:
             lines = f.read().decode("utf-8").strip().splitlines()
@@ -228,7 +244,9 @@ def test_pkg_checksums_present_and_inspect_counts(tmp_path: Path) -> None:
     assert any("agent/agent.py" in ln for ln in lines)
 
     # Inspect summary shows count
-    result_inspect = runner.invoke(main_app, ["pkg", "inspect", str(pkg_path)], catch_exceptions=False)
+    result_inspect = runner.invoke(
+        main_app, ["pkg", "inspect", str(pkg_path)], catch_exceptions=False
+    )
     assert result_inspect.exit_code == 0
     assert "Checksums" in result_inspect.output
     assert "(2 entries)" in result_inspect.output
@@ -265,6 +283,7 @@ def test_pkg_profiles_with_compose_and_requirements(tmp_path: Path) -> None:
     assert pkg_medium.exists()
     # Verify compose exists
     import zipfile
+
     with zipfile.ZipFile(pkg_medium, "r") as zf:
         assert "compose/stack.yaml" in zf.namelist()
         with zf.open("package.toml") as f:
@@ -302,7 +321,10 @@ def test_pkg_profiles_with_compose_and_requirements(tmp_path: Path) -> None:
 
             data = _toml.load(f)
             assert data.get("artifacts", {}).get("profile") == "fat"
-            assert data.get("artifacts", {}).get("requirements") == "artifacts/requirements.txt"
+            assert (
+                data.get("artifacts", {}).get("requirements")
+                == "artifacts/requirements.txt"
+            )
 
 
 def test_pkg_compose_auto_infers_qdrant_and_ollama(tmp_path: Path) -> None:
@@ -345,6 +367,7 @@ model = "llama3.2:3b"
     assert result_build.exit_code == 0, result_build.output
     pkg_path = dist_dir / "auto1-0.0.4.l6e"
     import zipfile
+
     with zipfile.ZipFile(pkg_path, "r") as zf:
         with zf.open("package.toml") as f:
             import tomllib as _toml
@@ -397,6 +420,7 @@ provider = "redis"
     assert result_build.exit_code == 0, result_build.output
     pkg_path = dist_dir / "auto2-0.0.5.l6e"
     import zipfile
+
     with zipfile.ZipFile(pkg_path, "r") as zf:
         with zf.open("package.toml") as f:
             import tomllib as _toml
@@ -430,7 +454,9 @@ def test_pkg_install_verifies_checksums_and_detects_mismatch(tmp_path: Path) -> 
 
     # Prepare workspace
     ws_path = tmp_path / "ws"
-    result_init = runner.invoke(main_app, ["init", str(ws_path)], catch_exceptions=False)
+    result_init = runner.invoke(
+        main_app, ["init", str(ws_path)], catch_exceptions=False
+    )
     assert result_init.exit_code == 0
 
     # First install should pass verification
@@ -444,8 +470,12 @@ def test_pkg_install_verifies_checksums_and_detects_mismatch(tmp_path: Path) -> 
 
     # Create a tampered package: replace agent/agent.py content but keep checksums.txt
     import zipfile
+
     tampered = dist_dir / "tamper-0.0.1-tampered.l6e"
-    with zipfile.ZipFile(pkg_path, "r") as zf_in, zipfile.ZipFile(tampered, "w") as zf_out:
+    with (
+        zipfile.ZipFile(pkg_path, "r") as zf_in,
+        zipfile.ZipFile(tampered, "w") as zf_out,
+    ):
         for info in zf_in.infolist():
             with zf_in.open(info.filename) as src:
                 data = src.read()
@@ -509,7 +539,9 @@ def test_pkg_sign_and_verify_signature(tmp_path: Path, monkeypatch) -> None:
 
     # Prepare workspace
     ws_path = tmp_path / "ws"
-    result_init = runner.invoke(main_app, ["init", str(ws_path)], catch_exceptions=False)
+    result_init = runner.invoke(
+        main_app, ["init", str(ws_path)], catch_exceptions=False
+    )
     assert result_init.exit_code == 0
 
     # Verify signature using embedded pub key
@@ -546,5 +578,3 @@ def test_pkg_sign_and_verify_signature(tmp_path: Path, monkeypatch) -> None:
     )
     assert result_install_sig2.exit_code == 0, result_install_sig2.output
     assert "Signature verification passed" in result_install_sig2.output
-
-

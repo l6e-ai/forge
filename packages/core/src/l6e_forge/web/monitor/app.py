@@ -102,10 +102,14 @@ def create_app(monitor: IMonitoringService) -> FastAPI:
             config = payload.get("config") or {}
             # type: ignore[attr-defined]
             monitor.set_agent_status(agent_id, name, status=status, config=config)  # noqa: SLF001
-            await monitor.record_event("agent.status", {"agent_id": agent_id, "status": status, "name": name})  # type: ignore[arg-type]
+            await monitor.record_event(
+                "agent.status", {"agent_id": agent_id, "status": status, "name": name}
+            )  # type: ignore[arg-type]
             # Trigger UI refresh by emitting agent.registered on ready state
             if status == "ready":
-                await monitor.record_event("agent.registered", {"agent_id": agent_id, "name": name})  # type: ignore[arg-type]
+                await monitor.record_event(
+                    "agent.registered", {"agent_id": agent_id, "name": name}
+                )  # type: ignore[arg-type]
             return JSONResponse({"ok": True})
         except Exception as exc:  # noqa: BLE001
             return JSONResponse({"ok": False, "error": str(exc)}, status_code=400)
@@ -130,7 +134,9 @@ def create_app(monitor: IMonitoringService) -> FastAPI:
             agent_id = payload.get("agent_id")
             # type: ignore[attr-defined]
             monitor.add_chat_log(conversation_id, role, content, agent_id=agent_id)  # noqa: SLF001
-            await monitor.record_event("chat.message", {"direction": "ingest", "role": role})  # type: ignore[arg-type]
+            await monitor.record_event(
+                "chat.message", {"direction": "ingest", "role": role}
+            )  # type: ignore[arg-type]
             return JSONResponse({"ok": True})
         except Exception as exc:  # noqa: BLE001
             return JSONResponse({"ok": False, "error": str(exc)}, status_code=400)
@@ -141,7 +147,13 @@ def create_app(monitor: IMonitoringService) -> FastAPI:
         q = await monitor.subscribe()  # type: ignore[attr-defined]
         try:
             # Send initial snapshot
-            await ws.send_json({"type": "snapshot", "agents": monitor.get_agent_status(), "perf": monitor.get_perf_summary()})
+            await ws.send_json(
+                {
+                    "type": "snapshot",
+                    "agents": monitor.get_agent_status(),
+                    "perf": monitor.get_perf_summary(),
+                }
+            )
             while True:
                 try:
                     msg = await asyncio.wait_for(q.get(), timeout=30.0)
@@ -296,5 +308,3 @@ _INDEX_HTML = """
 </body>
 </html>
 """
-
-

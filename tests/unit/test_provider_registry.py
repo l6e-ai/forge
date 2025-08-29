@@ -31,5 +31,3 @@ def test_get_manager_ollama_and_lmstudio() -> None:
     m2 = get_manager("lmstudio", eps)
     # Smoke: they are different types and have required methods
     assert hasattr(m1, "chat") and hasattr(m2, "chat")
-
-

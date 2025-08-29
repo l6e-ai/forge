@@ -95,5 +95,3 @@ class Agent(IAgent):
     def get_metrics(self):
         return {}
 """
-
-

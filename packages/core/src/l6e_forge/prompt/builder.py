@@ -32,7 +32,12 @@ class PromptBuilder:
     loader: PromptTemplateLoader
 
     def __init__(self, search_paths: Iterable[str | Path] | None = None) -> None:
-        self.env = Environment(autoescape=False, undefined=StrictUndefined, trim_blocks=True, lstrip_blocks=True)
+        self.env = Environment(
+            autoescape=False,
+            undefined=StrictUndefined,
+            trim_blocks=True,
+            lstrip_blocks=True,
+        )
         self.loader = PromptTemplateLoader([Path(p) for p in (search_paths or [])])
 
     async def render(
@@ -46,14 +51,23 @@ class PromptBuilder:
 
         # Resolve history via provider if k_limit is set; otherwise use context.conversation_history
         history: list[Message] = context.conversation_history
-        if k_limit is not None and getattr(context, "history_provider", None) is not None:
+        if (
+            k_limit is not None
+            and getattr(context, "history_provider", None) is not None
+        ):
             try:
                 # Get last k messages
-                full = await context.history_provider.get_recent(context.conversation_id, limit=k_limit)
+                full = await context.history_provider.get_recent(
+                    context.conversation_id, limit=k_limit
+                )
                 history = full[-k_limit:]
             except Exception:
                 # Fallback to whatever is on context
-                history = context.conversation_history[-k_limit:] if context.conversation_history else []
+                history = (
+                    context.conversation_history[-k_limit:]
+                    if context.conversation_history
+                    else []
+                )
 
         # Prepare vars for template
         vars: dict[str, Any] = {
@@ -78,8 +92,10 @@ class PromptBuilder:
         agent_name: str | None = None,
     ) -> str:
         # Default workspace root to context.workspace_path when not provided
-        root_path = Path(workspace_root).resolve() if workspace_root is not None else getattr(context, "workspace_path", Path.cwd())
+        root_path = (
+            Path(workspace_root).resolve()
+            if workspace_root is not None
+            else getattr(context, "workspace_path", Path.cwd())
+        )
         tmpl = self.loader.load(template_ref, root_path, agent_name)
         return await self.render(tmpl, context, extra_vars=extra_vars, k_limit=k_limit)
-
-

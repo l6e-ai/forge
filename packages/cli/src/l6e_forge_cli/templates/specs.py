@@ -51,7 +51,11 @@ def get_template_spec(template: str, provider: str) -> TemplateSpec:
             name="assistant-auto",
             description="Assistant agent using auto-bootstrap models",
             files=[
-                TemplateFile(path="agent.py", content=AGENT_ASSISTANT_MODEL_PY, file_type="python"),
+                TemplateFile(
+                    path="agent.py",
+                    content=AGENT_ASSISTANT_MODEL_PY,
+                    file_type="python",
+                ),
                 TemplateFile(path="config.toml", content=CONFIG_TOML, file_type="toml"),
             ],
             variables={},
@@ -62,5 +66,3 @@ def get_template_spec(template: str, provider: str) -> TemplateSpec:
     if template in ("assistant-ollama",):
         return build_ollama_spec()
     raise ValueError(f"Unknown template '{template}'.")
-
-

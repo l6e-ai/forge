@@ -11,7 +11,9 @@ from l6e_forge.types.tool import ToolContext, ToolResult
 @dataclass
 class CodeUtilsTool(ITool):
     name: str = "code.utils"
-    description: str = "Utilities for working with code snippets and JSON (format, validate)"
+    description: str = (
+        "Utilities for working with code snippets and JSON (format, validate)"
+    )
     category: str = "utility"
     version: str = "0.1.0"
 
@@ -19,7 +21,10 @@ class CodeUtilsTool(ITool):
         return {
             "type": "object",
             "properties": {
-                "operation": {"type": "string", "enum": ["json_validate", "json_format"]},
+                "operation": {
+                    "type": "string",
+                    "enum": ["json_validate", "json_format"],
+                },
                 "text": {"type": "string"},
             },
             "required": ["operation", "text"],
@@ -49,7 +54,9 @@ class CodeUtilsTool(ITool):
     async def cleanup(self) -> None:  # pragma: no cover
         return None
 
-    async def execute(self, parameters: dict[str, Any], context: ToolContext) -> ToolResult:
+    async def execute(
+        self, parameters: dict[str, Any], context: ToolContext
+    ) -> ToolResult:
         if not await self.validate_parameters(parameters):
             return ToolResult(success=False, error_message="Invalid parameters")
         op: str = parameters["operation"]
@@ -59,17 +66,22 @@ class CodeUtilsTool(ITool):
             if op == "json_validate":
                 try:
                     _ = json.loads(text)
-                    return ToolResult(success=True, data={"operation": op, "valid": True})
+                    return ToolResult(
+                        success=True, data={"operation": op, "valid": True}
+                    )
                 except json.JSONDecodeError as exc:
-                    return ToolResult(success=True, data={"operation": op, "valid": False, "error": str(exc)})
+                    return ToolResult(
+                        success=True,
+                        data={"operation": op, "valid": False, "error": str(exc)},
+                    )
 
             if op == "json_format":
                 obj = json.loads(text)
                 pretty = json.dumps(obj, indent=2, ensure_ascii=False)
                 return ToolResult(success=True, data={"operation": op, "text": pretty})
 
-            return ToolResult(success=False, error_message=f"Unsupported operation: {op}")
+            return ToolResult(
+                success=False, error_message=f"Unsupported operation: {op}"
+            )
         except Exception as exc:  # pragma: no cover
             return ToolResult(success=False, error_message=str(exc))
-
-

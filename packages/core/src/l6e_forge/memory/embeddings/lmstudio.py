@@ -9,10 +9,14 @@ from .base import IEmbeddingProvider
 
 
 class LMStudioEmbeddingProvider(IEmbeddingProvider):
-    def __init__(self, model: str = "text-embedding-3-small", endpoint: str | None = None) -> None:
+    def __init__(
+        self, model: str = "text-embedding-3-small", endpoint: str | None = None
+    ) -> None:
         # LM Studio OpenAI-compatible endpoint
         self.model = model
-        self.endpoint = (endpoint or os.environ.get("LMSTUDIO_HOST") or "http://localhost:1234/v1").rstrip("/")
+        self.endpoint = (
+            endpoint or os.environ.get("LMSTUDIO_HOST") or "http://localhost:1234/v1"
+        ).rstrip("/")
 
     def embed(self, text: str) -> List[float]:
         return self.embed_batch([text])[0]
@@ -29,5 +33,3 @@ class LMStudioEmbeddingProvider(IEmbeddingProvider):
         except Exception:
             pass
         return [[0.0] * 384 for _ in texts]
-
-

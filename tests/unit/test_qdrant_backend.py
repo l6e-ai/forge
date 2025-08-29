@@ -14,5 +14,3 @@ async def test_qdrant_split_collection_namespace() -> None:
     col2, ns2 = qb._split_collection_namespace("agentX:ns")  # type: ignore[attr-defined]
     assert col2 == "base"
     assert ns2 == "agentX:ns"
-
-

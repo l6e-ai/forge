@@ -41,5 +41,3 @@ def list() -> None:  # noqa: A003 - CLI verb
 
 def main() -> None:
     app()
-
-

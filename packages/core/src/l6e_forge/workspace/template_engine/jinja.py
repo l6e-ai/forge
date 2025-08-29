@@ -7,7 +7,11 @@ from typing import Any
 from jinja2 import Environment, StrictUndefined
 
 from l6e_forge.workspace.template_engine.base import IWorkspaceTemplateEngine
-from l6e_forge.types.workspace import TemplateContext, TemplateGenerationResult, TemplateSpec
+from l6e_forge.types.workspace import (
+    TemplateContext,
+    TemplateGenerationResult,
+    TemplateSpec,
+)
 
 
 @dataclass
@@ -17,11 +21,15 @@ class JinjaTemplateEngine(IWorkspaceTemplateEngine):
     def __init__(self) -> None:
         self.env = Environment(autoescape=False, undefined=StrictUndefined)
 
-    async def render_template(self, template_content: str, variables: dict[str, Any]) -> str:
+    async def render_template(
+        self, template_content: str, variables: dict[str, Any]
+    ) -> str:
         template = self.env.from_string(template_content)
         return template.render(**variables)
 
-    async def generate_from_template(self, template_spec: TemplateSpec, context: TemplateContext) -> TemplateGenerationResult:
+    async def generate_from_template(
+        self, template_spec: TemplateSpec, context: TemplateContext
+    ) -> TemplateGenerationResult:
         result = TemplateGenerationResult(
             success=True,
             template_name=template_spec.name,
@@ -41,5 +49,3 @@ class JinjaTemplateEngine(IWorkspaceTemplateEngine):
 
     def get_template(self, template_name: str) -> TemplateSpec:  # noqa: D401
         raise NotImplementedError
-
-

@@ -30,11 +30,19 @@ app.add_typer(template_cmd.app, name="template")
 app.add_typer(models_cmd.app, name="models")
 app.add_typer(package_cmd.app, name="pkg")
 app.add_typer(memory_cmd.app, name="memory")
+
+
 @app.command()
 def init(
     workspace: str = typer.Argument(..., help="Path to create the workspace in"),
-    with_example: bool = typer.Option(False, "--with-example", help="Also scaffold a sample agent 'demo'"),
-    with_compose: bool = typer.Option(True, "--with-compose/--no-with-compose", help="Include a production docker-compose.yml in the workspace"),
+    with_example: bool = typer.Option(
+        False, "--with-example", help="Also scaffold a sample agent 'demo'"
+    ),
+    with_compose: bool = typer.Option(
+        True,
+        "--with-compose/--no-with-compose",
+        help="Include a production docker-compose.yml in the workspace",
+    ),
     conversation_store: str = typer.Option(
         "postgres",
         "--conversation-store",
@@ -48,7 +56,11 @@ def init(
         typer.echo(f"Creating workspace at: {path}")
         import asyncio
 
-        asyncio.run(manager.create_workspace(path, with_compose=with_compose, conversation_store=conversation_store))
+        asyncio.run(
+            manager.create_workspace(
+                path, with_compose=with_compose, conversation_store=conversation_store
+            )
+        )
         # Ensure new default directories exist (robustness if manager changes)
         try:
             (path / "templates").mkdir(parents=True, exist_ok=True)
@@ -59,6 +71,7 @@ def init(
         if with_example:
             try:
                 from l6e_forge_cli.create import agent as create_agent
+
                 create_agent.callback  # type: ignore[attr-defined]
                 # run the command function directly
                 create_agent(
@@ -70,7 +83,9 @@ def init(
                     template="assistant",
                 )
             except Exception:
-                rprint("[yellow]Failed to scaffold example agent. You can create one later with 'forge create <name>'.[/yellow]")
+                rprint(
+                    "[yellow]Failed to scaffold example agent. You can create one later with 'forge create <name>'.[/yellow]"
+                )
         rprint("[green]Workspace created successfully.[/green]")
     except Exception as exc:  # noqa: BLE001
         rprint(f"[red]Failed to create workspace:[/red] {exc}")
@@ -88,7 +103,9 @@ def list() -> None:  # noqa: A003 - intentional CLI verb
     table = Table(title="Agents")
     table.add_column("Name")
     if state.agent_count == 0:
-        rprint("[yellow]No agents found. Create one with 'forge create <name>'.[/yellow]")
+        rprint(
+            "[yellow]No agents found. Create one with 'forge create <name>'.[/yellow]"
+        )
         return
     for name in state.active_agents:
         table.add_row(name)
@@ -115,7 +132,12 @@ def _find_compose_file(provided: str | None) -> Path | None:
     # Try walking up from cwd
     start = Path.cwd()
     for d in [start] + list(start.parents):
-        for name in ("docker-compose.yml", "docker-compose.yaml", "compose.yml", "compose.yaml"):
+        for name in (
+            "docker-compose.yml",
+            "docker-compose.yaml",
+            "compose.yml",
+            "compose.yaml",
+        ):
             c = d / name
             if c.exists():
                 return c
@@ -136,19 +158,33 @@ def _run_compose(compose_file: Path, args: list[str]) -> int:
 
 @app.command()
 def up(
-    workspace: str | None = typer.Option(None, "--workspace", "-w", help="Workspace root path"),
-    compose_file: str | None = typer.Option(None, "--compose-file", "-f", help="Path to docker compose file"),
-    monitor_url: str = typer.Option("http://localhost:8321", "--monitor-url", help="Monitor base URL"),
+    workspace: str | None = typer.Option(
+        None, "--workspace", "-w", help="Workspace root path"
+    ),
+    compose_file: str | None = typer.Option(
+        None, "--compose-file", "-f", help="Path to docker compose file"
+    ),
+    monitor_url: str = typer.Option(
+        "http://localhost:8321", "--monitor-url", help="Monitor base URL"
+    ),
     no_dev: bool = typer.Option(False, "--no-dev", help="Do not start dev runtime"),
-    dev_only: bool = typer.Option(False, "--dev-only", help="Only start dev runtime; skip containers"),
-    build: bool = typer.Option(False, "--build", help="Build images before starting containers"),
-    open_ui: bool = typer.Option(True, "--open-ui/--no-open-ui", help="Open the UI in your browser after start"),
+    dev_only: bool = typer.Option(
+        False, "--dev-only", help="Only start dev runtime; skip containers"
+    ),
+    build: bool = typer.Option(
+        False, "--build", help="Build images before starting containers"
+    ),
+    open_ui: bool = typer.Option(
+        True, "--open-ui/--no-open-ui", help="Open the UI in your browser after start"
+    ),
 ) -> None:
     """Start local stack: containers (monitor) and dev runtime with monitoring wired."""
     compose_path = _find_compose_file(compose_file)
     if not dev_only:
         if compose_path is None:
-            rprint("[red]Compose file not found. Provide --compose-file or set AF_COMPOSE_FILE.[/red]")
+            rprint(
+                "[red]Compose file not found. Provide --compose-file or set AF_COMPOSE_FILE.[/red]"
+            )
             raise typer.Exit(code=1)
         rprint(f"[cyan]Using compose file:[/cyan] {compose_path}")
         args = ["up", "-d"]
@@ -161,6 +197,7 @@ def up(
         if open_ui:
             try:
                 import webbrowser
+
                 webbrowser.open("http://localhost:5173", new=2)
             except Exception:
                 pass
@@ -187,13 +224,17 @@ def up(
 
 @app.command()
 def down(
-    compose_file: str | None = typer.Option(None, "--compose-file", "-f", help="Path to docker compose file"),
+    compose_file: str | None = typer.Option(
+        None, "--compose-file", "-f", help="Path to docker compose file"
+    ),
     volumes: bool = typer.Option(False, "--volumes", "-v", help="Remove named volumes"),
 ) -> None:
     """Stop local container stack (monitor, etc)."""
     compose_path = _find_compose_file(compose_file)
     if compose_path is None:
-        rprint("[red]Compose file not found. Provide --compose-file or set AF_COMPOSE_FILE.[/red]")
+        rprint(
+            "[red]Compose file not found. Provide --compose-file or set AF_COMPOSE_FILE.[/red]"
+        )
         raise typer.Exit(code=1)
     rprint(f"[cyan]Using compose file:[/cyan] {compose_path}")
     args = ["down"]
@@ -209,5 +250,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     sys.exit(main())
-
-

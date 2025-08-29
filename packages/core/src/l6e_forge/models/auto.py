@@ -38,7 +38,9 @@ def _get_ram_gb(sys_name: str) -> float:
     # macOS via sysctl
     if sys_name == "darwin":
         try:
-            out = subprocess.check_output(["/usr/sbin/sysctl", "-n", "hw.memsize"], stderr=subprocess.DEVNULL)
+            out = subprocess.check_output(
+                ["/usr/sbin/sysctl", "-n", "hw.memsize"], stderr=subprocess.DEVNULL
+            )
             return _bytes_to_gb(int(out.strip()))
         except Exception:
             return 0.0
@@ -59,14 +61,18 @@ def _detect_gpu(sys_name: str, ram_gb: float) -> Tuple[bool, float]:
     # NVIDIA (Linux/macOS with CUDA)
     try:
         if shutil.which("nvidia-smi"):
-            out = subprocess.check_output(
-                [
-                    "nvidia-smi",
-                    "--query-gpu=memory.total",
-                    "--format=csv,noheader,nounits",
-                ],
-                stderr=subprocess.DEVNULL,
-            ).decode().strip()
+            out = (
+                subprocess.check_output(
+                    [
+                        "nvidia-smi",
+                        "--query-gpu=memory.total",
+                        "--format=csv,noheader,nounits",
+                    ],
+                    stderr=subprocess.DEVNULL,
+                )
+                .decode()
+                .strip()
+            )
             # Take the max across GPUs
             vals = [int(v) for v in out.splitlines() if v.strip().isdigit()]
             if vals:
@@ -77,11 +83,14 @@ def _detect_gpu(sys_name: str, ram_gb: float) -> Tuple[bool, float]:
     # macOS: use system_profiler to detect Metal GPU and unified memory VRAM report
     if sys_name == "darwin":
         try:
-            out = subprocess.check_output([
-                "/usr/sbin/system_profiler",
-                "-json",
-                "SPDisplaysDataType",
-            ], stderr=subprocess.DEVNULL)
+            out = subprocess.check_output(
+                [
+                    "/usr/sbin/system_profiler",
+                    "-json",
+                    "SPDisplaysDataType",
+                ],
+                stderr=subprocess.DEVNULL,
+            )
             data = json.loads(out.decode())
             displays = data.get("SPDisplaysDataType", [])
             # Look for VRAM fields
@@ -95,7 +104,10 @@ def _detect_gpu(sys_name: str, ram_gb: float) -> Tuple[bool, float]:
                             vram_gb = max(vram_gb, float(m.group(1)))
             if displays:
                 # If VRAM not explicitly reported (common on Apple Silicon), estimate
-                if vram_gb <= 0.0 and platform.machine().lower() in ("arm64", "aarch64"):
+                if vram_gb <= 0.0 and platform.machine().lower() in (
+                    "arm64",
+                    "aarch64",
+                ):
                     # Unified memory: assume ~75% of RAM can be used by GPU
                     est = round(max(ram_gb * 0.75, 0.0), 1)
                     return True, est
@@ -123,7 +135,9 @@ def get_system_profile() -> SystemProfile:
     has_gpu, vram_gb = _detect_gpu(sys_name, ram_gb)
     has_internet = _has_internet_quick()
     has_ollama = shutil.which("ollama") is not None
-    return SystemProfile(sys_name, cores, ram_gb, vram_gb, has_gpu, has_internet, has_ollama)
+    return SystemProfile(
+        sys_name, cores, ram_gb, vram_gb, has_gpu, has_internet, has_ollama
+    )
 
 
 @dataclass
@@ -148,6 +162,7 @@ def recommend_models(sys: SystemProfile, hints: AutoHints) -> dict[str, str]:
 # Model catalog and estimation
 # -----------------------------
 
+
 @dataclass
 class ModelCatalogEntry:
     model_key: str  # canonical name, e.g., "llama3.2-3b", "gpt-oss-20b"
@@ -162,7 +177,9 @@ class ModelCatalogEntry:
     providers: Dict[str, str] = None  # e.g., {"ollama": "llama3.2:3b"}
     notes: Optional[str] = None
     # Optional quantized artifact sizes (GB) if known
-    quantized_artifacts_gb: Optional[Dict[str, float]] = None  # e.g., {"q4": 5.0, "q8": 9.5}
+    quantized_artifacts_gb: Optional[Dict[str, float]] = (
+        None  # e.g., {"q4": 5.0, "q8": 9.5}
+    )
     # Optional provider-specific quantized sizes (GB), e.g., {"lmstudio": {"mxfp4": 63.4}}
     provider_quantized_artifacts_gb: Optional[Dict[str, Dict[str, float]]] = None
 
@@ -329,13 +346,23 @@ def estimate_memory_gb(
         and quantization in entry.provider_quantized_artifacts_gb.get(provider, {})
     ):
         base = entry.provider_quantized_artifacts_gb[provider][quantization]
-    elif quantization != "auto" and entry.quantized_artifacts_gb and quantization in entry.quantized_artifacts_gb:
+    elif (
+        quantization != "auto"
+        and entry.quantized_artifacts_gb
+        and quantization in entry.quantized_artifacts_gb
+    ):
         base = entry.quantized_artifacts_gb[quantization]
-    elif quantization == "auto" and (entry.provider_quantized_artifacts_gb or entry.quantized_artifacts_gb):
+    elif quantization == "auto" and (
+        entry.provider_quantized_artifacts_gb or entry.quantized_artifacts_gb
+    ):
         # Choose a sensible default based on provider or smallest known quant
         preferred_order = ["mxfp4", "q4", "q5", "q8", "8bit"]
         source_map = None
-        if provider and entry.provider_quantized_artifacts_gb and provider in entry.provider_quantized_artifacts_gb:
+        if (
+            provider
+            and entry.provider_quantized_artifacts_gb
+            and provider in entry.provider_quantized_artifacts_gb
+        ):
             source_map = entry.provider_quantized_artifacts_gb[provider]
         else:
             source_map = entry.quantized_artifacts_gb or {}
@@ -378,7 +405,9 @@ class ModelSuggestion:
     mem_pct: int
 
 
-def suggest_models(sys: SystemProfile, hints: AutoHints, top_n: int = 5) -> List[ModelSuggestion]:
+def suggest_models(
+    sys: SystemProfile, hints: AutoHints, top_n: int = 5
+) -> List[ModelSuggestion]:
     """Return a list of suggested models with rough memory estimates and fit.
 
     We filter by role=chat for now and order by a simple score that prefers
@@ -415,7 +444,9 @@ def suggest_models(sys: SystemProfile, hints: AutoHints, top_n: int = 5) -> List
 
             # Base suggestion using catalog tag
             base_tag = provider_tag
-            base_est = estimate_memory_gb(entry, quantization=hints.quantization, provider=provider_name)
+            base_est = estimate_memory_gb(
+                entry, quantization=hints.quantization, provider=provider_name
+            )
             base_source: Literal["installed", "catalog", "estimate"] = "estimate"
             base_installed = False
             if provider_name == "ollama" and base_tag in installed_ollama_sizes:
@@ -424,10 +455,14 @@ def suggest_models(sys: SystemProfile, hints: AutoHints, top_n: int = 5) -> List
                 base_installed = True
             elif provider_name == "lmstudio" and base_tag in installed_lmstudio:
                 base_installed = True
-                if entry.provider_quantized_artifacts_gb and entry.provider_quantized_artifacts_gb.get("lmstudio"):
+                if (
+                    entry.provider_quantized_artifacts_gb
+                    and entry.provider_quantized_artifacts_gb.get("lmstudio")
+                ):
                     base_source = "catalog"
             elif entry.quantized_artifacts_gb and (
-                hints.quantization in (entry.quantized_artifacts_gb or {}) or hints.quantization == "auto"
+                hints.quantization in (entry.quantized_artifacts_gb or {})
+                or hints.quantization == "auto"
             ):
                 base_source = "catalog"
 
@@ -450,7 +485,9 @@ def suggest_models(sys: SystemProfile, hints: AutoHints, top_n: int = 5) -> List
                     is_installed=base_installed,
                     provider_available=provider_up,
                     mem_capacity_gb=capacity,
-                    mem_capacity_type="vram" if (sys.has_gpu and sys.vram_gb > 0) else "ram",
+                    mem_capacity_type="vram"
+                    if (sys.has_gpu and sys.vram_gb > 0)
+                    else "ram",
                     mem_pct=mem_pct,
                 )
             )
@@ -466,7 +503,9 @@ def suggest_models(sys: SystemProfile, hints: AutoHints, top_n: int = 5) -> List
                         reason2 = "fits GPU VRAM" if sys.has_gpu else "fits system RAM"
                         if not fits2:
                             reason2 = "may exceed local memory"
-                        mem_pct2 = int(round((est2 / capacity) * 100)) if capacity > 0 else 0
+                        mem_pct2 = (
+                            int(round((est2 / capacity) * 100)) if capacity > 0 else 0
+                        )
                         suggestions.append(
                             ModelSuggestion(
                                 entry=entry,
@@ -479,7 +518,9 @@ def suggest_models(sys: SystemProfile, hints: AutoHints, top_n: int = 5) -> List
                                 is_installed=True,
                                 provider_available=provider_up,
                                 mem_capacity_gb=capacity,
-                                mem_capacity_type="vram" if (sys.has_gpu and sys.vram_gb > 0) else "ram",
+                                mem_capacity_type="vram"
+                                if (sys.has_gpu and sys.vram_gb > 0)
+                                else "ram",
                                 mem_pct=mem_pct2,
                             )
                         )
@@ -497,7 +538,9 @@ def suggest_models(sys: SystemProfile, hints: AutoHints, top_n: int = 5) -> List
         else:
             params_score = -abs(params - 8.0)
         try:
-            prov_rank = len(hints.provider_order) - hints.provider_order.index(s.provider)
+            prov_rank = len(hints.provider_order) - hints.provider_order.index(
+                s.provider
+            )
         except ValueError:
             prov_rank = 0
         return (installed_score, available_score, fit_score, prov_rank, params_score)
@@ -540,7 +583,7 @@ def _ollama_list_models_with_sizes(endpoint: str = None) -> Dict[str, float]:
             name = it.get("name") or it.get("model")
             size_bytes = it.get("size") or it.get("size_bytes") or 0
             if isinstance(name, str) and isinstance(size_bytes, int):
-                sizes[name] = round(size_bytes / (1024 ** 3), 1)
+                sizes[name] = round(size_bytes / (1024**3), 1)
     except Exception:
         return {}
     return sizes
@@ -571,6 +614,7 @@ def _lmstudio_list_models(endpoint: str = None) -> List[str]:
 # Provider helpers
 # -----------------------------
 
+
 def _ollama_candidate_tags(tag: str) -> List[str]:
     """Return reasonable alternate tags for an Ollama model name.
 
@@ -597,7 +641,9 @@ def _ollama_candidate_tags(tag: str) -> List[str]:
     return out
 
 
-def _match_installed_ollama_tag(desired_tag: str, installed_sizes: Dict[str, float]) -> Optional[tuple[str, float]]:
+def _match_installed_ollama_tag(
+    desired_tag: str, installed_sizes: Dict[str, float]
+) -> Optional[tuple[str, float]]:
     """Return (installed_tag, size_gb) if any candidate of desired_tag is installed."""
     for cand in _ollama_candidate_tags(desired_tag):
         if cand in installed_sizes:
@@ -612,7 +658,9 @@ def _maybe_pull_model(name: str) -> None:
         pass
 
 
-def ensure_ollama_models(models: dict[str, str], endpoint: str = None) -> dict[str, str]:
+def ensure_ollama_models(
+    models: dict[str, str], endpoint: str = None
+) -> dict[str, str]:
     """Ensure models exist; return possibly adjusted names that actually exist.
 
     For example, if "llama3.1:8b-instruct" is unavailable but "llama3.1:8b" exists,
@@ -652,6 +700,7 @@ def ensure_ollama_models(models: dict[str, str], endpoint: str = None) -> dict[s
 # Config application utilities
 # -----------------------------
 
+
 def _quote_toml(v: object) -> str:
     if isinstance(v, bool):
         return "true" if v else "false"
@@ -659,7 +708,7 @@ def _quote_toml(v: object) -> str:
         return str(v)
     if isinstance(v, list):
         return "[" + ", ".join(_quote_toml(x) for x in v) + "]"
-    return '"' + str(v).replace('\\', '\\\\').replace('"', '\\"') + '"'
+    return '"' + str(v).replace("\\", "\\\\").replace('"', '\\"') + '"'
 
 
 def _write_toml(data: dict) -> str:
@@ -692,7 +741,9 @@ def _write_toml(data: dict) -> str:
     return "\n".join(lines) + "\n"
 
 
-def apply_recommendations_to_agent_config(agent_dir: Path, provider: str, recs: dict[str, str]) -> None:
+def apply_recommendations_to_agent_config(
+    agent_dir: Path, provider: str, recs: dict[str, str]
+) -> None:
     cfg_path = Path(agent_dir) / "config.toml"
     data: dict = {}
     if cfg_path.exists():
@@ -716,5 +767,3 @@ def apply_recommendations_to_agent_config(agent_dir: Path, provider: str, recs: 
     # Write with minimal TOML emitter
     content = _write_toml(data)
     cfg_path.write_text(content, encoding="utf-8")
-
-

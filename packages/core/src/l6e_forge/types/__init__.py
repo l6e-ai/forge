@@ -12,11 +12,19 @@ of the l6e-forge system, organized into logical modules.
 
 from .core import (
     # ID types
-    AgentID, ConversationID, SessionID, ModelID, ToolID, 
-    EventID, SubscriptionID, TaskID,
-    
+    AgentID,
+    ConversationID,
+    SessionID,
+    ModelID,
+    ToolID,
+    EventID,
+    SubscriptionID,
+    TaskID,
     # Core data types
-    Message, Attachment, AgentContext, AgentResponse
+    Message,
+    Attachment,
+    AgentContext,
+    AgentResponse,
 )
 
 # ============================================================================
@@ -25,21 +33,29 @@ from .core import (
 
 from .config import (
     # Workspace configuration
-    WorkspaceInfo, WorkspaceConfig, RuntimeConfig, ModelsConfig, 
+    WorkspaceInfo,
+    WorkspaceConfig,
+    RuntimeConfig,
+    ModelsConfig,
     MonitoringConfig,
-    
     # Agent configuration
-    AgentInfo, AgentConfig, ModelConfig, PersonalityConfig,
-    CapabilitiesConfig, BehaviorConfig, DevelopmentConfig,
-    
+    AgentInfo,
+    AgentConfig,
+    ModelConfig,
+    PersonalityConfig,
+    CapabilitiesConfig,
+    BehaviorConfig,
+    DevelopmentConfig,
     # System configuration
-    MemoryConfig, ToolsConfig,
-    
+    MemoryConfig,
+    ToolsConfig,
     # Security and environment
-    SandboxConfig, PermissionConfig, EnvironmentConfig,
-    
+    SandboxConfig,
+    PermissionConfig,
+    EnvironmentConfig,
     # Advanced configuration
-    MetricsConfig, TracingConfig
+    MetricsConfig,
+    TracingConfig,
 )
 
 # ============================================================================
@@ -48,16 +64,18 @@ from .config import (
 
 from .agent import (
     # Core agent types
-    AgentStatus, AgentSpec, AgentInstance,
-    
+    AgentStatus,
+    AgentSpec,
+    AgentInstance,
     # Capability types
-    Capability, AgentProfile,
-    
+    Capability,
+    AgentProfile,
     # Communication types
-    AgentConversation, AgentTeam,
-    
+    AgentConversation,
+    AgentTeam,
     # Learning types
-    LearningEvent, AgentKnowledgeBase
+    LearningEvent,
+    AgentKnowledgeBase,
 )
 
 # ============================================================================
@@ -66,20 +84,24 @@ from .agent import (
 
 from .model import (
     # Model specification
-    ModelSpec, ModelInstance,
-    
+    ModelSpec,
+    ModelInstance,
     # Request/Response types
-    CompletionRequest, CompletionResponse,
-    ChatRequest, ChatResponse, StreamingChunk,
-    
+    CompletionRequest,
+    CompletionResponse,
+    ChatRequest,
+    ChatResponse,
+    StreamingChunk,
     # Provider types
-    ProviderConfig, ProviderStatus,
-    
+    ProviderConfig,
+    ProviderStatus,
     # Performance types
-    ModelPerformanceMetrics, ModelUsagePattern,
-    
+    ModelPerformanceMetrics,
+    ModelUsagePattern,
     # Management types
-    ModelLoadRequest, ModelUnloadRequest, ModelOptimizationConfig
+    ModelLoadRequest,
+    ModelUnloadRequest,
+    ModelOptimizationConfig,
 )
 
 # ============================================================================
@@ -88,22 +110,25 @@ from .model import (
 
 from .memory import (
     # Core memory types
-    MemoryEntry, MemoryResult, MemoryQuery,
-    
+    MemoryEntry,
+    MemoryResult,
+    MemoryQuery,
     # Collection types
-    MemoryCollection, MemoryNamespace,
-    
+    MemoryCollection,
+    MemoryNamespace,
     # Conversation memory
-    ConversationMemory, SessionMemory,
-    
+    ConversationMemory,
+    SessionMemory,
     # Analytics types
-    MemoryUsageStats, MemoryHealth,
-    
+    MemoryUsageStats,
+    MemoryHealth,
     # Operations types
-    MemoryOperation, MemoryBatch,
-    
+    MemoryOperation,
+    MemoryBatch,
     # Configuration types
-    VectorStoreConfig, KVStoreConfig, MemoryIndexConfig
+    VectorStoreConfig,
+    KVStoreConfig,
+    MemoryIndexConfig,
 )
 
 # ============================================================================
@@ -112,22 +137,26 @@ from .memory import (
 
 from .tool import (
     # Core tool types
-    ToolSpec, ToolContext, ToolCall, ToolResult,
-    
+    ToolSpec,
+    ToolContext,
+    ToolCall,
+    ToolResult,
     # Registration and discovery
-    ToolRegistration, ToolCategory,
-    
+    ToolRegistration,
+    ToolCategory,
     # Execution types
-    ToolExecutionRequest, ToolExecutionStatus, ToolExecutionLog,
-    
+    ToolExecutionRequest,
+    ToolExecutionStatus,
+    ToolExecutionLog,
     # Security types
-    ToolPermission, ToolAuditLog,
-    
+    ToolPermission,
+    ToolAuditLog,
     # Analytics types
-    ToolUsageStats, ToolPerformanceBenchmark,
-    
+    ToolUsageStats,
+    ToolPerformanceBenchmark,
     # Plugin types
-    ToolPlugin, ToolExtension
+    ToolPlugin,
+    ToolExtension,
 )
 
 # ============================================================================
@@ -136,25 +165,30 @@ from .tool import (
 
 from .event import (
     # Core event types
-    Event, EventHandler, AsyncEventHandler, EventSubscription,
-    
+    Event,
+    EventHandler,
+    AsyncEventHandler,
+    EventSubscription,
     # Event bus types
-    EventBusConfig, EventRoute,
-    
+    EventBusConfig,
+    EventRoute,
     # Standard event types
-    AgentEvent, ConversationEvent, SystemEvent,
-    
+    AgentEvent,
+    ConversationEvent,
+    SystemEvent,
     # Processing types
-    EventProcessingResult, EventBatch, EventQueue,
-    
+    EventProcessingResult,
+    EventBatch,
+    EventQueue,
     # Analytics types
-    EventStats, EventTrace,
-    
+    EventStats,
+    EventTrace,
     # Pattern types
-    EventPattern, EventCorrelation,
-    
+    EventPattern,
+    EventCorrelation,
     # Middleware types
-    EventMiddleware, EventFilter
+    EventMiddleware,
+    EventFilter,
 )
 
 # ============================================================================
@@ -163,25 +197,27 @@ from .event import (
 
 from .error import (
     # Error classification
-    ErrorType, ErrorSeverity,
-    
+    ErrorType,
+    ErrorSeverity,
     # Core error types
-    AgentError, ErrorContext,
-    
+    AgentError,
+    ErrorContext,
     # Health and status
-    HealthStatus, ServiceStatus, SystemHealth,
-    
+    HealthStatus,
+    ServiceStatus,
+    SystemHealth,
     # Error handling
-    ErrorHandler, ErrorRecoveryStrategy,
-    
+    ErrorHandler,
+    ErrorRecoveryStrategy,
     # Error reporting
-    ErrorReport, ErrorSummary,
-    
+    ErrorReport,
+    ErrorSummary,
     # Monitoring and alerting
-    AlertRule, Alert,
-    
+    AlertRule,
+    Alert,
     # Performance and reliability
-    ReliabilityMetrics, PerformanceBaseline
+    ReliabilityMetrics,
+    PerformanceBaseline,
 )
 
 # ============================================================================
@@ -190,20 +226,27 @@ from .error import (
 
 from .workspace import (
     # Workspace core types
-    WorkspaceMetadata, WorkspaceStructure, WorkspaceState,
-    
+    WorkspaceMetadata,
+    WorkspaceStructure,
+    WorkspaceState,
     # Template types
-    TemplateVariable, TemplateDependencies, TemplateFile, 
-    TemplateSpec, TemplateContext, TemplateGenerationResult,
-    
+    TemplateVariable,
+    TemplateDependencies,
+    TemplateFile,
+    TemplateSpec,
+    TemplateContext,
+    TemplateGenerationResult,
     # Project types
-    ProjectManifest, ProjectDependency, ProjectEnvironment,
-    
+    ProjectManifest,
+    ProjectDependency,
+    ProjectEnvironment,
     # Operations types
-    WorkspaceOperation, WorkspaceBackup, WorkspaceValidation,
-    
+    WorkspaceOperation,
+    WorkspaceBackup,
+    WorkspaceValidation,
     # Discovery types
-    WorkspaceDiscoveryResult, WorkspaceIndex
+    WorkspaceDiscoveryResult,
+    WorkspaceIndex,
 )
 
 # ============================================================================
@@ -212,25 +255,29 @@ from .workspace import (
 
 from .testing import (
     # Test definition types
-    TestCase, TestSuite, TestScenario,
-    
+    TestCase,
+    TestSuite,
+    TestScenario,
     # Test execution types
-    TestEnvironment, TestExecution, TestResult, TestRun,
-    
+    TestEnvironment,
+    TestExecution,
+    TestResult,
+    TestRun,
     # Configuration types
-    TestConfig, MockConfig,
-    
+    TestConfig,
+    MockConfig,
     # Assertion types
-    Assertion, AssertionGroup,
-    
+    Assertion,
+    AssertionGroup,
     # Test data types
-    TestData, TestDataSet,
-    
+    TestData,
+    TestDataSet,
     # Reporting types
-    TestReport, TestMetrics,
-    
+    TestReport,
+    TestMetrics,
     # Performance testing types
-    PerformanceTest, PerformanceResult
+    PerformanceTest,
+    PerformanceResult,
 )
 
 # ============================================================================
@@ -239,22 +286,30 @@ from .testing import (
 
 from .ecosystem import (
     # Package types
-    AgentPackageMetadata, PackageDependencies, AgentPackage, PackageVersion,
-    
+    AgentPackageMetadata,
+    PackageDependencies,
+    AgentPackage,
+    PackageVersion,
     # Registry types
-    PackageRegistry, RegistryConfig, PackageSearchResult,
-    
+    PackageRegistry,
+    RegistryConfig,
+    PackageSearchResult,
     # Installation types
-    InstallationRequest, InstallationPlan, InstallationResult, InstalledPackage,
-    
+    InstallationRequest,
+    InstallationPlan,
+    InstallationResult,
+    InstalledPackage,
     # Publishing types
-    PublishingCredentials, PublishingRequest, PublishingResult,
-    
+    PublishingCredentials,
+    PublishingRequest,
+    PublishingResult,
     # Marketplace types
-    PackageReview, PackageStats, PackageCollection,
-    
+    PackageReview,
+    PackageStats,
+    PackageCollection,
     # Security types
-    SecurityScan, SecurityPolicy
+    SecurityScan,
+    SecurityPolicy,
 )
 
 # ============================================================================
@@ -263,38 +318,66 @@ from .ecosystem import (
 
 # Core system types
 CORE_TYPES = [
-    "AgentID", "ConversationID", "SessionID", "ModelID", "ToolID", 
-    "EventID", "SubscriptionID", "TaskID",
-    "Message", "Attachment", "AgentContext", "AgentResponse"
+    "AgentID",
+    "ConversationID",
+    "SessionID",
+    "ModelID",
+    "ToolID",
+    "EventID",
+    "SubscriptionID",
+    "TaskID",
+    "Message",
+    "Attachment",
+    "AgentContext",
+    "AgentResponse",
 ]
 
 # Configuration types
 CONFIG_TYPES = [
-    "WorkspaceConfig", "AgentConfig", "ModelConfig", "MemoryConfig", 
-    "ToolsConfig", "RuntimeConfig", "MonitoringConfig"
+    "WorkspaceConfig",
+    "AgentConfig",
+    "ModelConfig",
+    "MemoryConfig",
+    "ToolsConfig",
+    "RuntimeConfig",
+    "MonitoringConfig",
 ]
 
 # Runtime types
 RUNTIME_TYPES = [
-    "AgentSpec", "AgentInstance", "ModelInstance", "ToolCall", 
-    "Event", "MemoryEntry", "MemoryResult"
+    "AgentSpec",
+    "AgentInstance",
+    "ModelInstance",
+    "ToolCall",
+    "Event",
+    "MemoryEntry",
+    "MemoryResult",
 ]
 
 # Interface types
 INTERFACE_TYPES = [
-    "IAgent", "IRuntime", "IMemoryManager", "IModelManager", 
-    "IToolRegistry", "IEventBus"
+    "IAgent",
+    "IRuntime",
+    "IMemoryManager",
+    "IModelManager",
+    "IToolRegistry",
+    "IEventBus",
 ]
 
 # Error and status types
 STATUS_TYPES = [
-    "ErrorType", "ErrorSeverity", "AgentError", "HealthStatus", 
-    "ServiceStatus", "SystemHealth"
+    "ErrorType",
+    "ErrorSeverity",
+    "AgentError",
+    "HealthStatus",
+    "ServiceStatus",
+    "SystemHealth",
 ]
 
 # ============================================================================
 # Utility Functions
 # ============================================================================
+
 
 def get_type_categories() -> dict[str, list[str]]:
     """Get all type categories"""
@@ -303,23 +386,26 @@ def get_type_categories() -> dict[str, list[str]]:
         "config": CONFIG_TYPES,
         "runtime": RUNTIME_TYPES,
         "interfaces": INTERFACE_TYPES,
-        "status": STATUS_TYPES
+        "status": STATUS_TYPES,
     }
+
 
 def get_all_types() -> list[str]:
     """Get list of all exported types"""
     return [
-        name for name in globals() 
-        if not name.startswith('_') and name[0].isupper()
+        name for name in globals() if not name.startswith("_") and name[0].isupper()
     ]
+
 
 def is_config_type(type_name: str) -> bool:
     """Check if a type is a configuration type"""
-    return type_name in CONFIG_TYPES or type_name.endswith('Config')
+    return type_name in CONFIG_TYPES or type_name.endswith("Config")
+
 
 def is_error_type(type_name: str) -> bool:
     """Check if a type is an error or status type"""
-    return type_name in STATUS_TYPES or 'Error' in type_name or 'Status' in type_name
+    return type_name in STATUS_TYPES or "Error" in type_name or "Status" in type_name
+
 
 # ============================================================================
 # Version Information
@@ -340,75 +426,180 @@ SUPPORTED_PYTHON_VERSIONS = ["3.9", "3.10", "3.11", "3.12"]
 __all__ = [
     # Core types
     *CORE_TYPES,
-    
     # Configuration types
-    "WorkspaceInfo", "WorkspaceConfig", "RuntimeConfig", "ModelsConfig", 
-    "MonitoringConfig", "AgentInfo", "AgentConfig", "ModelConfig", 
-    "PersonalityConfig", "CapabilitiesConfig", "BehaviorConfig", 
-    "DevelopmentConfig", "MemoryConfig", "ToolsConfig", "SandboxConfig", 
-    "PermissionConfig", "EnvironmentConfig", "MetricsConfig", "TracingConfig",
-    
+    "WorkspaceInfo",
+    "WorkspaceConfig",
+    "RuntimeConfig",
+    "ModelsConfig",
+    "MonitoringConfig",
+    "AgentInfo",
+    "AgentConfig",
+    "ModelConfig",
+    "PersonalityConfig",
+    "CapabilitiesConfig",
+    "BehaviorConfig",
+    "DevelopmentConfig",
+    "MemoryConfig",
+    "ToolsConfig",
+    "SandboxConfig",
+    "PermissionConfig",
+    "EnvironmentConfig",
+    "MetricsConfig",
+    "TracingConfig",
     # Agent types
-    "AgentStatus", "AgentSpec", "AgentInstance", "Capability", "AgentProfile",
-    "AgentConversation", "AgentTeam", "LearningEvent", "AgentKnowledgeBase",
-    
+    "AgentStatus",
+    "AgentSpec",
+    "AgentInstance",
+    "Capability",
+    "AgentProfile",
+    "AgentConversation",
+    "AgentTeam",
+    "LearningEvent",
+    "AgentKnowledgeBase",
     # Model types
-    "ModelSpec", "ModelInstance", "CompletionRequest", "CompletionResponse",
-    "ChatRequest", "ChatResponse", "StreamingChunk", "ProviderConfig", 
-    "ProviderStatus", "ModelPerformanceMetrics", "ModelUsagePattern",
-    "ModelLoadRequest", "ModelUnloadRequest", "ModelOptimizationConfig",
-    
+    "ModelSpec",
+    "ModelInstance",
+    "CompletionRequest",
+    "CompletionResponse",
+    "ChatRequest",
+    "ChatResponse",
+    "StreamingChunk",
+    "ProviderConfig",
+    "ProviderStatus",
+    "ModelPerformanceMetrics",
+    "ModelUsagePattern",
+    "ModelLoadRequest",
+    "ModelUnloadRequest",
+    "ModelOptimizationConfig",
     # Memory types
-    "MemoryEntry", "MemoryResult", "MemoryQuery", "MemoryCollection", 
-    "MemoryNamespace", "ConversationMemory", "SessionMemory", 
-    "MemoryUsageStats", "MemoryHealth", "MemoryOperation", "MemoryBatch",
-    "VectorStoreConfig", "KVStoreConfig", "MemoryIndexConfig",
-    
+    "MemoryEntry",
+    "MemoryResult",
+    "MemoryQuery",
+    "MemoryCollection",
+    "MemoryNamespace",
+    "ConversationMemory",
+    "SessionMemory",
+    "MemoryUsageStats",
+    "MemoryHealth",
+    "MemoryOperation",
+    "MemoryBatch",
+    "VectorStoreConfig",
+    "KVStoreConfig",
+    "MemoryIndexConfig",
     # Tool types
-    "ToolSpec", "ToolContext", "ToolCall", "ToolResult", "ToolRegistration", 
-    "ToolCategory", "ToolExecutionRequest", "ToolExecutionStatus", 
-    "ToolExecutionLog", "ToolPermission", "ToolAuditLog", "ToolUsageStats", 
-    "ToolPerformanceBenchmark", "ToolPlugin", "ToolExtension",
-    
+    "ToolSpec",
+    "ToolContext",
+    "ToolCall",
+    "ToolResult",
+    "ToolRegistration",
+    "ToolCategory",
+    "ToolExecutionRequest",
+    "ToolExecutionStatus",
+    "ToolExecutionLog",
+    "ToolPermission",
+    "ToolAuditLog",
+    "ToolUsageStats",
+    "ToolPerformanceBenchmark",
+    "ToolPlugin",
+    "ToolExtension",
     # Event types
-    "Event", "EventHandler", "AsyncEventHandler", "EventSubscription",
-    "EventBusConfig", "EventRoute", "AgentEvent", "ConversationEvent", 
-    "SystemEvent", "EventProcessingResult", "EventBatch", "EventQueue",
-    "EventStats", "EventTrace", "EventPattern", "EventCorrelation",
-    "EventMiddleware", "EventFilter",
-    
+    "Event",
+    "EventHandler",
+    "AsyncEventHandler",
+    "EventSubscription",
+    "EventBusConfig",
+    "EventRoute",
+    "AgentEvent",
+    "ConversationEvent",
+    "SystemEvent",
+    "EventProcessingResult",
+    "EventBatch",
+    "EventQueue",
+    "EventStats",
+    "EventTrace",
+    "EventPattern",
+    "EventCorrelation",
+    "EventMiddleware",
+    "EventFilter",
     # Error types
-    "ErrorType", "ErrorSeverity", "AgentError", "ErrorContext", 
-    "HealthStatus", "ServiceStatus", "SystemHealth", "ErrorHandler", 
-    "ErrorRecoveryStrategy", "ErrorReport", "ErrorSummary", "AlertRule", 
-    "Alert", "ReliabilityMetrics", "PerformanceBaseline",
-    
+    "ErrorType",
+    "ErrorSeverity",
+    "AgentError",
+    "ErrorContext",
+    "HealthStatus",
+    "ServiceStatus",
+    "SystemHealth",
+    "ErrorHandler",
+    "ErrorRecoveryStrategy",
+    "ErrorReport",
+    "ErrorSummary",
+    "AlertRule",
+    "Alert",
+    "ReliabilityMetrics",
+    "PerformanceBaseline",
     # Workspace types
-    "WorkspaceMetadata", "WorkspaceStructure", "WorkspaceState",
-    "TemplateVariable", "TemplateDependencies", "TemplateFile", 
-    "TemplateSpec", "TemplateContext", "TemplateGenerationResult",
-    "ProjectManifest", "ProjectDependency", "ProjectEnvironment",
-    "WorkspaceOperation", "WorkspaceBackup", "WorkspaceValidation",
-    "WorkspaceDiscoveryResult", "WorkspaceIndex",
-    
+    "WorkspaceMetadata",
+    "WorkspaceStructure",
+    "WorkspaceState",
+    "TemplateVariable",
+    "TemplateDependencies",
+    "TemplateFile",
+    "TemplateSpec",
+    "TemplateContext",
+    "TemplateGenerationResult",
+    "ProjectManifest",
+    "ProjectDependency",
+    "ProjectEnvironment",
+    "WorkspaceOperation",
+    "WorkspaceBackup",
+    "WorkspaceValidation",
+    "WorkspaceDiscoveryResult",
+    "WorkspaceIndex",
     # Testing types
-    "TestCase", "TestSuite", "TestScenario", "TestEnvironment", 
-    "TestExecution", "TestResult", "TestRun", "TestConfig", "MockConfig",
-    "Assertion", "AssertionGroup", "TestData", "TestDataSet", 
-    "TestReport", "TestMetrics", "PerformanceTest", "PerformanceResult",
-    
+    "TestCase",
+    "TestSuite",
+    "TestScenario",
+    "TestEnvironment",
+    "TestExecution",
+    "TestResult",
+    "TestRun",
+    "TestConfig",
+    "MockConfig",
+    "Assertion",
+    "AssertionGroup",
+    "TestData",
+    "TestDataSet",
+    "TestReport",
+    "TestMetrics",
+    "PerformanceTest",
+    "PerformanceResult",
     # Ecosystem types
-    "AgentPackageMetadata", "PackageDependencies", "AgentPackage", 
-    "PackageVersion", "PackageRegistry", "RegistryConfig", 
-    "PackageSearchResult", "InstallationRequest", "InstallationPlan", 
-    "InstallationResult", "InstalledPackage", "PublishingCredentials", 
-    "PublishingRequest", "PublishingResult", "PackageReview", 
-    "PackageStats", "PackageCollection", "SecurityScan", "SecurityPolicy",
-    
+    "AgentPackageMetadata",
+    "PackageDependencies",
+    "AgentPackage",
+    "PackageVersion",
+    "PackageRegistry",
+    "RegistryConfig",
+    "PackageSearchResult",
+    "InstallationRequest",
+    "InstallationPlan",
+    "InstallationResult",
+    "InstalledPackage",
+    "PublishingCredentials",
+    "PublishingRequest",
+    "PublishingResult",
+    "PackageReview",
+    "PackageStats",
+    "PackageCollection",
+    "SecurityScan",
+    "SecurityPolicy",
     # Utility functions
-    "get_type_categories", "get_all_types", "is_protocol_type", 
-    "is_config_type", "is_error_type",
-    
+    "get_type_categories",
+    "get_all_types",
+    "is_protocol_type",
+    "is_config_type",
+    "is_error_type",
     # Version info
-    "__version__", "TYPE_SYSTEM_VERSION"
+    "__version__",
+    "TYPE_SYSTEM_VERSION",
 ]

@@ -22,5 +22,3 @@ def test_build_namespace_with_collection_and_prefix() -> None:
     ns = reg.build_namespace("agentB", "long_term", subspace="topic123")
     # Encodes collection override and logical namespace together
     assert ns == "agentB_lt::agentB:lt:topic123"
-
-

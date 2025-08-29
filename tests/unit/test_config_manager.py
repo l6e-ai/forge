@@ -30,5 +30,3 @@ async def test_load_and_get_values(tmp_path: Path) -> None:
     assert mgr.get_config_value("agent.model") == "llama3.2:3b"
     assert mgr.get_config_value("runtime.hot_reload") is True
     assert mgr.get_config_value("not.there", default=123) == 123
-
-

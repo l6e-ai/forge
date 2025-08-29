@@ -39,10 +39,10 @@ def _quote_toml_value(value: object) -> str:
     if isinstance(value, (int, float)):
         return str(value)
     if isinstance(value, str):
-        return "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"") + "\""
+        return '"' + value.replace("\\", "\\\\").replace('"', '\\"') + '"'
     if isinstance(value, list):
         return "[" + ", ".join(_quote_toml_value(v) for v in value) + "]"
-    return "\"" + str(value) + "\""
+    return '"' + str(value) + '"'
 
 
 def _emit_toml_from_dict(root_table: str, data: dict) -> str:
@@ -84,14 +84,14 @@ def _write_manifest(
     desc = description or ""
     parts: list[str] = []
     parts.append("[metadata]")
-    parts.append(f"name = \"{name}\"")
-    parts.append(f"version = \"{version}\"")
-    parts.append(f"description = \"{desc}\"")
-    parts.append("package_format_version = \"1.0\"")
-    parts.append(f"created_at = \"{created}\"")
+    parts.append(f'name = "{name}"')
+    parts.append(f'version = "{version}"')
+    parts.append(f'description = "{desc}"')
+    parts.append('package_format_version = "1.0"')
+    parts.append(f'created_at = "{created}"')
     parts.append("")
     parts.append("[runtime]")
-    parts.append("entrypoint = \"agent.py:Agent\"")
+    parts.append('entrypoint = "agent.py:Agent"')
     parts.append("")
     if agent_cfg:
         parts.append(_emit_toml_from_dict("agent_config", agent_cfg).rstrip())
@@ -141,6 +141,7 @@ async def _generate_compose_yaml(services: list[str]) -> str:
 # Ed25519 signing / verification
 # ==============================
 
+
 def _b64encode(data: bytes) -> str:
     return base64.b64encode(data).decode("ascii")
 
@@ -152,7 +153,9 @@ def _b64decode(text: str) -> bytes:
 def _read_key_bytes(path: Path) -> bytes:
     raw_text = path.read_text(encoding="utf-8").strip()
     # Prefer hex if it looks like hex
-    is_hex = len(raw_text) % 2 == 0 and all(c in "0123456789abcdefABCDEF" for c in raw_text)
+    is_hex = len(raw_text) % 2 == 0 and all(
+        c in "0123456789abcdefABCDEF" for c in raw_text
+    )
     if is_hex:
         try:
             return bytes.fromhex(raw_text)
@@ -173,7 +176,9 @@ def _ed25519_sign(data: bytes, private_key_bytes: bytes) -> tuple[bytes, bytes]:
     try:
         from nacl.signing import SigningKey  # type: ignore
     except Exception as exc:  # noqa: BLE001
-        raise RuntimeError("PyNaCl is required for signing. Install with poetry group 'cli'.") from exc
+        raise RuntimeError(
+            "PyNaCl is required for signing. Install with poetry group 'cli'."
+        ) from exc
     sk = SigningKey(private_key_bytes)
     signed = sk.sign(data)
     sig = signed.signature
@@ -186,7 +191,9 @@ def _ed25519_verify(data: bytes, signature: bytes, public_key_bytes: bytes) -> b
         from nacl.signing import VerifyKey  # type: ignore
         from nacl.exceptions import BadSignatureError  # type: ignore
     except Exception as exc:  # noqa: BLE001
-        raise RuntimeError("PyNaCl is required for verification. Install with poetry group 'cli'.") from exc
+        raise RuntimeError(
+            "PyNaCl is required for verification. Install with poetry group 'cli'."
+        ) from exc
     vk = VerifyKey(public_key_bytes)
     try:
         vk.verify(data, signature)
@@ -201,31 +208,107 @@ def _key_fingerprint(public_key_bytes: bytes) -> str:
 
 @app.command()
 def build(
-    agent_path: str = typer.Argument(..., help="Path to the agent directory (contains agent.py)"),
-    out_dir: str = typer.Option("dist", "--out", "-o", help="Output directory for .l6e"),
-    name: str | None = typer.Option(None, "--name", help="Package name (defaults to agent dir name)"),
+    agent_path: str = typer.Argument(
+        ..., help="Path to the agent directory (contains agent.py)"
+    ),
+    out_dir: str = typer.Option(
+        "dist", "--out", "-o", help="Output directory for .l6e"
+    ),
+    name: str | None = typer.Option(
+        None, "--name", help="Package name (defaults to agent dir name)"
+    ),
     version: str = typer.Option("0.1.0", "--version", "-v", help="Package version"),
-    description: str | None = typer.Option(None, "--description", "-d", help="Description for manifest"),
-    sign_key: str | None = typer.Option(None, "--sign-key", help="Path to Ed25519 private key to sign checksums"),
-    profile: str = typer.Option("thin", "--profile", help="Package profile: thin | medium | fat"),
-    include_compose: bool = typer.Option(False, "--include-compose", help="Include a minimal compose overlay in package"),
-    compose_services: str = typer.Option("auto", "--compose-services", help="Comma-separated services to include in compose or 'auto' to infer"),
-    requirements: str | None = typer.Option(None, "--requirements", help="Path to requirements.txt to include (for fat or bundling)"),
-    bundle_wheels: bool = typer.Option(False, "--bundle-wheels/--no-bundle-wheels", help="Include a wheelhouse built from requirements.txt for offline install"),
-    poetry_config: bool = typer.Option(False, "--poetry-config/--no-poetry-config", help="Generate requirements from pyproject via 'poetry export' when --requirements is not provided"),
-    poetry_root: str | None = typer.Option(None, "--poetry-root", help="Directory to run 'poetry export' in (defaults to agent dir when auto-detected)"),
-    ui_dir: str | None = typer.Option(None, "--ui-dir", help="Path to a UI project (will be packaged under artifacts/ui)"),
-    ui_build: bool = typer.Option(False, "--ui-build/--no-ui-build", help="Run UI build (npm ci && npm run build) before packaging"),
-    ui_dist: str = typer.Option("dist", "--ui-dist", help="Relative path of build output within --ui-dir"),
-    ui_git: str | None = typer.Option(None, "--ui-git", help="Git URL to fetch UI from (prefered over --ui-dir if provided)"),
-    ui_ref: str = typer.Option("main", "--ui-ref", help="Git ref (branch|tag|commit) for --ui-git"),
-    ui_subdir: str | None = typer.Option(None, "--ui-subdir", help="Optional subdirectory within the cloned repo for the UI project"),
-    ui_git_ssh_key: str | None = typer.Option(None, "--ui-git-ssh-key", help="Path to SSH private key for cloning (sets GIT_SSH_COMMAND)"),
-    ui_git_insecure_host: bool = typer.Option(False, "--ui-git-insecure-host/--no-ui-git-insecure-host", help="Disable strict host key checking for git clone"),
-    ui_git_username: str | None = typer.Option(None, "--ui-git-username", help="Basic auth username for HTTPS git clone"),
-    ui_git_password: str | None = typer.Option(None, "--ui-git-password", help="Basic auth password for HTTPS git clone (or pass token here)"),
-    ui_git_token: str | None = typer.Option(None, "--ui-git-token", help="Personal access token for HTTPS git clone (used as password; username can be anything)"),
-    prompts_dir: str | None = typer.Option(None, "--prompts-dir", help="Path to a directory of prompt templates to include under artifacts/prompts"),
+    description: str | None = typer.Option(
+        None, "--description", "-d", help="Description for manifest"
+    ),
+    sign_key: str | None = typer.Option(
+        None, "--sign-key", help="Path to Ed25519 private key to sign checksums"
+    ),
+    profile: str = typer.Option(
+        "thin", "--profile", help="Package profile: thin | medium | fat"
+    ),
+    include_compose: bool = typer.Option(
+        False, "--include-compose", help="Include a minimal compose overlay in package"
+    ),
+    compose_services: str = typer.Option(
+        "auto",
+        "--compose-services",
+        help="Comma-separated services to include in compose or 'auto' to infer",
+    ),
+    requirements: str | None = typer.Option(
+        None,
+        "--requirements",
+        help="Path to requirements.txt to include (for fat or bundling)",
+    ),
+    bundle_wheels: bool = typer.Option(
+        False,
+        "--bundle-wheels/--no-bundle-wheels",
+        help="Include a wheelhouse built from requirements.txt for offline install",
+    ),
+    poetry_config: bool = typer.Option(
+        False,
+        "--poetry-config/--no-poetry-config",
+        help="Generate requirements from pyproject via 'poetry export' when --requirements is not provided",
+    ),
+    poetry_root: str | None = typer.Option(
+        None,
+        "--poetry-root",
+        help="Directory to run 'poetry export' in (defaults to agent dir when auto-detected)",
+    ),
+    ui_dir: str | None = typer.Option(
+        None,
+        "--ui-dir",
+        help="Path to a UI project (will be packaged under artifacts/ui)",
+    ),
+    ui_build: bool = typer.Option(
+        False,
+        "--ui-build/--no-ui-build",
+        help="Run UI build (npm ci && npm run build) before packaging",
+    ),
+    ui_dist: str = typer.Option(
+        "dist", "--ui-dist", help="Relative path of build output within --ui-dir"
+    ),
+    ui_git: str | None = typer.Option(
+        None,
+        "--ui-git",
+        help="Git URL to fetch UI from (prefered over --ui-dir if provided)",
+    ),
+    ui_ref: str = typer.Option(
+        "main", "--ui-ref", help="Git ref (branch|tag|commit) for --ui-git"
+    ),
+    ui_subdir: str | None = typer.Option(
+        None,
+        "--ui-subdir",
+        help="Optional subdirectory within the cloned repo for the UI project",
+    ),
+    ui_git_ssh_key: str | None = typer.Option(
+        None,
+        "--ui-git-ssh-key",
+        help="Path to SSH private key for cloning (sets GIT_SSH_COMMAND)",
+    ),
+    ui_git_insecure_host: bool = typer.Option(
+        False,
+        "--ui-git-insecure-host/--no-ui-git-insecure-host",
+        help="Disable strict host key checking for git clone",
+    ),
+    ui_git_username: str | None = typer.Option(
+        None, "--ui-git-username", help="Basic auth username for HTTPS git clone"
+    ),
+    ui_git_password: str | None = typer.Option(
+        None,
+        "--ui-git-password",
+        help="Basic auth password for HTTPS git clone (or pass token here)",
+    ),
+    ui_git_token: str | None = typer.Option(
+        None,
+        "--ui-git-token",
+        help="Personal access token for HTTPS git clone (used as password; username can be anything)",
+    ),
+    prompts_dir: str | None = typer.Option(
+        None,
+        "--prompts-dir",
+        help="Path to a directory of prompt templates to include under artifacts/prompts",
+    ),
 ) -> None:
     """Create a minimal public .l6e from an agent directory."""
     agent_dir = Path(agent_path).expanduser().resolve()
@@ -271,9 +354,13 @@ def build(
         if (agent_dir / "pyproject.toml").exists():
             poetry_config = True
             poetry_root_for_export = agent_dir
-            rprint(f"[cyan]Using Poetry project at agent dir:[/cyan] {poetry_root_for_export}")
+            rprint(
+                f"[cyan]Using Poetry project at agent dir:[/cyan] {poetry_root_for_export}"
+            )
         else:
-            rprint("[red]--bundle-wheels requires --requirements or a Poetry project (use --poetry-config)\n[yellow]Tip:[/yellow] Provide --requirements or run in an agent with its own pyproject.toml.")
+            rprint(
+                "[red]--bundle-wheels requires --requirements or a Poetry project (use --poetry-config)\n[yellow]Tip:[/yellow] Provide --requirements or run in an agent with its own pyproject.toml."
+            )
             raise typer.Exit(code=1)
     if poetry_root:
         p = Path(poetry_root).expanduser().resolve()
@@ -290,6 +377,7 @@ def build(
 
     # Optional compose overlay
     if include_compose:
+
         def _infer_services_from_config(cfg: dict | None) -> list[str]:
             inferred: list[str] = []
             if not cfg:
@@ -341,8 +429,11 @@ def build(
         # Attempt to export requirements from poetry
         try:
             import shutil as _shutil
+
             if _shutil.which("poetry") is None:
-                rprint("[red]Poetry is not installed or not on PATH. Install Poetry or pass --requirements.[/red]")
+                rprint(
+                    "[red]Poetry is not installed or not on PATH. Install Poetry or pass --requirements.[/red]"
+                )
                 raise typer.Exit(code=1)
             proc = subprocess.run(
                 ["poetry", "export", "-f", "requirements.txt", "--without-hashes"],
@@ -364,7 +455,9 @@ def build(
             req_path_for_wheels = temp_req_path
         except subprocess.CalledProcessError as exc:  # type: ignore[name-defined]
             stderr = (exc.stderr or b"").decode("utf-8", errors="replace")
-            rprint(f"[red]Failed to export requirements via poetry (exit {exc.returncode}):[/red]\n{stderr}")
+            rprint(
+                f"[red]Failed to export requirements via poetry (exit {exc.returncode}):[/red]\n{stderr}"
+            )
             raise typer.Exit(code=1)
         except Exception as exc:  # noqa: BLE001
             rprint(f"[red]Failed to export requirements via poetry:[/red] {exc}")
@@ -388,7 +481,19 @@ def build(
             subprocess.run(cmd, check=False)
             # Fallback: allow sdists if wheels not available
             if not any(wheel_tmp.iterdir()):
-                subprocess.run(["python", "-m", "pip", "download", "-r", str(req_path_for_wheels), "-d", str(wheel_tmp)], check=False)
+                subprocess.run(
+                    [
+                        "python",
+                        "-m",
+                        "pip",
+                        "download",
+                        "-r",
+                        str(req_path_for_wheels),
+                        "-d",
+                        str(wheel_tmp),
+                    ],
+                    check=False,
+                )
             wheel_files = list(wheel_tmp.iterdir())
             if wheel_files:
                 for wf in wheel_files:
@@ -418,13 +523,22 @@ def build(
             if count_prompts:
                 artifacts_meta["prompts"] = "artifacts/prompts"
         else:
-            rprint(f"[yellow]Prompts dir not found or not a directory:[/yellow] {pr_dir}")
+            rprint(
+                f"[yellow]Prompts dir not found or not a directory:[/yellow] {pr_dir}"
+            )
 
     # Optional UI packaging from git (preferred) or local directory
     def _package_ui_from_path(root: Path) -> None:
         if ui_build:
             try:
-                subprocess.run(["bash", "-lc", f"cd '{root}' && npm ci --no-audit --no-fund && npm run build"], check=False)
+                subprocess.run(
+                    [
+                        "bash",
+                        "-lc",
+                        f"cd '{root}' && npm ci --no-audit --no-fund && npm run build",
+                    ],
+                    check=False,
+                )
             except Exception as exc:  # noqa: BLE001
                 rprint(f"[yellow]UI build command failed:[/yellow] {exc}")
         dist_dir_path = root / ui_dist
@@ -453,18 +567,45 @@ def build(
                         netloc = f"{user}:{pwd}@{parsed.hostname or ''}"
                         if parsed.port:
                             netloc += f":{parsed.port}"
-                        clone_url = urlunparse((parsed.scheme, netloc, parsed.path, parsed.params, parsed.query, parsed.fragment))
+                        clone_url = urlunparse(
+                            (
+                                parsed.scheme,
+                                netloc,
+                                parsed.path,
+                                parsed.params,
+                                parsed.query,
+                                parsed.fragment,
+                            )
+                        )
                     elif ui_git_username and ui_git_password:
                         user = quote(ui_git_username)
                         pwd = quote(ui_git_password)
                         netloc = f"{user}:{pwd}@{parsed.hostname or ''}"
                         if parsed.port:
                             netloc += f":{parsed.port}"
-                        clone_url = urlunparse((parsed.scheme, netloc, parsed.path, parsed.params, parsed.query, parsed.fragment))
+                        clone_url = urlunparse(
+                            (
+                                parsed.scheme,
+                                netloc,
+                                parsed.path,
+                                parsed.params,
+                                parsed.query,
+                                parsed.fragment,
+                            )
+                        )
             except Exception:
                 pass
 
-            clone_cmd = ["git", "clone", "--depth", "1", "--branch", ui_ref, clone_url, str(tmp_repo)]
+            clone_cmd = [
+                "git",
+                "clone",
+                "--depth",
+                "1",
+                "--branch",
+                ui_ref,
+                clone_url,
+                str(tmp_repo),
+            ]
             env = os.environ.copy()
             # Disable interactive terminal prompts (fail fast if creds missing)
             env["GIT_TERMINAL_PROMPT"] = "0"
@@ -473,7 +614,12 @@ def build(
                 if ui_git_ssh_key:
                     ssh_parts += ["-i", ui_git_ssh_key, "-o", "IdentitiesOnly=yes"]
                 if ui_git_insecure_host:
-                    ssh_parts += ["-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null"]
+                    ssh_parts += [
+                        "-o",
+                        "StrictHostKeyChecking=no",
+                        "-o",
+                        "UserKnownHostsFile=/dev/null",
+                    ]
                 env["GIT_SSH_COMMAND"] = " ".join(ssh_parts)
             subprocess.run(clone_cmd, check=False, env=env)
             repo_ui_root: Path = tmp_repo
@@ -483,7 +629,11 @@ def build(
                 rprint(f"[yellow]UI subdir not found in repo:[/yellow] {repo_ui_root}")
             else:
                 _package_ui_from_path(repo_ui_root)
-                artifacts_meta["ui_git"] = {"url": ui_git, "ref": ui_ref, "subdir": ui_subdir or ""}
+                artifacts_meta["ui_git"] = {
+                    "url": ui_git,
+                    "ref": ui_ref,
+                    "subdir": ui_subdir or "",
+                }
         finally:
             try:
                 shutil.rmtree(tmp_repo, ignore_errors=True)
@@ -492,17 +642,23 @@ def build(
     elif ui_dir:
         ui_root = Path(ui_dir).expanduser().resolve()
         if not ui_root.exists() or not ui_root.is_dir():
-            rprint(f"[yellow]UI directory not found or not a directory:[/yellow] {ui_root}")
+            rprint(
+                f"[yellow]UI directory not found or not a directory:[/yellow] {ui_root}"
+            )
         else:
             _package_ui_from_path(ui_root)
 
-    manifest_text = _write_manifest(pkg_name, version, description, agent_cfg, artifacts_meta, compose_meta)
+    manifest_text = _write_manifest(
+        pkg_name, version, description, agent_cfg, artifacts_meta, compose_meta
+    )
     manifest_bytes = manifest_text.encode("utf-8")
 
     try:
         # First compute checksums with manifest and agent files
         checksums_text, _ = _compute_checksums(manifest_bytes, agent_dir, extras)
-        with zipfile.ZipFile(pkg_file, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
+        with zipfile.ZipFile(
+            pkg_file, mode="w", compression=zipfile.ZIP_DEFLATED
+        ) as zf:
             # Write manifest
             zf.writestr("package.toml", manifest_bytes)
             # Write checksums
@@ -515,10 +671,15 @@ def build(
                 try:
                     key_path = Path(sign_key).expanduser().resolve()
                     sk_bytes = _read_key_bytes(key_path)
-                    sig_bytes, pub_bytes = _ed25519_sign(checksums_text.encode("utf-8"), sk_bytes)
+                    sig_bytes, pub_bytes = _ed25519_sign(
+                        checksums_text.encode("utf-8"), sk_bytes
+                    )
                     zf.writestr("signature.sig", _b64encode(sig_bytes))
                     zf.writestr("signature.pub", _b64encode(pub_bytes))
-                    zf.writestr("signature.meta", f"algo=ed25519\nfpr={_key_fingerprint(pub_bytes)}\n")
+                    zf.writestr(
+                        "signature.meta",
+                        f"algo=ed25519\nfpr={_key_fingerprint(pub_bytes)}\n",
+                    )
                 except Exception as exc:  # noqa: BLE001
                     rprint(f"[red]Signing failed:[/red] {exc}")
                     raise typer.Exit(code=1)
@@ -536,8 +697,14 @@ def build(
 @app.command()
 def inspect(
     package_path: str = typer.Argument(..., help="Path to .l6e file"),
-    show_config: bool = typer.Option(False, "--show-config", help="Display embedded [agent_config] from manifest if present"),
-    manifest_only: bool = typer.Option(False, "--manifest-only", help="Print only raw package.toml and exit (debug)"),
+    show_config: bool = typer.Option(
+        False,
+        "--show-config",
+        help="Display embedded [agent_config] from manifest if present",
+    ),
+    manifest_only: bool = typer.Option(
+        False, "--manifest-only", help="Print only raw package.toml and exit (debug)"
+    ),
 ) -> None:
     """Display basic metadata from a .l6e package."""
     pkg = Path(package_path).expanduser().resolve()
@@ -557,13 +724,21 @@ def inspect(
                 data = tomllib.load(io.BytesIO(raw_bytes))
         meta = data.get("metadata", {})
         rprint("[cyan]Package Metadata[/cyan]")
-        for key in ("name", "version", "description", "package_format_version", "created_at"):
+        for key in (
+            "name",
+            "version",
+            "description",
+            "package_format_version",
+            "created_at",
+        ):
             rprint(f"  {key}: {meta.get(key, '')}")
         # Try to show checksum summary
         try:
             with zipfile.ZipFile(pkg, mode="r") as zf2:
                 with zf2.open("checksums.txt") as c2:
-                    lines = c2.read().decode("utf-8", errors="replace").strip().splitlines()
+                    lines = (
+                        c2.read().decode("utf-8", errors="replace").strip().splitlines()
+                    )
                     rprint(f"[cyan]Checksums[/cyan] ({len(lines)} entries)")
         except Exception:
             pass
@@ -580,8 +755,11 @@ def inspect(
                     with zipfile.ZipFile(pkg, mode="r") as zf2:
                         with zf2.open("agent/config.toml") as f2:
                             import tomllib as _tomllib2
+
                             parsed = _tomllib2.load(io.BytesIO(f2.read()))
-                            rprint("\n[cyan]Agent Config (from agent/config.toml)[/cyan]")
+                            rprint(
+                                "\n[cyan]Agent Config (from agent/config.toml)[/cyan]"
+                            )
                             toml_text = _emit_toml_from_dict("agent_config", parsed)
                             for line in toml_text.strip().splitlines():
                                 typer.echo(line)
@@ -599,9 +777,13 @@ def inspect(
 def contents(
     package_path: str = typer.Argument(..., help="Path to .l6e file"),
     tree: bool = typer.Option(True, "--tree/--no-tree", help="Show archive contents"),
-    limit: int = typer.Option(0, "--limit", help="Limit number of displayed entries (0 = all)"),
+    limit: int = typer.Option(
+        0, "--limit", help="Limit number of displayed entries (0 = all)"
+    ),
     stats: bool = typer.Option(True, "--stats/--no-stats", help="Show size statistics"),
-    artifacts: bool = typer.Option(True, "--artifacts/--no-artifacts", help="Show artifacts summary"),
+    artifacts: bool = typer.Option(
+        True, "--artifacts/--no-artifacts", help="Show artifacts summary"
+    ),
 ) -> None:
     """List files contained in a .l6e bundle and summarize artifacts."""
     pkg = Path(package_path).expanduser().resolve()
@@ -629,34 +811,54 @@ def contents(
                         continue
                     tbl.add_row(
                         info.filename,
-                        f"{(info.file_size or 0)/1024:.1f}",
-                        f"{(info.compress_size or 0)/1024:.1f}",
+                        f"{(info.file_size or 0) / 1024:.1f}",
+                        f"{(info.compress_size or 0) / 1024:.1f}",
                     )
                     count += 1
                 rprint(tbl)
-                if limit and count < (len([i for i in zf.infolist() if not (i.is_dir() or i.filename.endswith('/'))])):
-                    rprint(f"[yellow]Showing first {count} files (use --limit 0 for all).[/yellow]")
+                if limit and count < (
+                    len(
+                        [
+                            i
+                            for i in zf.infolist()
+                            if not (i.is_dir() or i.filename.endswith("/"))
+                        ]
+                    )
+                ):
+                    rprint(
+                        f"[yellow]Showing first {count} files (use --limit 0 for all).[/yellow]"
+                    )
                 if stats:
                     rprint(
-                        f"[cyan]Sizes[/cyan] total={total_size/1024/1024:.2f} MB, compressed={total_csize/1024/1024:.2f} MB"
+                        f"[cyan]Sizes[/cyan] total={total_size / 1024 / 1024:.2f} MB, compressed={total_csize / 1024 / 1024:.2f} MB"
                     )
 
             if artifacts:
                 has_ui = any(n.startswith("artifacts/ui/") for n in names)
                 has_prompts = any(n.startswith("artifacts/prompts/") for n in names)
                 has_wheels = any(n.startswith("artifacts/wheels/") for n in names)
-                ui_count = sum(1 for n in names if n.startswith("artifacts/ui/") and not n.endswith("/"))
-                wheel_files = [n for n in names if n.startswith("artifacts/wheels/") and n.endswith(".whl")]
+                ui_count = sum(
+                    1
+                    for n in names
+                    if n.startswith("artifacts/ui/") and not n.endswith("/")
+                )
+                wheel_files = [
+                    n
+                    for n in names
+                    if n.startswith("artifacts/wheels/") and n.endswith(".whl")
+                ]
                 rprint("\n[cyan]Artifacts Summary[/cyan]")
                 rprint(f"  UI: {'present' if has_ui else 'absent'}  files={ui_count}")
                 rprint(f"  Prompts: {'present' if has_prompts else 'absent'}")
-                rprint(f"  Wheels: {'present' if has_wheels else 'absent'}  count={len(wheel_files)}")
+                rprint(
+                    f"  Wheels: {'present' if has_wheels else 'absent'}  count={len(wheel_files)}"
+                )
                 if wheel_files and (not limit or limit > 0):
                     show = wheel_files[: min(10, len(wheel_files))]
                     for w in show:
                         rprint(f"    - {w.split('/')[-1]}")
                     if len(wheel_files) > len(show):
-                        rprint(f"    (+{len(wheel_files)-len(show)} more)")
+                        rprint(f"    (+{len(wheel_files) - len(show)} more)")
     except Exception as exc:  # noqa: BLE001
         rprint(f"[red]Failed to read contents:[/red] {exc}")
         raise typer.Exit(code=1)
@@ -665,13 +867,34 @@ def contents(
 @app.command()
 def install(
     package_path: str = typer.Argument(..., help="Path to .l6e file"),
-    workspace: str = typer.Option(".", "--workspace", "-w", help="Workspace root (contains forge.toml and agents/)"),
-    overwrite: bool = typer.Option(False, "--overwrite", help="Overwrite existing agent directory if present"),
-    verify: bool = typer.Option(True, "--verify/--no-verify", help="Verify checksums before install"),
-    verify_sig: bool = typer.Option(False, "--verify-sig", help="Verify Ed25519 signature of checksums if present"),
-    public_key: str | None = typer.Option(None, "--public-key", help="Path to Ed25519 public key (if not embedded)"),
-    install_wheels: bool = typer.Option(False, "--install-wheels/--no-install-wheels", help="Install bundled wheels into a venv after extraction"),
-    venv_path: str | None = typer.Option(None, "--venv-path", help="Path to create/use a virtual environment for installing wheels (defaults to <workspace>/.venv_agents/<agent>)"),
+    workspace: str = typer.Option(
+        ".",
+        "--workspace",
+        "-w",
+        help="Workspace root (contains forge.toml and agents/)",
+    ),
+    overwrite: bool = typer.Option(
+        False, "--overwrite", help="Overwrite existing agent directory if present"
+    ),
+    verify: bool = typer.Option(
+        True, "--verify/--no-verify", help="Verify checksums before install"
+    ),
+    verify_sig: bool = typer.Option(
+        False, "--verify-sig", help="Verify Ed25519 signature of checksums if present"
+    ),
+    public_key: str | None = typer.Option(
+        None, "--public-key", help="Path to Ed25519 public key (if not embedded)"
+    ),
+    install_wheels: bool = typer.Option(
+        False,
+        "--install-wheels/--no-install-wheels",
+        help="Install bundled wheels into a venv after extraction",
+    ),
+    venv_path: str | None = typer.Option(
+        None,
+        "--venv-path",
+        help="Path to create/use a virtual environment for installing wheels (defaults to <workspace>/.venv_agents/<agent>)",
+    ),
 ) -> None:
     """Install a package into a workspace's agents directory."""
     pkg = Path(package_path).expanduser().resolve()
@@ -696,7 +919,9 @@ def install(
                 # Verify checksums if present
                 try:
                     with zf.open("checksums.txt") as cf:
-                        checks_lines = cf.read().decode("utf-8", errors="replace").splitlines()
+                        checks_lines = (
+                            cf.read().decode("utf-8", errors="replace").splitlines()
+                        )
                     for line in checks_lines:
                         parts = line.strip().split()
                         if len(parts) != 3 or parts[0] != "sha256":
@@ -726,11 +951,17 @@ def install(
                     except KeyError:
                         pass
                     if public_key and not pub_b64:
-                        pub_b64 = _b64encode(_read_key_bytes(Path(public_key).expanduser().resolve()))
+                        pub_b64 = _b64encode(
+                            _read_key_bytes(Path(public_key).expanduser().resolve())
+                        )
                     if not sig_b64 or not pub_b64:
-                        rprint("[red]Missing signature or public key for verification[/red]")
+                        rprint(
+                            "[red]Missing signature or public key for verification[/red]"
+                        )
                         raise typer.Exit(code=1)
-                    ok = _ed25519_verify(cbytes, _b64decode(sig_b64), _b64decode(pub_b64))
+                    ok = _ed25519_verify(
+                        cbytes, _b64decode(sig_b64), _b64decode(pub_b64)
+                    )
                     if not ok:
                         rprint("[red]Signature verification failed[/red]")
                         raise typer.Exit(code=1)
@@ -741,7 +972,9 @@ def install(
             target = root / "agents" / agent_name
             if target.exists():
                 if not overwrite:
-                    rprint(f"[red]Agent already exists:[/red] {target} (use --overwrite to replace)")
+                    rprint(
+                        f"[red]Agent already exists:[/red] {target} (use --overwrite to replace)"
+                    )
                     raise typer.Exit(code=1)
             else:
                 target.mkdir(parents=True, exist_ok=True)
@@ -779,12 +1012,16 @@ def install(
                         with zf.open(info.filename) as src, dest.open("wb") as dst:
                             dst.write(src.read())
                     rprint(f"[green]Extracted UI assets to:[/green] {ui_root}")
-                    rprint("[cyan]To serve UI via API, set AF_UI_DIR to this path or mount it in compose (defaults to /app/static/ui in compose template).[/cyan]")
+                    rprint(
+                        "[cyan]To serve UI via API, set AF_UI_DIR to this path or mount it in compose (defaults to /app/static/ui in compose template).[/cyan]"
+                    )
             except Exception:
                 pass
             # Optionally extract prompts to workspace-level directory
             try:
-                has_prompts = any(n.startswith("artifacts/prompts/") for n in zf.namelist())
+                has_prompts = any(
+                    n.startswith("artifacts/prompts/") for n in zf.namelist()
+                )
                 if has_prompts:
                     prompts_root = root / "prompts" / str(agent_name)
                     for info in zf.infolist():
@@ -800,12 +1037,16 @@ def install(
                         dest.parent.mkdir(parents=True, exist_ok=True)
                         with zf.open(info.filename) as src, dest.open("wb") as dst:
                             dst.write(src.read())
-                    rprint(f"[green]Extracted prompt templates to:[/green] {prompts_root}")
+                    rprint(
+                        f"[green]Extracted prompt templates to:[/green] {prompts_root}"
+                    )
             except Exception:
                 pass
             # Optionally extract wheels to workspace and (optionally) install into a venv
             try:
-                has_wheels = any(n.startswith("artifacts/wheels/") for n in zf.namelist())
+                has_wheels = any(
+                    n.startswith("artifacts/wheels/") for n in zf.namelist()
+                )
                 wheelhouse_dir = None
                 if has_wheels:
                     wheelhouse_dir = root / "wheels" / str(agent_name)
@@ -822,7 +1063,9 @@ def install(
                         dest.parent.mkdir(parents=True, exist_ok=True)
                         with zf.open(info.filename) as src, dest.open("wb") as dst:
                             dst.write(src.read())
-                    rprint(f"[green]Extracted wheel bundle to:[/green] {wheelhouse_dir}")
+                    rprint(
+                        f"[green]Extracted wheel bundle to:[/green] {wheelhouse_dir}"
+                    )
                 # Install wheels if requested
                 if install_wheels and wheelhouse_dir and wheelhouse_dir.exists():
                     # Resolve requirements file if present (inside package)
@@ -832,33 +1075,74 @@ def install(
                         try:
                             with zf.open(req_rel) as rf:
                                 req_bytes = rf.read()
-                            req_tmp_path = root / "wheels" / str(agent_name) / "requirements.txt"
+                            req_tmp_path = (
+                                root / "wheels" / str(agent_name) / "requirements.txt"
+                            )
                             req_tmp_path.parent.mkdir(parents=True, exist_ok=True)
                             req_tmp_path.write_bytes(req_bytes)
                         except Exception:
                             req_tmp_path = None
                     # Create or use venv
-                    venv_dir = Path(venv_path).expanduser().resolve() if venv_path else (root / ".venv_agents" / str(agent_name))
+                    venv_dir = (
+                        Path(venv_path).expanduser().resolve()
+                        if venv_path
+                        else (root / ".venv_agents" / str(agent_name))
+                    )
                     if not venv_dir.exists():
                         rprint(f"[cyan]Creating virtual environment:[/cyan] {venv_dir}")
-                        subprocess.run(["python", "-m", "venv", str(venv_dir)], check=False)
+                        subprocess.run(
+                            ["python", "-m", "venv", str(venv_dir)], check=False
+                        )
                     bin_dir = "Scripts" if os.name == "nt" else "bin"
-                    pip_exe = venv_dir / bin_dir / ("pip.exe" if os.name == "nt" else "pip")
-                    python_exe = venv_dir / bin_dir / ("python.exe" if os.name == "nt" else "python")
-                    subprocess.run([str(python_exe), "-m", "pip", "install", "--upgrade", "pip"], check=False)
+                    pip_exe = (
+                        venv_dir / bin_dir / ("pip.exe" if os.name == "nt" else "pip")
+                    )
+                    python_exe = (
+                        venv_dir
+                        / bin_dir
+                        / ("python.exe" if os.name == "nt" else "python")
+                    )
+                    subprocess.run(
+                        [str(python_exe), "-m", "pip", "install", "--upgrade", "pip"],
+                        check=False,
+                    )
                     if req_tmp_path and req_tmp_path.exists():
-                        cmd = [str(python_exe), "-m", "pip", "install", "--no-index", "--find-links", str(wheelhouse_dir), "-r", str(req_tmp_path)]
-                        rprint("[cyan]Installing from requirements with wheelhouse...[/cyan]")
+                        cmd = [
+                            str(python_exe),
+                            "-m",
+                            "pip",
+                            "install",
+                            "--no-index",
+                            "--find-links",
+                            str(wheelhouse_dir),
+                            "-r",
+                            str(req_tmp_path),
+                        ]
+                        rprint(
+                            "[cyan]Installing from requirements with wheelhouse...[/cyan]"
+                        )
                         subprocess.run(cmd, check=False)
                     else:
                         wheels = [str(p) for p in wheelhouse_dir.glob("*.whl")]
                         if wheels:
-                            cmd = [str(python_exe), "-m", "pip", "install", "--no-index", "--find-links", str(wheelhouse_dir)] + wheels
+                            cmd = [
+                                str(python_exe),
+                                "-m",
+                                "pip",
+                                "install",
+                                "--no-index",
+                                "--find-links",
+                                str(wheelhouse_dir),
+                            ] + wheels
                             rprint("[cyan]Installing wheel files...[/cyan]")
                             subprocess.run(cmd, check=False)
-                    rprint(f"[green]Dependencies installed into venv:[/green] {venv_dir}")
+                    rprint(
+                        f"[green]Dependencies installed into venv:[/green] {venv_dir}"
+                    )
             except Exception as exc:  # noqa: BLE001
-                rprint(f"[yellow]Wheel extraction/installation skipped or errored:[/yellow] {exc}")
+                rprint(
+                    f"[yellow]Wheel extraction/installation skipped or errored:[/yellow] {exc}"
+                )
         rprint(f"[green]Installed agent to:[/green] {root / 'agents' / agent_name}")
     except Exception as exc:  # noqa: BLE001
         rprint(f"[red]Failed to install package:[/red] {exc}")
@@ -867,6 +1151,3 @@ def install(
 
 def main() -> None:  # pragma: no cover
     app()
-
-
-

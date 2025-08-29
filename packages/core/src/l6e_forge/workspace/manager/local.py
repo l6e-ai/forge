@@ -17,7 +17,13 @@ class LocalWorkspaceManager(IWorkspaceManager):
     Keeps behavior minimal to support MVP commands: `forge init` and `forge list`.
     """
 
-    async def create_workspace(self, path: Path, template: str | None = None, with_compose: bool = True, conversation_store: str | None = None) -> None:
+    async def create_workspace(
+        self,
+        path: Path,
+        template: str | None = None,
+        with_compose: bool = True,
+        conversation_store: str | None = None,
+    ) -> None:
         root = Path(path).expanduser().resolve()
         root.mkdir(parents=True, exist_ok=True)
 
@@ -32,7 +38,16 @@ class LocalWorkspaceManager(IWorkspaceManager):
         templates_dir = root / "templates"
         prompts_dir = root / "prompts"
 
-        for d in (agents_dir, logs_dir, data_dir, shared_dir, tools_dir, ui_dir, templates_dir, prompts_dir):
+        for d in (
+            agents_dir,
+            logs_dir,
+            data_dir,
+            shared_dir,
+            tools_dir,
+            ui_dir,
+            templates_dir,
+            prompts_dir,
+        ):
             d.mkdir(parents=True, exist_ok=True)
 
         # Create default forge.toml if it doesn't exist
@@ -55,7 +70,10 @@ hot_reload = true
         # Generate a docker-compose file using the ComposeTemplateService (preferred over copying a static template)
         if with_compose:
             try:
-                from l6e_forge.infra.compose import ComposeTemplateService, ComposeServiceSpec
+                from l6e_forge.infra.compose import (
+                    ComposeTemplateService,
+                    ComposeServiceSpec,
+                )
 
                 target_cp = root / "docker-compose.yml"
                 if not target_cp.exists():
@@ -75,7 +93,17 @@ hot_reload = true
                         services.insert(0, ComposeServiceSpec(name="postgres"))
                         # Ensure AF_DB_URL is templated via api context (defaults ok)
                         services = [
-                            ComposeServiceSpec(name=s.name, context=(s.context | {"db_url": "postgresql://forge:forge@postgres:5432/forge"} if s.name == "api" else s.context))
+                            ComposeServiceSpec(
+                                name=s.name,
+                                context=(
+                                    s.context
+                                    | {
+                                        "db_url": "postgresql://forge:forge@postgres:5432/forge"
+                                    }
+                                    if s.name == "api"
+                                    else s.context
+                                ),
+                            )
                             for s in services
                         ]
                         # Create migrations directory with initial file
@@ -107,8 +135,9 @@ create table if not exists forge.messages (
 
 create index if not exists idx_messages_conversation_ts on forge.messages (conversation_id, timestamp desc);
 """
-                            ).strip()
-                        , encoding="utf-8")
+                            ).strip(),
+                            encoding="utf-8",
+                        )
                     compose_text = await svc.generate(services)
                     target_cp.write_text(compose_text, encoding="utf-8")
             except Exception:
@@ -155,10 +184,14 @@ create index if not exists idx_messages_conversation_ts on forge.messages (conve
             warnings.append("Missing 'agents/' directory; creating it is recommended.")
 
         if not config_file.exists():
-            warnings.append("Missing 'forge.toml'; run 'forge init <workspace>' to create one.")
+            warnings.append(
+                "Missing 'forge.toml'; run 'forge init <workspace>' to create one."
+            )
 
         if not internal_dir.exists():
-            warnings.append("Missing '.forge/' internal directory; it will be created on demand.")
+            warnings.append(
+                "Missing '.forge/' internal directory; it will be created on demand."
+            )
 
         is_valid = len(errors) == 0
         return WorkspaceValidation(
@@ -178,5 +211,3 @@ create index if not exists idx_messages_conversation_ts on forge.messages (conve
         if (cwd / "forge.toml").exists() and (cwd / "agents").exists():
             return [cwd]
         return []
-
-

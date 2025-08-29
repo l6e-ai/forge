@@ -10,6 +10,7 @@ from l6e_forge.types.error import HealthStatus
 
 # TODO support multiple collections
 
+
 class QdrantVectorStore(IMemoryBackend):
     """Qdrant HTTP backend for vector upsert/search (MVP).
 
@@ -25,7 +26,9 @@ class QdrantVectorStore(IMemoryBackend):
         timeout: float = 5.0,
     ) -> None:
         self.collection = collection
-        self.endpoint = (endpoint or os.environ.get("QDRANT_URL") or "http://localhost:6333").rstrip("/")
+        self.endpoint = (
+            endpoint or os.environ.get("QDRANT_URL") or "http://localhost:6333"
+        ).rstrip("/")
         self.distance = distance  # "Cosine" | "Dot" | "Euclid"
         self.api_key = api_key or os.environ.get("QDRANT_API_KEY")
         self.timeout = timeout
@@ -61,7 +64,9 @@ class QdrantVectorStore(IMemoryBackend):
             payload = {
                 "vectors": {"size": vector_size, "distance": self.distance},
             }
-            httpx.put(url, json=payload, headers=self._headers(), timeout=self.timeout).raise_for_status()
+            httpx.put(
+                url, json=payload, headers=self._headers(), timeout=self.timeout
+            ).raise_for_status()
         except Exception:
             # Best-effort in MVP
             pass
@@ -98,17 +103,30 @@ class QdrantVectorStore(IMemoryBackend):
                 {
                     "id": key,
                     "vector": embedding,
-                    "payload": {"content": content, "metadata": metadata or {}, "namespace": ns},
+                    "payload": {
+                        "content": content,
+                        "metadata": metadata or {},
+                        "namespace": ns,
+                    },
                 }
             ]
         }
         try:
             url = f"{self.endpoint}/collections/{collection}/points?wait=true"
-            httpx.put(url, json=payload, headers=self._headers(), timeout=self.timeout).raise_for_status()
+            httpx.put(
+                url, json=payload, headers=self._headers(), timeout=self.timeout
+            ).raise_for_status()
         except Exception:
             pass
 
-    async def query(self, namespace: str, query_embedding: List[float], limit: int = 10, *, collection: Optional[str] = None) -> List[Tuple[str, float, Any]]:
+    async def query(
+        self,
+        namespace: str,
+        query_embedding: List[float],
+        limit: int = 10,
+        *,
+        collection: Optional[str] = None,
+    ) -> List[Tuple[str, float, Any]]:
         if collection and "::" not in namespace:
             namespace = f"{collection}::{namespace}"
         collection, ns = self._split_collection_namespace(namespace)
@@ -121,7 +139,9 @@ class QdrantVectorStore(IMemoryBackend):
         }
         try:
             url = f"{self.endpoint}/collections/{collection}/points/search"
-            r = httpx.post(url, json=payload, headers=self._headers(), timeout=self.timeout)
+            r = httpx.post(
+                url, json=payload, headers=self._headers(), timeout=self.timeout
+            )
             r.raise_for_status()
             items = r.json().get("result") or []
             out: List[Tuple[str, float, Any]] = []
@@ -131,9 +151,13 @@ class QdrantVectorStore(IMemoryBackend):
                 payload = it.get("payload") or {}
                 content = payload.get("content", "")
                 meta = payload.get("metadata", {})
-                out.append((pid, score, type("_QItem", (), {"content": content, "metadata": meta})()))
+                out.append(
+                    (
+                        pid,
+                        score,
+                        type("_QItem", (), {"content": content, "metadata": meta})(),
+                    )
+                )
             return out
         except Exception:
             return []
-
-

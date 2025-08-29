@@ -16,10 +16,19 @@ app = typer.Typer(help="Development server and hot reload")
 
 @app.callback(invoke_without_command=True)
 def dev(
-    workspace: str | None = typer.Option(None, "--workspace", "-w", help="Workspace root path"),
+    workspace: str | None = typer.Option(
+        None, "--workspace", "-w", help="Workspace root path"
+    ),
     check: bool = typer.Option(False, "--check", help="Validate workspace and exit"),
-    run_for: float | None = typer.Option(None, "--run-for", help="Run dev mode for N seconds then exit (testing)"),
-    test_touch: list[str] = typer.Option(None, "--test-touch", help="[TEST] Touch paths after start to trigger reload", hidden=True),
+    run_for: float | None = typer.Option(
+        None, "--run-for", help="Run dev mode for N seconds then exit (testing)"
+    ),
+    test_touch: list[str] = typer.Option(
+        None,
+        "--test-touch",
+        help="[TEST] Touch paths after start to trigger reload",
+        hidden=True,
+    ),
 ) -> None:
     """Start dev mode (hot reload) or just validate with --check."""
     manager = LocalWorkspaceManager()
@@ -49,5 +58,3 @@ def dev(
     service = DevService(root)
     code = service.start(run_for=run_for, test_touch=test_touch)
     raise typer.Exit(code=code)
-
-

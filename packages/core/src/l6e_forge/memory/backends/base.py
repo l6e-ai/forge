@@ -1,4 +1,3 @@
-
 from typing import Any, Dict, List, Optional, Protocol, Tuple
 
 from l6e_forge.types.error import HealthStatus
@@ -14,15 +13,15 @@ class IMemoryBackend(Protocol):
       keeps the higher-level memory manager API stable while enabling multiple
       collections.
     """
-    
+
     async def connect(self) -> None:
         """Connect to the storage backend"""
         ...
-    
+
     async def disconnect(self) -> None:
         """Disconnect from the storage backend"""
         ...
-    
+
     async def health_check(self) -> HealthStatus:
         """Check backend health"""
         ...

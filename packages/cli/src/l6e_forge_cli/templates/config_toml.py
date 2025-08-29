@@ -19,5 +19,3 @@ quality = "balanced"
 # Embedding model will be filled by bootstrapper if not set
 embedding_model = ""
 """
-
-

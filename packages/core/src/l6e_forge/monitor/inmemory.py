@@ -18,7 +18,12 @@ class InMemoryMonitoringService(IMonitoringService):
     - Tracks lightweight agent status and chat logs
     """
 
-    def __init__(self, max_events: int = 2000, max_metrics_per_name: int = 1000, max_chats: int = 2000) -> None:
+    def __init__(
+        self,
+        max_events: int = 2000,
+        max_metrics_per_name: int = 1000,
+        max_chats: int = 2000,
+    ) -> None:
         self._events: Deque[dict[str, Any]] = deque(maxlen=max_events)
         self._metric_name_to_points: dict[str, Deque[dict[str, Any]]] = {}
         self._metric_name_to_points_max: int = max_metrics_per_name
@@ -31,7 +36,9 @@ class InMemoryMonitoringService(IMonitoringService):
         self._lock = asyncio.Lock()
 
     # ---- Public API (IMonitoringService) ----
-    async def record_metric(self, name: str, value: float, tags: dict[str, str] | None = None) -> None:
+    async def record_metric(
+        self, name: str, value: float, tags: dict[str, str] | None = None
+    ) -> None:
         point = {
             "name": name,
             "value": value,
@@ -39,7 +46,9 @@ class InMemoryMonitoringService(IMonitoringService):
             "timestamp": datetime.now().isoformat(),
         }
         if name not in self._metric_name_to_points:
-            self._metric_name_to_points[name] = deque(maxlen=self._metric_name_to_points_max)
+            self._metric_name_to_points[name] = deque(
+                maxlen=self._metric_name_to_points_max
+            )
         self._metric_name_to_points[name].append(point)
         await self._broadcast({"type": "metric", "data": point})
 
@@ -52,17 +61,21 @@ class InMemoryMonitoringService(IMonitoringService):
         self._events.append(evt)
         await self._broadcast({"type": "event", "data": evt})
 
-    def get_metrics(self, name: str, time_range: tuple[datetime, datetime] | None = None) -> list[dict[str, Any]]:
+    def get_metrics(
+        self, name: str, time_range: tuple[datetime, datetime] | None = None
+    ) -> list[dict[str, Any]]:
         series = list(self._metric_name_to_points.get(name, []))
         if time_range is None:
             return series
         start, end = time_range
+
         def _isin(p: dict[str, Any]) -> bool:
             try:
                 ts = datetime.fromisoformat(p.get("timestamp"))
             except Exception:
                 return False
             return start <= ts <= end
+
         return [p for p in series if _isin(p)]
 
     async def start_trace(self, trace_name: str) -> str:
@@ -72,7 +85,12 @@ class InMemoryMonitoringService(IMonitoringService):
             "started_at": datetime.now().isoformat(),
             "steps": [],
         }
-        await self._broadcast({"type": "trace_start", "data": {"trace_id": trace_id, "trace_name": trace_name}})
+        await self._broadcast(
+            {
+                "type": "trace_start",
+                "data": {"trace_id": trace_id, "trace_name": trace_name},
+            }
+        )
         return trace_id
 
     async def end_trace(self, trace_id: str) -> None:
@@ -88,7 +106,13 @@ class InMemoryMonitoringService(IMonitoringService):
     def get_agent_status(self) -> list[dict[str, Any]]:
         return list(self._agent_status.values())
 
-    def set_agent_status(self, agent_id: str, name: str, status: str, config: dict[str, Any] | None = None) -> None:
+    def set_agent_status(
+        self,
+        agent_id: str,
+        name: str,
+        status: str,
+        config: dict[str, Any] | None = None,
+    ) -> None:
         self._agent_status[agent_id] = {
             "agent_id": agent_id,
             "name": name,
@@ -100,7 +124,9 @@ class InMemoryMonitoringService(IMonitoringService):
     def remove_agent(self, agent_id: str) -> None:
         self._agent_status.pop(agent_id, None)
 
-    def add_chat_log(self, conversation_id: str, role: str, content: str, agent_id: str | None = None) -> None:
+    def add_chat_log(
+        self, conversation_id: str, role: str, content: str, agent_id: str | None = None
+    ) -> None:
         entry = {
             "conversation_id": str(conversation_id),
             "role": role,
@@ -171,5 +197,3 @@ class InMemoryMonitoringService(IMonitoringService):
             except Exception:
                 # Slow or closed subscriber; ignore
                 pass
-
-

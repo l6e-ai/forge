@@ -16,9 +16,29 @@ class Agent(IAgent):
     async def configure(self, config: AgentConfig) -> None:
         self.config = config
         # Bootstrapper populates these fields in config.toml
-        model_cfg = getattr(config, "model", {}) if hasattr(config, "model") else (config.get("model", {}) if isinstance(config, dict) else {})
-        self._provider = (getattr(model_cfg, "provider", None) if hasattr(model_cfg, "provider") else model_cfg.get("provider")) if model_cfg else None
-        self._model = (getattr(model_cfg, "model", None) if hasattr(model_cfg, "model") else model_cfg.get("model")) if model_cfg else None
+        model_cfg = (
+            getattr(config, "model", {})
+            if hasattr(config, "model")
+            else (config.get("model", {}) if isinstance(config, dict) else {})
+        )
+        self._provider = (
+            (
+                getattr(model_cfg, "provider", None)
+                if hasattr(model_cfg, "provider")
+                else model_cfg.get("provider")
+            )
+            if model_cfg
+            else None
+        )
+        self._model = (
+            (
+                getattr(model_cfg, "model", None)
+                if hasattr(model_cfg, "model")
+                else model_cfg.get("model")
+            )
+            if model_cfg
+            else None
+        )
 
     async def initialize(self, runtime: IRuntime) -> None:
         self.runtime = runtime
@@ -26,13 +46,22 @@ class Agent(IAgent):
     async def shutdown(self) -> None:
         pass
 
-    async def handle_message(self, message: Message, context: AgentContext) -> AgentResponse:
+    async def handle_message(
+        self, message: Message, context: AgentContext
+    ) -> AgentResponse:
         # Recall and store memory (MVP)
         try:
             mm = self.runtime.get_memory_manager()
-            memories = await mm.search_vectors(namespace="my-ollama", query=message.content, limit=3)
+            memories = await mm.search_vectors(
+                namespace="my-ollama", query=message.content, limit=3
+            )
             recall = "\n".join(f"- {m.content}" for m in memories)
-            await mm.store_vector(namespace="my-ollama", key=str(message.message_id), content=message.content, metadata={"role": message.role})
+            await mm.store_vector(
+                namespace="my-ollama",
+                key=str(message.message_id),
+                content=message.content,
+                metadata={"role": message.role},
+            )
         except Exception:
             recall = ""
 
@@ -46,10 +75,16 @@ class Agent(IAgent):
         )
         model_id = await manager.load_model(spec)
         # Prepend recalled context as a system/user preface
-        sys_preface = f"You may use this related memory to answer:\n{recall}\n\n" if recall else ""
+        sys_preface = (
+            f"You may use this related memory to answer:\n{recall}\n\n"
+            if recall
+            else ""
+        )
         prompt_msg = Message(role="user", content=sys_preface + message.content)
         chat = await manager.chat(model_id, [prompt_msg])
-        return AgentResponse(content=chat.message.content, agent_id=self.name, response_time=0.0)
+        return AgentResponse(
+            content=chat.message.content, agent_id=self.name, response_time=0.0
+        )
 
     async def can_handle(self, message: Message, context: AgentContext) -> bool:
         return True

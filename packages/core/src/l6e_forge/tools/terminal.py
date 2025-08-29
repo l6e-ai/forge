@@ -23,7 +23,12 @@ class TerminalTool(ITool):
             "properties": {
                 "command": {"type": "string"},
                 "cwd": {"type": "string"},
-                "timeout": {"type": "integer", "minimum": 1, "maximum": 120, "default": 30},
+                "timeout": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 120,
+                    "default": 30,
+                },
             },
             "required": ["command"],
             "additionalProperties": False,
@@ -50,21 +55,34 @@ class TerminalTool(ITool):
     async def cleanup(self) -> None:  # pragma: no cover
         return None
 
-    async def execute(self, parameters: dict[str, Any], context: ToolContext) -> ToolResult:
+    async def execute(
+        self, parameters: dict[str, Any], context: ToolContext
+    ) -> ToolResult:
         if not await self.validate_parameters(parameters):
             return ToolResult(success=False, error_message="Invalid parameters")
 
         # Simple safety: disallow interactive and background control characters
         command = parameters["command"].strip()
-        if any(x in command for x in ["| less", "| more", "tail -f", "top", "htop", "vim", "nano"]):
-            return ToolResult(success=False, error_message="Interactive commands are not allowed")
+        if any(
+            x in command
+            for x in ["| less", "| more", "tail -f", "top", "htop", "vim", "nano"]
+        ):
+            return ToolResult(
+                success=False, error_message="Interactive commands are not allowed"
+            )
 
         timeout = int(parameters.get("timeout", 30))
         cwd_rel = parameters.get("cwd")
-        cwd = (context.workspace_path / cwd_rel).resolve() if cwd_rel else context.workspace_path.resolve()
+        cwd = (
+            (context.workspace_path / cwd_rel).resolve()
+            if cwd_rel
+            else context.workspace_path.resolve()
+        )
 
         if not str(cwd).startswith(str(context.workspace_path.resolve())):
-            return ToolResult(success=False, error_message="cwd must be within workspace")
+            return ToolResult(
+                success=False, error_message="cwd must be within workspace"
+            )
 
         args = shlex.split(command)
 
@@ -77,14 +95,20 @@ class TerminalTool(ITool):
                     stderr=asyncio.subprocess.PIPE,
                 )
                 try:
-                    out, err = await asyncio.wait_for(proc.communicate(), timeout=timeout)
+                    out, err = await asyncio.wait_for(
+                        proc.communicate(), timeout=timeout
+                    )
                 except asyncio.TimeoutError:
                     try:
                         proc.kill()
                     except Exception:
                         pass
                     return 124, "", "Command timed out"
-                return proc.returncode, out.decode("utf-8", errors="replace"), err.decode("utf-8", errors="replace")
+                return (
+                    proc.returncode,
+                    out.decode("utf-8", errors="replace"),
+                    err.decode("utf-8", errors="replace"),
+                )
             except FileNotFoundError:
                 return 127, "", "Command not found"
             except Exception as exc:  # pragma: no cover
@@ -94,6 +118,7 @@ class TerminalTool(ITool):
         # Respect output size limits
         stdout = stdout[: context.max_output_size]
         stderr = stderr[: context.max_output_size]
-        return ToolResult(success=code == 0, data={"returncode": code, "stdout": stdout, "stderr": stderr})
-
-
+        return ToolResult(
+            success=code == 0,
+            data={"returncode": code, "stdout": stdout, "stderr": stderr},
+        )

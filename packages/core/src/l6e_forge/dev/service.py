@@ -43,8 +43,12 @@ class DevService:
         except Exception:
             pass
 
-    def start(self, run_for: float | None = None, test_touch: Iterable[str] | None = None) -> int:
-        if not ((self.root / "forge.toml").exists() and (self.root / "agents").exists()):
+    def start(
+        self, run_for: float | None = None, test_touch: Iterable[str] | None = None
+    ) -> int:
+        if not (
+            (self.root / "forge.toml").exists() and (self.root / "agents").exists()
+        ):
             rprint(f"[red]Not a workspace: {self.root}[/red]")
             return 1
 
@@ -61,17 +65,24 @@ class DevService:
             try:
                 # Spawn a background task to run the server without blocking
                 import threading
-                t = threading.Thread(target=self._run_monitoring_ui, args=(), daemon=True)
+
+                t = threading.Thread(
+                    target=self._run_monitoring_ui, args=(), daemon=True
+                )
                 t.start()
             except Exception:
                 pass
-        handler = DevEventHandler(self.agents_dir, on_agent_changed=self._on_agent_changed)
+        handler = DevEventHandler(
+            self.agents_dir, on_agent_changed=self._on_agent_changed
+        )
         self.observer.schedule(handler, str(self.agents_dir), recursive=True)
         self.observer.schedule(handler, str(self.root), recursive=False)
 
         rprint(f"[cyan]Watching:[/cyan] {self.agents_dir}")
         rprint(f"[cyan]Watching:[/cyan] {self.config_file}")
-        rprint(f"[green]Dev mode started (hot_reload={self._hot_reload_enabled}, debounce={self._debounce_seconds}s). Press Ctrl+C to stop.[/green]")
+        rprint(
+            f"[green]Dev mode started (hot_reload={self._hot_reload_enabled}, debounce={self._debounce_seconds}s). Press Ctrl+C to stop.[/green]"
+        )
 
         try:
             self.observer.start()
@@ -129,9 +140,11 @@ class DevService:
 
     def _register_agent(self, agent_name: str) -> None:
         agent_dir = self.agents_dir / agent_name
+
         async def _run():
             # Unregister previous if exists
             from l6e_forge.types.core import AgentID
+
             prev = self._agent_ids.get(agent_name)
             if prev:
                 try:
@@ -140,9 +153,12 @@ class DevService:
                     pass
             new_id = await self.runtime.register_agent(agent_dir)
             self._agent_ids[agent_name] = str(new_id)
+
         def uuid_from_str(s: str):
             import uuid as _uuid
+
             return _uuid.UUID(s)
+
         asyncio.run(_run())
         rprint(f"[bold cyan]Registered agent:[/bold cyan] {agent_name}")
 
@@ -167,5 +183,3 @@ class DevService:
         except Exception:
             # Swallow import or other unexpected errors silently in dev background
             pass
-
-

@@ -13,5 +13,3 @@ class IEmbeddingProvider(Protocol):
     def embed_batch(self, texts: List[str]) -> List[List[float]]:
         """Return embeddings for a list of strings."""
         ...
-
-

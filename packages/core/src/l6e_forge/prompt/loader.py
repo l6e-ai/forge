@@ -37,7 +37,11 @@ class PromptTemplateLoader:
             cands.append((workspace_root / "templates" / ref).resolve())
             cands.append((workspace_root / "shared" / "prompts" / ref).resolve())
             if agent_name:
-                cands.append((workspace_root / "agents" / agent_name / "templates" / ref).resolve())
+                cands.append(
+                    (
+                        workspace_root / "agents" / agent_name / "templates" / ref
+                    ).resolve()
+                )
                 cands.append((workspace_root / "prompts" / agent_name / ref).resolve())
             # Workspace-level prompts fallback
             cands.append((workspace_root / "prompts" / ref).resolve())
@@ -58,5 +62,3 @@ class PromptTemplateLoader:
             except Exception:
                 continue
         raise FileNotFoundError(f"Prompt template not found: {template_ref}")
-
-

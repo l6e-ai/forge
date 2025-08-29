@@ -107,16 +107,22 @@ class LocalRuntime:
             term_id = self._tool_registry.register_tool(TerminalTool())
             web_id = self._tool_registry.register_tool(WebFetchTool())
             code_id = self._tool_registry.register_tool(CodeUtilsTool())
-            self._tool_registry.assign_tools_to_agent(agent_id, [fs_id, term_id, web_id, code_id])
+            self._tool_registry.assign_tools_to_agent(
+                agent_id, [fs_id, term_id, web_id, code_id]
+            )
         except Exception:
             # Best-effort only in MVP
             pass
         # Update monitoring (status only). The monitor service emits agent.registered on ready.
         try:
             mon = get_monitoring()
-            mon.set_agent_status(str(agent_id), agent_name, status="ready", config=config_data)
+            mon.set_agent_status(
+                str(agent_id), agent_name, status="ready", config=config_data
+            )
             # Emit event so UIs refresh active agents
-            await mon.record_event("agent.registered", {"agent_id": str(agent_id), "name": agent_name})
+            await mon.record_event(
+                "agent.registered", {"agent_id": str(agent_id), "name": agent_name}
+            )
         except Exception:
             pass
         return agent_id
@@ -170,23 +176,31 @@ class LocalRuntime:
         # Minimal context
         from l6e_forge.types.core import AgentContext  # local import to avoid cycles
 
-        ctx = AgentContext(conversation_id=conversation_id or uuid.uuid4(), session_id=session_id or "local")
+        ctx = AgentContext(
+            conversation_id=conversation_id or uuid.uuid4(),
+            session_id=session_id or "local",
+        )
         # Request logging moved to API layer to avoid duplicates
         # Best-effort: store conversation message in memory and attach history/provider to context
         try:
             mm = self.get_memory_manager()
             await mm.store_conversation(ctx.conversation_id, message)
             # Attach conversation history and provider for agent use
-            from l6e_forge.memory.conversation.provider import ConversationHistoryProvider
+            from l6e_forge.memory.conversation.provider import (
+                ConversationHistoryProvider,
+            )
 
             try:
-                ctx.conversation_history = await mm.get_conversation(ctx.conversation_id, limit=50)
+                ctx.conversation_history = await mm.get_conversation(
+                    ctx.conversation_id, limit=50
+                )
             except Exception:
                 ctx.conversation_history = []
             ctx.history_provider = ConversationHistoryProvider(mm)
         except Exception:
             pass
         import time as _time
+
         _start = _time.perf_counter()
         resp = await agent.handle_message(message, ctx)
         # Process result with configurable processor (agent override or env default)
@@ -206,7 +220,10 @@ class LocalRuntime:
         # Ensure response object integrity for UI
         try:
             if not getattr(resp, "agent_id", None):
-                resp.agent_id = self._id_to_name.get(target or next(iter(self._id_to_name.keys()), uuid.uuid4()), "unknown")  # type: ignore[attr-defined]
+                resp.agent_id = self._id_to_name.get(
+                    target or next(iter(self._id_to_name.keys()), uuid.uuid4()),
+                    "unknown",
+                )  # type: ignore[attr-defined]
             if not getattr(resp, "content", None):
                 resp.content = ""  # type: ignore[attr-defined]
         except Exception:
@@ -215,17 +232,23 @@ class LocalRuntime:
         # Record performance metric only; chat/event logging handled at API layer
         try:
             mon = get_monitoring()
-            await mon.record_metric("response_time_ms", _elapsed_ms, tags={"agent": resp.agent_id})
+            await mon.record_metric(
+                "response_time_ms", _elapsed_ms, tags={"agent": resp.agent_id}
+            )
         except Exception:
             pass
         return resp
 
-    async def broadcast_message(self, message: Message, filter_fn: Callable | None = None) -> list[AgentResponse]:
+    async def broadcast_message(
+        self, message: Message, filter_fn: Callable | None = None
+    ) -> list[AgentResponse]:
         results: list[AgentResponse] = []
         for agent in self._id_to_agent.values():
             if filter_fn and not filter_fn(agent):  # type: ignore[arg-type]
                 continue
-            from l6e_forge.types.core import AgentContext  # local import to avoid cycles
+            from l6e_forge.types.core import (
+                AgentContext,
+            )  # local import to avoid cycles
 
             ctx = AgentContext(conversation_id=uuid.uuid4(), session_id="local")
             results.append(await agent.handle_message(message, ctx))
@@ -246,7 +269,10 @@ class LocalRuntime:
             store = InMemoryVectorStore()
             try:
                 # If QDRANT_URL or AF_MEMORY_PROVIDER=qdrant, use Qdrant
-                if os.environ.get("QDRANT_URL") or os.environ.get("AF_MEMORY_PROVIDER") == "qdrant":
+                if (
+                    os.environ.get("QDRANT_URL")
+                    or os.environ.get("AF_MEMORY_PROVIDER") == "qdrant"
+                ):
                     collection = os.environ.get("AF_MEMORY_COLLECTION", "agent_memory")
                     store = QdrantVectorStore(collection=collection)
             except Exception:
@@ -257,7 +283,9 @@ class LocalRuntime:
                 import httpx
 
                 # Probe Ollama
-                ollama = os.environ.get("OLLAMA_HOST", "http://localhost:11434").rstrip("/")
+                ollama = os.environ.get("OLLAMA_HOST", "http://localhost:11434").rstrip(
+                    "/"
+                )
                 r = httpx.get(f"{ollama}/api/version", timeout=1.0)
                 if r.status_code == 200:
                     embedder = OllamaEmbeddingProvider()
@@ -267,7 +295,9 @@ class LocalRuntime:
                 try:
                     import httpx
 
-                    lm = os.environ.get("LMSTUDIO_HOST", "http://localhost:1234/v1").rstrip("/")
+                    lm = os.environ.get(
+                        "LMSTUDIO_HOST", "http://localhost:1234/v1"
+                    ).rstrip("/")
                     r = httpx.get(f"{lm}/models", timeout=1.0)
                     if r.status_code == 200:
                         embedder = LMStudioEmbeddingProvider()
@@ -280,21 +310,31 @@ class LocalRuntime:
             try:
                 db_url = os.environ.get("AF_DB_URL", "").strip()
                 if db_url:
-                    from l6e_forge.memory.conversation.postgres import PostgresConversationStore
+                    from l6e_forge.memory.conversation.postgres import (
+                        PostgresConversationStore,
+                    )
+
                     conversation_store = PostgresConversationStore(db_url)
             except Exception:
                 conversation_store = None
-            self._memory_manager = InMemoryMemoryManager(store, embedder, conversation_store)
+            self._memory_manager = InMemoryMemoryManager(
+                store, embedder, conversation_store
+            )
         return self._memory_manager
 
     def get_model_manager(self):  # -> IModelManager
         if self._model_manager is None:
             # Use provider registry with endpoints from forge.toml (workspace root is parent of agents dir)
-            from l6e_forge.models.providers.registry import load_endpoints_from_config, get_manager
+            from l6e_forge.models.providers.registry import (
+                load_endpoints_from_config,
+                get_manager,
+            )
 
             workspace_root = Path.cwd()
             _default_provider, endpoints = load_endpoints_from_config(workspace_root)
-            provider = (os.environ.get("AF_DEFAULT_PROVIDER") or _default_provider or "ollama")
+            provider = (
+                os.environ.get("AF_DEFAULT_PROVIDER") or _default_provider or "ollama"
+            )
             self._model_manager = get_manager(provider, endpoints)
         return self._model_manager
 
@@ -324,6 +364,3 @@ class LocalRuntime:
 
     def get_agent_id_by_name(self, name: str) -> AgentID | None:
         return self._name_to_id.get(name)
-
-
-

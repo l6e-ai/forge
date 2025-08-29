@@ -36,8 +36,16 @@ def agent(
         "--template",
         help="Template to use (e.g., 'basic', 'assistant'). Provider-specific variants are resolved automatically.",
     ),
-    include_compose: bool = typer.Option(True, "--include-compose/--no-include-compose", help="Generate/append compose with memory provider."),
-    memory_provider: str = typer.Option("qdrant", "--memory-provider", help="Default memory provider to include in compose (qdrant|memory)"),
+    include_compose: bool = typer.Option(
+        True,
+        "--include-compose/--no-include-compose",
+        help="Generate/append compose with memory provider.",
+    ),
+    memory_provider: str = typer.Option(
+        "qdrant",
+        "--memory-provider",
+        help="Default memory provider to include in compose (qdrant|memory)",
+    ),
 ):
     """Scaffold a minimal agent directory."""
     root = Path(workspace).resolve()
@@ -47,10 +55,18 @@ def agent(
         target.mkdir(parents=True, exist_ok=False)
         spec = get_template_spec(template, provider)
         engine = JinjaTemplateEngine()
-        variables = {"name": name, "provider": provider, "model": model, "endpoint": provider_endpoint or ""}
+        variables = {
+            "name": name,
+            "provider": provider,
+            "model": model,
+            "endpoint": provider_endpoint or "",
+        }
         import asyncio as _asyncio
+
         for tf in spec.files:
-            rendered = _asyncio.run(engine.render_template(tf.content.strip(), variables))
+            rendered = _asyncio.run(
+                engine.render_template(tf.content.strip(), variables)
+            )
             (target / tf.path).write_text(rendered, encoding=tf.encoding)
         # Create a default templates/ with chat.j2
         try:
@@ -77,7 +93,10 @@ def agent(
         # Optionally write/append compose with memory provider
         if include_compose:
             try:
-                from l6e_forge.infra.compose import ComposeTemplateService, ComposeServiceSpec
+                from l6e_forge.infra.compose import (
+                    ComposeTemplateService,
+                    ComposeServiceSpec,
+                )
 
                 svc = ComposeTemplateService()
                 ui_context: dict = {}
@@ -86,7 +105,9 @@ def agent(
                     ui_context["ui_mount"] = str(workspace_ui_dir.resolve())
                 services = [
                     ComposeServiceSpec(name="monitor"),
-                    ComposeServiceSpec(name="api", context={"memory_provider": memory_provider}),
+                    ComposeServiceSpec(
+                        name="api", context={"memory_provider": memory_provider}
+                    ),
                     ComposeServiceSpec(name="ui", context=ui_context),
                 ]
                 if memory_provider == "qdrant":
@@ -98,13 +119,19 @@ def agent(
                     merged = _asyncio.run(svc.merge(existing, services))
                     if merged != existing:
                         compose_path.write_text(merged, encoding="utf-8")
-                        rprint("[green]Updated docker-compose.yml with missing services.[/green]")
+                        rprint(
+                            "[green]Updated docker-compose.yml with missing services.[/green]"
+                        )
                     else:
-                        rprint("[green]docker-compose.yml already includes required services.[/green]")
+                        rprint(
+                            "[green]docker-compose.yml already includes required services.[/green]"
+                        )
                 else:
                     compose_text = _asyncio.run(svc.generate(services))
                     compose_path.write_text(compose_text, encoding="utf-8")
-                    rprint("[green]Wrote docker-compose.yml with memory provider.[/green]")
+                    rprint(
+                        "[green]Wrote docker-compose.yml with memory provider.[/green]"
+                    )
             except Exception as exc:
                 rprint(f"[yellow]Compose generation skipped:[/yellow] {exc}")
     except FileExistsError:
@@ -114,5 +141,3 @@ def agent(
 
 def main() -> None:
     app()
-
-

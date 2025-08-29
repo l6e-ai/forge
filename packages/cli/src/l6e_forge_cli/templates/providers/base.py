@@ -14,5 +14,3 @@ class IProviderTemplate(Protocol):
     def get_template_vars(self, model: str, endpoint: str | None) -> dict[str, str]:
         """Return variables like 'model_imports' and 'model_usage'."""
         ...
-
-

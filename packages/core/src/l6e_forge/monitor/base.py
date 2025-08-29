@@ -10,7 +10,9 @@ class IMonitoringService(Protocol):
     """
 
     # --- Ingest/write API ---
-    async def record_metric(self, name: str, value: float, tags: dict[str, str] | None = None) -> None:
+    async def record_metric(
+        self, name: str, value: float, tags: dict[str, str] | None = None
+    ) -> None:
         """Record a metric value."""
         ...
 
@@ -18,7 +20,13 @@ class IMonitoringService(Protocol):
         """Record an event with arbitrary data."""
         ...
 
-    def set_agent_status(self, agent_id: str, name: str, status: str, config: dict[str, Any] | None = None) -> None:
+    def set_agent_status(
+        self,
+        agent_id: str,
+        name: str,
+        status: str,
+        config: dict[str, Any] | None = None,
+    ) -> None:
         """Upsert lightweight agent status."""
         ...
 
@@ -26,7 +34,9 @@ class IMonitoringService(Protocol):
         """Remove an agent from the status store."""
         ...
 
-    def add_chat_log(self, conversation_id: str, role: str, content: str, agent_id: str | None = None) -> None:
+    def add_chat_log(
+        self, conversation_id: str, role: str, content: str, agent_id: str | None = None
+    ) -> None:
         """Append a chat log entry."""
         ...
 
@@ -39,7 +49,9 @@ class IMonitoringService(Protocol):
         ...
 
     # --- Read API ---
-    def get_metrics(self, name: str, time_range: tuple[datetime, datetime] | None = None) -> list[dict[str, Any]]:
+    def get_metrics(
+        self, name: str, time_range: tuple[datetime, datetime] | None = None
+    ) -> list[dict[str, Any]]:
         """Get metric values for a time range."""
         ...
 
@@ -76,11 +88,16 @@ class IMonitoringService(Protocol):
         """Get agent status"""
         ...
 
-    def set_agent_status(self, agent_id: str, name: str, status: str, config: dict[str, Any] | None = None) -> None:
+    def set_agent_status(
+        self,
+        agent_id: str,
+        name: str,
+        status: str,
+        config: dict[str, Any] | None = None,
+    ) -> None:
         """Set agent status"""
         ...
 
     def remove_agent(self, agent_id: str) -> None:
         """Remove an agent"""
         ...
-

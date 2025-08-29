@@ -8,7 +8,9 @@ from rich import print as rprint
 
 
 class DevEventHandler(FileSystemEventHandler):
-    def __init__(self, agents_dir: Path, on_agent_changed: Callable[[str], None]) -> None:
+    def __init__(
+        self, agents_dir: Path, on_agent_changed: Callable[[str], None]
+    ) -> None:
         super().__init__()
         self.agents_dir = agents_dir.resolve()
         self.on_agent_changed = on_agent_changed
@@ -29,12 +31,13 @@ class DevEventHandler(FileSystemEventHandler):
             path_str = src or dest
             if path_str:
                 changed_path = Path(path_str).resolve()
-                if changed_path.suffix == ".py" and self.agents_dir in changed_path.parents:
+                if (
+                    changed_path.suffix == ".py"
+                    and self.agents_dir in changed_path.parents
+                ):
                     rel = changed_path.relative_to(self.agents_dir)
                     agent_name = rel.parts[0] if rel.parts else None
                     if agent_name:
                         self.on_agent_changed(agent_name)
         except Exception:  # noqa: BLE001
             pass
-
-

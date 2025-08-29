@@ -1,4 +1,3 @@
-
 from dataclasses import dataclass, field
 from typing import Dict, List
 
@@ -176,7 +175,9 @@ class ComposeTemplateService:
                     names.add(stripped[:-1])
         return names
 
-    async def merge(self, existing_text: str, services: List[ComposeServiceSpec]) -> str:
+    async def merge(
+        self, existing_text: str, services: List[ComposeServiceSpec]
+    ) -> str:
         """Merge missing services into an existing docker-compose text.
 
         - If a top-level services block exists, append only the missing services
@@ -185,7 +186,9 @@ class ComposeTemplateService:
         """
         existing_names = self._existing_service_names(existing_text)
         # Determine which specs are missing
-        missing_specs: List[ComposeServiceSpec] = [s for s in services if s.name not in existing_names]
+        missing_specs: List[ComposeServiceSpec] = [
+            s for s in services if s.name not in existing_names
+        ]
         if not missing_specs:
             return existing_text
 
@@ -205,7 +208,11 @@ class ComposeTemplateService:
             # Cannot safely merge without a services block; return existing as-is
             return existing_text
 
-        insertion = ("\n" if not existing_text.endswith("\n") else "") + "\n".join(rendered_fragments) + "\n"
+        insertion = (
+            ("\n" if not existing_text.endswith("\n") else "")
+            + "\n".join(rendered_fragments)
+            + "\n"
+        )
         lines = existing_text.splitlines()
         # Insert fragments right before end of services block (or EOF)
         new_lines = lines[:end] + insertion.splitlines() + lines[end:]
@@ -213,5 +220,3 @@ class ComposeTemplateService:
 
 
 __all__ = ["ComposeTemplateService", "ComposeServiceSpec"]
-
-

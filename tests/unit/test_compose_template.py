@@ -9,15 +9,15 @@ def test_compose_template_renders_selected_services() -> None:
     svc = ComposeTemplateService()
 
     async def _run():
-        return await svc.generate([
-            ComposeServiceSpec(name="monitor"),
-            ComposeServiceSpec(name="redis"),
-        ])
+        return await svc.generate(
+            [
+                ComposeServiceSpec(name="monitor"),
+                ComposeServiceSpec(name="redis"),
+            ]
+        )
 
     text = asyncio.run(_run())
     assert "services:" in text
     assert "monitor:" in text
     assert "redis:" in text
     assert "qdrant:" not in text
-
-

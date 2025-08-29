@@ -27,7 +27,9 @@ class TomlConfigManager(IConfigManager):
         self._config = config
         return None
 
-    async def validate_config(self, config: dict[str, Any], schema: dict[str, Any]) -> bool:  # noqa: D401
+    async def validate_config(
+        self, config: dict[str, Any], schema: dict[str, Any]
+    ) -> bool:  # noqa: D401
         # MVP: accept all configs
         return True
 
@@ -47,5 +49,3 @@ class TomlConfigManager(IConfigManager):
         for p in parts[:-1]:
             current = current.setdefault(p, {})
         current[parts[-1]] = value
-
-

@@ -14,9 +14,10 @@ class ConversationHistoryProvider:
     def __init__(self, memory_manager: IMemoryManager) -> None:
         self._memory_manager = memory_manager
 
-    async def get_recent(self, conversation_id: ConversationID, limit: int = 50) -> List[Message]:
+    async def get_recent(
+        self, conversation_id: ConversationID, limit: int = 50
+    ) -> List[Message]:
         return await self._memory_manager.get_conversation(conversation_id, limit)
 
     async def append(self, conversation_id: ConversationID, message: Message) -> None:
         await self._memory_manager.store_conversation(conversation_id, message)
-

@@ -63,7 +63,9 @@ class FilesystemTool(ITool):
     async def cleanup(self) -> None:  # pragma: no cover - no-op
         return None
 
-    async def execute(self, parameters: dict[str, Any], context: ToolContext) -> ToolResult:
+    async def execute(
+        self, parameters: dict[str, Any], context: ToolContext
+    ) -> ToolResult:
         if not await self.validate_parameters(parameters):
             return ToolResult(success=False, error_message="Invalid parameters")
 
@@ -79,51 +81,85 @@ class FilesystemTool(ITool):
 
         # Enforce sandbox: path must be within allowed_paths or workspace
         if context.allowed_paths:
-            allowed = any(str(target).startswith(str(Path(p).resolve())) for p in context.allowed_paths)
+            allowed = any(
+                str(target).startswith(str(Path(p).resolve()))
+                for p in context.allowed_paths
+            )
         else:
             allowed = str(target).startswith(str(base.resolve()))
-        denied = any(str(target).startswith(str(Path(p).resolve())) for p in context.denied_paths)
+        denied = any(
+            str(target).startswith(str(Path(p).resolve())) for p in context.denied_paths
+        )
         if not allowed or denied:
-            return ToolResult(success=False, error_message="Access to path is not allowed")
+            return ToolResult(
+                success=False, error_message="Access to path is not allowed"
+            )
 
         try:
             if operation == "read_file":
                 if not target.exists() or not target.is_file():
-                    return ToolResult(success=False, error_message="File does not exist")
+                    return ToolResult(
+                        success=False, error_message="File does not exist"
+                    )
 
                 def _read() -> str:
                     return target.read_text(encoding="utf-8")
 
                 text = await asyncio.to_thread(_read)
                 data = text[: context.max_output_size]
-                return ToolResult(success=True, data={"operation": operation, "path": str(rel_path), "data": data})
+                return ToolResult(
+                    success=True,
+                    data={"operation": operation, "path": str(rel_path), "data": data},
+                )
 
             if operation == "write_file":
                 if content is None:
-                    return ToolResult(success=False, error_message="'content' is required for write_file")
+                    return ToolResult(
+                        success=False,
+                        error_message="'content' is required for write_file",
+                    )
 
                 def _write() -> None:
                     target.parent.mkdir(parents=True, exist_ok=True)
                     target.write_text(content, encoding="utf-8")
 
                 await asyncio.to_thread(_write)
-                return ToolResult(success=True, data={"operation": operation, "path": str(rel_path), "data": "ok"}, files_modified=[target])
+                return ToolResult(
+                    success=True,
+                    data={"operation": operation, "path": str(rel_path), "data": "ok"},
+                    files_modified=[target],
+                )
 
             if operation == "list_dir":
                 if not target.exists() or not target.is_dir():
-                    return ToolResult(success=False, error_message="Directory does not exist")
+                    return ToolResult(
+                        success=False, error_message="Directory does not exist"
+                    )
 
                 def _list() -> list[dict[str, Any]]:
                     entries: list[dict[str, Any]] = []
                     for p in target.iterdir():
-                        entries.append({"name": p.name, "is_dir": p.is_dir(), "size": p.stat().st_size if p.is_file() else None})
+                        entries.append(
+                            {
+                                "name": p.name,
+                                "is_dir": p.is_dir(),
+                                "size": p.stat().st_size if p.is_file() else None,
+                            }
+                        )
                     return entries
 
                 entries = await asyncio.to_thread(_list)
-                return ToolResult(success=True, data={"operation": operation, "path": str(rel_path), "data": entries})
+                return ToolResult(
+                    success=True,
+                    data={
+                        "operation": operation,
+                        "path": str(rel_path),
+                        "data": entries,
+                    },
+                )
 
-            return ToolResult(success=False, error_message=f"Unsupported operation: {operation}")
+            return ToolResult(
+                success=False, error_message=f"Unsupported operation: {operation}"
+            )
         except Exception as exc:  # pragma: no cover - safety net
             return ToolResult(success=False, error_message=str(exc))
-
-

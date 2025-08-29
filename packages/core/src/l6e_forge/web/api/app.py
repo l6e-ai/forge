@@ -15,6 +15,7 @@ from l6e_forge.runtime.monitoring import get_monitoring
 from l6e_forge.types.core import Message, AgentContext
 
 import logging
+
 logger = logging.getLogger(__name__)
 
 
@@ -54,7 +55,12 @@ def create_app() -> FastAPI:
         discovered: list[str] = []
         try:
             from pathlib import Path
-            ws = Path(workspace or os.environ.get("AF_WORKSPACE", "/workspace")).expanduser().resolve()
+
+            ws = (
+                Path(workspace or os.environ.get("AF_WORKSPACE", "/workspace"))
+                .expanduser()
+                .resolve()
+            )
             agents_dir = ws / "agents"
             if agents_dir.exists():
                 for p in agents_dir.iterdir():
@@ -69,8 +75,11 @@ def create_app() -> FastAPI:
     @app.post("/api/agents/start")
     async def start_agent(payload: dict[str, Any]) -> dict[str, Any]:
         agent_name = str(payload.get("name"))
-        workspace = str(payload.get("workspace", os.environ.get("AF_WORKSPACE", "/workspace")))
+        workspace = str(
+            payload.get("workspace", os.environ.get("AF_WORKSPACE", "/workspace"))
+        )
         from pathlib import Path
+
         agent_dir = Path(workspace).expanduser().resolve() / "agents" / agent_name
         agent_id = await _runtime().register_agent(agent_dir)
         return {"agent_id": str(agent_id), "name": agent_name}
@@ -82,8 +91,13 @@ def create_app() -> FastAPI:
         name = payload.get("name")
         rt = _runtime()
         from uuid import UUID
+
         try:
-            aid = UUID(agent_id) if agent_id else (rt.get_agent_id_by_name(str(name)) if name else None)
+            aid = (
+                UUID(agent_id)
+                if agent_id
+                else (rt.get_agent_id_by_name(str(name)) if name else None)
+            )
         except Exception:
             aid = None
         if aid is None:
@@ -97,13 +111,16 @@ def create_app() -> FastAPI:
         agent_name = str(payload.get("agent", "default"))
         text = str(payload.get("message", "")).strip()
         # Start log removed to reduce duplicate noise; we log only the end
-        workspace = str(payload.get("workspace", os.environ.get("AF_WORKSPACE", "/workspace")))
+        workspace = str(
+            payload.get("workspace", os.environ.get("AF_WORKSPACE", "/workspace"))
+        )
         if not text:
             return {"error": "empty message"}
 
         runtime = _runtime()
         # The agent directories are expected under <workspace>/agents/<agent_name>
         from pathlib import Path
+
         agent_dir = Path(workspace).expanduser().resolve() / "agents" / agent_name
         if not (agent_dir / "agent.py").exists():
             return {"error": f"agent not found: {agent_name}"}
@@ -143,13 +160,30 @@ def create_app() -> FastAPI:
 
         ctx = AgentContext(conversation_id=conversation_uuid, session_id=session_uuid)
         mon = get_monitoring()
-        mon.add_chat_log(conversation_id=str(conversation_uuid), role="user", content=text)
+        mon.add_chat_log(
+            conversation_id=str(conversation_uuid), role="user", content=text
+        )
         await mon.record_event("chat.message", {"direction": "in", "role": "user"})
-        resp = await runtime.route_message(Message(role="user", content=text), target=aid, conversation_id=conversation_uuid, session_id=session_uuid)
+        resp = await runtime.route_message(
+            Message(role="user", content=text),
+            target=aid,
+            conversation_id=conversation_uuid,
+            session_id=session_uuid,
+        )
         print(f"/api/chat end agent_id={aid} content={resp.content!r}")
-        mon.add_chat_log(conversation_id=str(conversation_uuid), role="assistant", content=resp.content, agent_id=str(aid))
+        mon.add_chat_log(
+            conversation_id=str(conversation_uuid),
+            role="assistant",
+            content=resp.content,
+            agent_id=str(aid),
+        )
         await mon.record_event("chat.message", {"direction": "out", "agent": str(aid)})
-        out = {"content": resp.content, "conversation_id": str(conversation_uuid), "session_id": session_uuid, "agent_id": str(aid)}
+        out = {
+            "content": resp.content,
+            "conversation_id": str(conversation_uuid),
+            "session_id": session_uuid,
+            "agent_id": str(aid),
+        }
         if _idem_key:
             idem_cache[_idem_key] = out
         return out
@@ -177,7 +211,9 @@ def create_app() -> FastAPI:
         if not query:
             return {"error": "query is required"}
         mm = _runtime().get_memory_manager()
-        results = await mm.search_vectors(ns, query, limit=limit, collection=collection or None)
+        results = await mm.search_vectors(
+            ns, query, limit=limit, collection=collection or None
+        )
         out = [
             {
                 "namespace": r.namespace,
@@ -225,7 +261,12 @@ def create_app() -> FastAPI:
                 import websockets
 
                 async def bridge_remote() -> None:
-                    remote_ws = remote_url.replace("http://", "ws://").replace("https://", "wss://").rstrip("/") + "/ws"
+                    remote_ws = (
+                        remote_url.replace("http://", "ws://")
+                        .replace("https://", "wss://")
+                        .rstrip("/")
+                        + "/ws"
+                    )
                     async with websockets.connect(remote_ws) as rws:
                         async for msg in rws:
                             try:
@@ -271,10 +312,15 @@ def create_app() -> FastAPI:
                 # Fallback: periodic polling and sending deltas
                 while True:
                     try:
-                        await ws.send_json({
-                            "type": "metric",
-                            "data": {"name": "response_time_ms", **mon.get_perf_summary()},
-                        })
+                        await ws.send_json(
+                            {
+                                "type": "metric",
+                                "data": {
+                                    "name": "response_time_ms",
+                                    **mon.get_perf_summary(),
+                                },
+                            }
+                        )
                         await asyncio.sleep(2.0)
                     except Exception:
                         break
@@ -295,10 +341,9 @@ def create_app() -> FastAPI:
             async def root_index() -> Response:
                 # Redirect to /ui/ index.html
                 from fastapi.responses import RedirectResponse
+
                 return RedirectResponse(url="/ui/")
     except Exception:
         pass
 
     return app
-
-

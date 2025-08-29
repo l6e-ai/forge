@@ -9,9 +9,13 @@ from .base import IEmbeddingProvider
 
 
 class OllamaEmbeddingProvider(IEmbeddingProvider):
-    def __init__(self, model: str = "nomic-embed-text:latest", endpoint: str | None = None) -> None:
+    def __init__(
+        self, model: str = "nomic-embed-text:latest", endpoint: str | None = None
+    ) -> None:
         self.model = model
-        self.endpoint = (endpoint or os.environ.get("OLLAMA_HOST") or "http://localhost:11434").rstrip("/")
+        self.endpoint = (
+            endpoint or os.environ.get("OLLAMA_HOST") or "http://localhost:11434"
+        ).rstrip("/")
 
     def embed(self, text: str) -> List[float]:
         return self.embed_batch([text])[0]
@@ -32,5 +36,3 @@ class OllamaEmbeddingProvider(IEmbeddingProvider):
             pass
         # Fallback: zeros
         return [[0.0] * 384 for _ in texts]
-
-

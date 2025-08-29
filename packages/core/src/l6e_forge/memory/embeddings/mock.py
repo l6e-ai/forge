@@ -23,5 +23,3 @@ class MockEmbeddingProvider(IEmbeddingProvider):
             norm = sum(x * x for x in vec) ** 0.5 or 1.0
             outs.append([x / norm for x in vec])
         return outs
-
-

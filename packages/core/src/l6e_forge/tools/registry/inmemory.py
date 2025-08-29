@@ -75,8 +75,8 @@ class InMemoryToolRegistry(IToolRegistry):
         self._agent_to_tool_ids[agent_id] = list(tool_ids)
 
     # Execution
-    async def execute_tool(self, tool_id: ToolID, parameters: dict[str, Any], context: ToolContext) -> ToolResult:
+    async def execute_tool(
+        self, tool_id: ToolID, parameters: dict[str, Any], context: ToolContext
+    ) -> ToolResult:
         tool = self.get_tool(tool_id)
         return await tool.execute(parameters, context)
-
-

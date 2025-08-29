@@ -100,5 +100,3 @@ async def test_load_workspace_status_error_when_path_missing(tmp_path: Path) -> 
     state = await manager.load_workspace(missing)
     assert state.status == "error"
     assert state.agent_count == 0
-
-

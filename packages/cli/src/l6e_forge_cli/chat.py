@@ -42,7 +42,9 @@ async def _prepare_runtime(workspace_root: Path, agent_name: str):
     return runtime, agent_id
 
 
-async def _stream_ollama_chat(endpoint: str, model: str, messages: list[Message]) -> None:
+async def _stream_ollama_chat(
+    endpoint: str, model: str, messages: list[Message]
+) -> None:
     url = f"{endpoint.rstrip('/')}/api/chat"
     payload = {
         "model": model,
@@ -51,6 +53,7 @@ async def _stream_ollama_chat(endpoint: str, model: str, messages: list[Message]
     }
     try:
         import httpx  # local import to avoid hard dep in non-stream paths
+
         async with httpx.AsyncClient(timeout=None) as client:
             async with client.stream("POST", url, json=payload) as resp:
                 resp.raise_for_status()
@@ -59,7 +62,9 @@ async def _stream_ollama_chat(endpoint: str, model: str, messages: list[Message]
                         continue
                     try:
                         data = json.loads(line)
-                        content = data.get("message", {}).get("content") or data.get("delta")
+                        content = data.get("message", {}).get("content") or data.get(
+                            "delta"
+                        )
                         if content:
                             sys.stdout.write(str(content))
                             sys.stdout.flush()
@@ -74,7 +79,9 @@ async def _stream_ollama_chat(endpoint: str, model: str, messages: list[Message]
         raise
 
 
-async def _stream_lmstudio_chat(endpoint: str, model: str, messages: list[Message]) -> None:
+async def _stream_lmstudio_chat(
+    endpoint: str, model: str, messages: list[Message]
+) -> None:
     url = f"{endpoint.rstrip('/')}/chat/completions"
     payload = {
         "model": model,
@@ -83,6 +90,7 @@ async def _stream_lmstudio_chat(endpoint: str, model: str, messages: list[Messag
     }
     try:
         import httpx  # local import to avoid hard dep in non-stream paths
+
         async with httpx.AsyncClient(timeout=None) as client:
             async with client.stream("POST", url, json=payload) as resp:
                 resp.raise_for_status()
@@ -96,9 +104,10 @@ async def _stream_lmstudio_chat(endpoint: str, model: str, messages: list[Messag
                     try:
                         data = json.loads(line)
                         delta = (
-                            ((data.get("choices") or [{}])[0].get("delta") or {}).get("content")
-                            or ((data.get("choices") or [{}])[0].get("message") or {}).get("content")
-                        )
+                            (data.get("choices") or [{}])[0].get("delta") or {}
+                        ).get("content") or (
+                            (data.get("choices") or [{}])[0].get("message") or {}
+                        ).get("content")
                         if delta:
                             sys.stdout.write(str(delta))
                             sys.stdout.flush()
@@ -115,13 +124,29 @@ async def _stream_lmstudio_chat(endpoint: str, model: str, messages: list[Messag
 @app.command()
 def chat(
     agent: str = typer.Argument(..., help="Agent name"),
-    message: str = typer.Option("", "--message", "-m", help="Send a single message and exit"),
-    workspace: str | None = typer.Option(None, "--workspace", "-w", help="Workspace root path"),
-    stream: bool = typer.Option(True, "--stream/--no-stream", help="Stream responses when using providers"),
-    monitor_url: str | None = typer.Option(None, "--monitor-url", help="Monitoring base URL (overrides env/config)"),
-    markdown: bool = typer.Option(True, "--markdown/--no-markdown", help="Render responses as Markdown in the terminal"),
-    debug: bool = typer.Option(False, "--debug", help="Print full tracebacks on errors"),
-    timeout: float = typer.Option(90.0, "--timeout", help="Model request timeout in seconds (direct providers)"),
+    message: str = typer.Option(
+        "", "--message", "-m", help="Send a single message and exit"
+    ),
+    workspace: str | None = typer.Option(
+        None, "--workspace", "-w", help="Workspace root path"
+    ),
+    stream: bool = typer.Option(
+        True, "--stream/--no-stream", help="Stream responses when using providers"
+    ),
+    monitor_url: str | None = typer.Option(
+        None, "--monitor-url", help="Monitoring base URL (overrides env/config)"
+    ),
+    markdown: bool = typer.Option(
+        True,
+        "--markdown/--no-markdown",
+        help="Render responses as Markdown in the terminal",
+    ),
+    debug: bool = typer.Option(
+        False, "--debug", help="Print full tracebacks on errors"
+    ),
+    timeout: float = typer.Option(
+        90.0, "--timeout", help="Model request timeout in seconds (direct providers)"
+    ),
 ):
     """Send a message to an agent and print the response."""
     root = _resolve_workspace(workspace)
@@ -154,7 +179,11 @@ def chat(
                 endpoints["lmstudio"] = ep_lmstudio
             # optional monitor url in config
             cfg_monitor_url = cfg_mgr.get_config_value("monitor.url")
-            if isinstance(cfg_monitor_url, str) and not os.environ.get("AF_MONITOR_URL") and monitor_url is None:
+            if (
+                isinstance(cfg_monitor_url, str)
+                and not os.environ.get("AF_MONITOR_URL")
+                and monitor_url is None
+            ):
                 os.environ["AF_MONITOR_URL"] = cfg_monitor_url
     except Exception:
         pass
@@ -169,7 +198,9 @@ def chat(
 
     # Ensure monitoring is configured for this process if not already
     if not os.environ.get("AF_MONITOR_URL"):
-        use_url = monitor_url or os.environ.get("AF_MONITOR_URL") or "http://localhost:8321"
+        use_url = (
+            monitor_url or os.environ.get("AF_MONITOR_URL") or "http://localhost:8321"
+        )
         os.environ["AF_MONITOR_URL"] = use_url
 
     use_provider = (provider_from_cfg or "").lower()
@@ -230,47 +261,94 @@ def chat(
         # Minimal context
         msg = Message(content=message, role="user")
         conversation_id = uuid.uuid4()
-        ctx = AgentContext(conversation_id=conversation_id, session_id=session_uuid, workspace_path=root)
+        ctx = AgentContext(
+            conversation_id=conversation_id,
+            session_id=session_uuid,
+            workspace_path=root,
+        )
         try:
             if use_direct_model:
                 if stream:
                     if use_provider == "ollama":
-                        endpoint = endpoints.get("ollama", os.environ.get("OLLAMA_HOST", "http://localhost:11434"))
+                        endpoint = endpoints.get(
+                            "ollama",
+                            os.environ.get("OLLAMA_HOST", "http://localhost:11434"),
+                        )
                         await _stream_ollama_chat(endpoint, str(use_model), [msg])  # type: ignore[arg-type]
                     else:
-                        endpoint = endpoints.get("lmstudio", os.environ.get("LMSTUDIO_HOST", "http://localhost:1234/v1"))
+                        endpoint = endpoints.get(
+                            "lmstudio",
+                            os.environ.get("LMSTUDIO_HOST", "http://localhost:1234/v1"),
+                        )
                         await _stream_lmstudio_chat(endpoint, str(use_model), [msg])  # type: ignore[arg-type]
                 else:
                     if use_provider == "ollama":
-                        endpoint = endpoints.get("ollama", os.environ.get("OLLAMA_HOST", "http://localhost:11434"))
+                        endpoint = endpoints.get(
+                            "ollama",
+                            os.environ.get("OLLAMA_HOST", "http://localhost:11434"),
+                        )
                         rprint(f"[cyan]Using provider:[/cyan] ollama at {endpoint}")
                         manager = OllamaModelManager(endpoint=endpoint)
                     else:
-                        endpoint = endpoints.get("lmstudio", os.environ.get("LMSTUDIO_HOST", "http://localhost:1234/v1"))
+                        endpoint = endpoints.get(
+                            "lmstudio",
+                            os.environ.get("LMSTUDIO_HOST", "http://localhost:1234/v1"),
+                        )
                         rprint(f"[cyan]Using provider:[/cyan] lmstudio at {endpoint}")
                         manager = LMStudioModelManager(endpoint=endpoint)
-                    spec = ModelSpec(model_id=use_model, provider=use_provider, model_name=use_model, memory_requirement_gb=0.0)  # type: ignore[arg-type]
+                    spec = ModelSpec(
+                        model_id=use_model,
+                        provider=use_provider,
+                        model_name=use_model,
+                        memory_requirement_gb=0.0,
+                    )  # type: ignore[arg-type]
                     model_id = await manager.load_model(spec)
                     # Monitoring for direct-model path
                     mon = get_monitoring()
                     d_agent_id, d_name = _direct_identifiers()
                     # Mark agent as ready so UI shows it
-                    mon.set_agent_status(d_agent_id, d_name, status="ready", config={"provider": use_provider, "model": use_model})
-                    mon.add_chat_log(conversation_id=str(ctx.conversation_id), role=msg.role, content=msg.content)
-                    await mon.record_event("chat.message", {"direction": "in", "role": msg.role})
+                    mon.set_agent_status(
+                        d_agent_id,
+                        d_name,
+                        status="ready",
+                        config={"provider": use_provider, "model": use_model},
+                    )
+                    mon.add_chat_log(
+                        conversation_id=str(ctx.conversation_id),
+                        role=msg.role,
+                        content=msg.content,
+                    )
+                    await mon.record_event(
+                        "chat.message", {"direction": "in", "role": msg.role}
+                    )
                     _start = time.perf_counter()
                     resp = await manager.chat(model_id, [msg], timeout=timeout)
                     elapsed_ms = (time.perf_counter() - _start) * 1000.0
                     _print_response(resp.message.content)
-                    mon.add_chat_log(conversation_id=str(ctx.conversation_id), role="assistant", content=resp.message.content, agent_id=d_agent_id)
-                    await mon.record_metric("response_time_ms", elapsed_ms, tags={"agent": d_agent_id})
-                    await mon.record_event("chat.message", {"direction": "out", "agent": d_agent_id})
+                    mon.add_chat_log(
+                        conversation_id=str(ctx.conversation_id),
+                        role="assistant",
+                        content=resp.message.content,
+                        agent_id=d_agent_id,
+                    )
+                    await mon.record_metric(
+                        "response_time_ms", elapsed_ms, tags={"agent": d_agent_id}
+                    )
+                    await mon.record_event(
+                        "chat.message", {"direction": "out", "agent": d_agent_id}
+                    )
             else:
                 assert runtime is not None and agent_id is not None
-                resp = await runtime.route_message(msg, target=agent_id, conversation_id=conversation_id, session_id=session_uuid)
+                resp = await runtime.route_message(
+                    msg,
+                    target=agent_id,
+                    conversation_id=conversation_id,
+                    session_id=session_uuid,
+                )
                 _print_response(resp.content)
         except Exception as exc:  # noqa: BLE001
             import traceback
+
             err_type = type(exc).__name__
             msg = str(exc) or repr(exc)
             rprint(f"[red]Error ({err_type}):[/red] {msg}")
@@ -307,11 +385,15 @@ def chat(
             auto_suggest=AutoSuggestFromHistory(),
         )
 
-        rprint("[green]Interactive chat. Press Ctrl+D to exit, Ctrl+C to clear line.[/green]")
+        rprint(
+            "[green]Interactive chat. Press Ctrl+D to exit, Ctrl+C to clear line.[/green]"
+        )
         conversation: list[Message] = []
         # Seed conversation in streaming direct-model mode to avoid empty-history errors
         if use_direct_model and stream:
-            conversation.append(Message(content="You are a helpful assistant.", role="system"))
+            conversation.append(
+                Message(content="You are a helpful assistant.", role="system")
+            )
         while True:
             try:
                 user_input = session.prompt()
@@ -329,35 +411,84 @@ def chat(
             async def _run_one_msg(text: str) -> int:
                 msg = Message(content=text, role="user")
                 conversation_id = uuid.uuid4()
-                ctx = AgentContext(conversation_id=conversation_id, session_id=session_uuid, workspace_path=root)
+                ctx = AgentContext(
+                    conversation_id=conversation_id,
+                    session_id=session_uuid,
+                    workspace_path=root,
+                )
                 try:
                     if use_direct_model:
                         conversation.append(msg)
                         if stream:
                             if use_provider == "ollama":
-                                endpoint = endpoints.get("ollama", os.environ.get("OLLAMA_HOST", "http://localhost:11434"))
-                                await _stream_ollama_chat(endpoint, str(use_model), conversation)  # type: ignore[arg-type]
+                                endpoint = endpoints.get(
+                                    "ollama",
+                                    os.environ.get(
+                                        "OLLAMA_HOST", "http://localhost:11434"
+                                    ),
+                                )
+                                await _stream_ollama_chat(
+                                    endpoint, str(use_model), conversation
+                                )  # type: ignore[arg-type]
                             else:
-                                endpoint = endpoints.get("lmstudio", os.environ.get("LMSTUDIO_HOST", "http://localhost:1234/v1"))
-                                await _stream_lmstudio_chat(endpoint, str(use_model), conversation)  # type: ignore[arg-type]
+                                endpoint = endpoints.get(
+                                    "lmstudio",
+                                    os.environ.get(
+                                        "LMSTUDIO_HOST", "http://localhost:1234/v1"
+                                    ),
+                                )
+                                await _stream_lmstudio_chat(
+                                    endpoint, str(use_model), conversation
+                                )  # type: ignore[arg-type]
                         else:
                             if use_provider == "ollama":
-                                endpoint = endpoints.get("ollama", os.environ.get("OLLAMA_HOST", "http://localhost:11434"))
-                                rprint(f"[cyan]Using provider:[/cyan] ollama at {endpoint}")
+                                endpoint = endpoints.get(
+                                    "ollama",
+                                    os.environ.get(
+                                        "OLLAMA_HOST", "http://localhost:11434"
+                                    ),
+                                )
+                                rprint(
+                                    f"[cyan]Using provider:[/cyan] ollama at {endpoint}"
+                                )
                                 manager = OllamaModelManager(endpoint=endpoint)
                             else:
-                                endpoint = endpoints.get("lmstudio", os.environ.get("LMSTUDIO_HOST", "http://localhost:1234/v1"))
-                                rprint(f"[cyan]Using provider:[/cyan] lmstudio at {endpoint}")
+                                endpoint = endpoints.get(
+                                    "lmstudio",
+                                    os.environ.get(
+                                        "LMSTUDIO_HOST", "http://localhost:1234/v1"
+                                    ),
+                                )
+                                rprint(
+                                    f"[cyan]Using provider:[/cyan] lmstudio at {endpoint}"
+                                )
                                 manager = LMStudioModelManager(endpoint=endpoint)
-                            resp = await manager.chat(await manager.load_model(ModelSpec(model_id=use_model, provider=use_provider, model_name=use_model, memory_requirement_gb=0.0)), conversation, timeout=timeout)  # type: ignore[arg-type]
+                            resp = await manager.chat(
+                                await manager.load_model(
+                                    ModelSpec(
+                                        model_id=use_model,
+                                        provider=use_provider,
+                                        model_name=use_model,
+                                        memory_requirement_gb=0.0,
+                                    )
+                                ),
+                                conversation,
+                                timeout=timeout,
+                            )  # type: ignore[arg-type]
                             _print_response(resp.message.content)
                             conversation.append(resp.message)
                     else:
                         assert runtime is not None and agent_id is not None
-                        resp = await runtime.route_message(msg, target=agent_id, conversation_id=conversation_id, session_id=session_uuid)
+                        resp = await runtime.route_message(
+                            msg,
+                            target=agent_id,
+                            conversation_id=conversation_id,
+                            session_id=session_uuid,
+                        )
                         _print_response(resp.content)
                 except Exception as exc:  # noqa: BLE001
                     import traceback
+
                     err_type = type(exc).__name__
                     msg = str(exc) or repr(exc)
                     rprint(f"[red]Error ({err_type}):[/red] {msg}")
@@ -369,7 +500,9 @@ def chat(
             code = asyncio.run(_run_one_msg(user_input))
             if code != 0:
                 if debug:
-                    rprint("[yellow]Continuing after error. Type another message or Ctrl+D to exit.[/yellow]")
+                    rprint(
+                        "[yellow]Continuing after error. Type another message or Ctrl+D to exit.[/yellow]"
+                    )
                 continue
         # Unreachable
 
@@ -380,5 +513,3 @@ def chat(
 
 def main() -> None:
     app()
-
-
