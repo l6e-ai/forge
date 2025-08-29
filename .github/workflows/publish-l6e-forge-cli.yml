@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -50,8 +51,9 @@ jobs:
         run: |
           TAG="${GITHUB_REF_NAME}"
           EXPECTED="v${{ steps.version.outputs.version }}"
-          echo "Tag: $TAG; Expected: $EXPECTED"
-          if [ "$TAG" != "$EXPECTED" ]; then
+          EXPECTED_TRIMMED=$(echo "$EXPECTED" | sed 's/-.*//')
+          echo "Tag: $TAG; Expected: $EXPECTED_TRIMMED"
+          if [ "$TAG" != "$EXPECTED_TRIMMED" ]; then
             echo 'Tag does not match version. Aborting.' >&2
             exit 1
           fi
