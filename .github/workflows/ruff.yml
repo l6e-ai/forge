@@ -3,12 +3,6 @@ name: ruff
 on:
   pull_request:
     branches: [ main ]
-    paths:
-      - 'pyproject.toml'
-      - 'poetry.lock'
-      - 'packages/**'
-      - 'tests/**'
-      - '.github/workflows/ruff.yml'
 
 permissions:
   contents: read

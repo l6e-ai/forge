@@ -3,12 +3,6 @@ name: mypy
 on:
   pull_request:
     branches: [ main ]
-    paths:
-      - 'pyproject.toml'
-      - 'poetry.lock'
-      - 'packages/**'
-      - 'tests/**'
-      - '.github/workflows/mypy.yml'
 
 permissions:
   contents: read
