@@ -30,6 +30,13 @@ const sidebars: SidebarsConfig = {
         'cli',
         {
           type: 'category',
+          label: 'Runtime',
+          items: [
+            'runtime/local-runtime',
+          ],
+        },
+        {
+          type: 'category',
           label: 'Packaging',
           items: [
             'packaging-agents',
@@ -49,6 +56,9 @@ const sidebars: SidebarsConfig = {
           type: 'category',
           label: 'Memory',
           items: [
+            'memory/sdk-overview',
+            'memory/vector-search',
+            'memory/conversation-history',
             'memory/using-collections',
           ],
         },
