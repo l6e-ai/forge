@@ -1,3 +1,7 @@
+[![pytest](https://github.com/l6e-ai/forge/actions/workflows/pytest.yml/badge.svg?branch=main)](https://github.com/l6e-ai/forge/actions/workflows/pytest.yml)
+[![mypy](https://github.com/l6e-ai/forge/actions/workflows/mypy.yml/badge.svg?branch=main)](https://github.com/l6e-ai/forge/actions/workflows/mypy.yml)
+[![ruff](https://github.com/l6e-ai/forge/actions/workflows/ruff.yml/badge.svg?branch=main)](https://github.com/l6e-ai/forge/actions/workflows/ruff.yml)
+
 Forge (l6e-forge) is an open source toolkit for building and shipping local-first AI agents. It provides an optional full stack—including API, monitoring, chat UI, and pluggable memory—designed to help you rapidly prototype and deploy AI agent MVPs on your laptop, then adapt and scale as your needs grow. Forge emphasizes an adapters-first, extensible architecture, enabling you to swap out components like runners, memory, and databases without lock-in or rewrites. Learn more about Forge's features on our [site](https://l6e.ai).
 
 ## Highlights
