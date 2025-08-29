@@ -1,6 +1,6 @@
 [project]
 name = "l6e-forge"
-version = "0.1.0-alpha"
+version = "0.1.0"
 description = "Build & Deploy local agents with ease - alpha"
 authors = [{ name = "l6e AI", email = "hello@l6e.ai" }]
 readme = "README.md"
