@@ -27,6 +27,9 @@ Understand Forge in 5 minutes by trying it locally.
 - Optional: Docker (for API/monitor/UI stack)
 - Optional: Ollama or LM Studio (local LLMs)
 
+#### Install a local LLM provider
+We recommend Ollama for most users. See: [Local LLM providers](models/local-llm-providers)
+
 #### Try it
 ```bash
 # Add core library to your project

@@ -64,6 +64,35 @@ const config: Config = {
       respectPrefersColorScheme: true,
       disableSwitch: false,
     },
+    algolia: {
+      // The application ID provided by Algolia
+      appId: 'HGUH3ADJR4',
+
+      // Public API key: it is safe to commit it
+      apiKey: 'e98b4adf5d2e172d131933ef274de437',
+
+      indexName: 'Documentation Website',
+
+      // Optional: see doc section below
+      contextualSearch: true,
+
+      // Optional: Replace parts of the item URLs from Algolia. Useful when using the same search index for multiple deployments using a different baseUrl. You can use regexp or string in the `from` param. For example: localhost:3000 vs myCompany.com/docs
+      replaceSearchResultPathname: {
+        from: '/docs/', // or as RegExp: /\/docs\//
+        to: '/',
+      },
+
+      // Optional: Algolia search parameters
+      searchParameters: {},
+
+      // Optional: path for search page that enabled by default (`false` to disable it)
+      searchPagePath: 'search',
+
+      // Optional: whether the insights feature is enabled or not on Docsearch (`false` by default)
+      insights: false,
+
+      //... other Algolia params
+    },
     navbar: {
       title: 'L6E Forge',
       logo: {
@@ -123,7 +152,7 @@ const config: Config = {
           ],
         },
       ],
-      copyright: `Copyright © ${new Date().getFullYear()} L6E Forge. Apache 2.0 Licensed.`,
+      copyright: `Copyright © ${new Date().getFullYear()} l6e AI. Apache 2.0 Licensed.`,
     },
     prism: {
       theme: prismThemes.github,
