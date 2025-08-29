@@ -4,7 +4,7 @@ import typer
 from rich import print as rprint
 from rich.table import Table
 
-from l6e_forge.cli.templates.specs import get_template_spec
+from l6e_forge_cli.templates.specs import get_template_spec
 
 
 app = typer.Typer(help="Template utilities")

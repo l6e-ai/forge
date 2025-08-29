@@ -1,14 +1,14 @@
 from __future__ import annotations
 
-from l6e_forge.cli.templates import (
+from l6e_forge_cli.templates import (
     AGENT_ECHO_PY,
     AGENT_OLLAMA_PY,
     AGENT_ASSISTANT_BASIC_PY,
     AGENT_ASSISTANT_MODEL_PY,
     CONFIG_TOML,
 )
-from l6e_forge.cli.templates.providers.ollama import OllamaProviderTemplate
-from l6e_forge.cli.templates.providers.lmstudio import LMStudioProviderTemplate
+from l6e_forge_cli.templates.providers.ollama import OllamaProviderTemplate
+from l6e_forge_cli.templates.providers.lmstudio import LMStudioProviderTemplate
 from l6e_forge.types.workspace import TemplateFile, TemplateSpec
 
 

@@ -1,0 +1,9 @@
+{
+    "include": ["packages"],
+    "typeCheckingMode": "basic",
+    "extraPaths": [
+        "packages/core/src",
+        "packages/cli/src"
+    ],
+    "reportMissingImports": true
+}

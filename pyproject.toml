@@ -1,28 +1,17 @@
-[project]
-name = "l6e-forge"
-version = "0.1.0"
-description = "Build & Deploy local agents with ease - alpha"
-authors = [
-    {name = "l6e AI",email = "hello@l6e.ai"}
-]
-license = {text = "Apache 2.0"}
-license-files = ["LICEN[CS]E*"]
-readme = "README.md"
-requires-python = ">=3.13,<4.0"
-
-[project.urls]
-Homepage = "https://l6e.ai"
-Issues = "https://github.com/l6eai/forge/issues"
-Docs = "https://docs.l6e.ai"
-
 [tool.poetry]
-name = "l6e-forge"
-version = "0.1.0"
-description = "Build & Deploy local agents with ease - alpha"
-authors = ["Bennett Dixon <bennettdixon16@gmail.com>"]
-packages = [
-    { include = "l6e_forge" }
-]
+name = "forge-monorepo"
+version = "0.0.0"
+description = "Dev meta-package for l6e/forge monorepo (not published)"
+authors = ["l6e AI <hello@l6e.ai>"]
+# Ensure we don't accidentally package any code from the root
+packages = []
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.13,<4.0"
+# Install both packages in editable mode for development
+l6e-forge = { path = "packages/core", develop = true }
+l6e-forge-cli = { path = "packages/cli", develop = true }
 
 [tool.poetry.group.cli.dependencies]
 rich = ">=14.1.0,<15.0.0"
@@ -59,5 +48,3 @@ twine = "^6.1.0"
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
 
-[project.scripts]
-forge = "l6e_forge.cli.main:main"
