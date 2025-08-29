@@ -20,7 +20,7 @@ dependencies = [
 
 [project.urls]
 Homepage = "https://l6e.ai"
-Issues = "https://github.com/l6eai/forge/issues"
+Issues = "https://github.com/l6e-ai/forge/issues"
 Docs = "https://docs.l6e.ai"
 
 

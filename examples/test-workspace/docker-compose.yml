@@ -1,4 +1,4 @@
-# This compose file has been modified to allow testing the dev experience with hot-reloads in the main l6eai/l6e-forge repository
+# This compose file has been modified to allow testing the dev experience with hot-reloads in the main l6e-ai/l6e-forge repository
 
 # Do not use this as an example of how to run forge in your environment (it differs from the template generated compose file)
 
