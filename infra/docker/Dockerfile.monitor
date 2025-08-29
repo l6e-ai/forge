@@ -14,6 +14,7 @@ RUN pip install --no-cache-dir poetry
 
 # Copy pyproject and lock to install deps
 COPY pyproject.toml poetry.lock* /app/
+COPY packages/ /app/packages/
 
 # Install only monitor dependency group (no dev/test tooling)
 RUN poetry config virtualenvs.create false \
@@ -21,8 +22,8 @@ RUN poetry config virtualenvs.create false \
 
 # Ensure WebSocket support for uvicorn
 RUN pip install --no-cache-dir "uvicorn[standard]"
-# Copy package source
-COPY l6e_forge/ /app/l6e_forge/
+# Install the local core package into the image
+RUN poetry run pip install -e /app/packages/core
 
 ENV PYTHONUNBUFFERED=1 \
     MONITOR_PORT=8321
