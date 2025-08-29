@@ -20,13 +20,15 @@ WORKDIR /app
 RUN pip install --no-cache-dir poetry
 
 COPY pyproject.toml poetry.lock* /app/
+COPY packages/ /app/packages/
 
 RUN poetry config virtualenvs.create false \
     && poetry install --only monitor,cli --no-interaction --no-ansi --no-root
 
 RUN pip install --no-cache-dir "uvicorn[standard]"
 
-COPY l6e_forge/ /app/l6e_forge/
+# Install the local packages (core and cli) into the image
+RUN poetry run pip install -e /app/packages/core -e /app/packages/cli
 
 # Copy built UI into image
 COPY --from=ui-build /app/site/agent-ui/dist/ /app/static/ui/

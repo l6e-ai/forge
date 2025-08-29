@@ -1,14 +1,11 @@
 name: mypy
 
 on:
+  push:
+    branches: [ main ]
   pull_request:
     branches: [ main ]
-    paths:
-      - 'pyproject.toml'
-      - 'poetry.lock'
-      - 'packages/**'
-      - 'tests/**'
-      - '.github/workflows/mypy.yml'
+  workflow_dispatch:
 
 permissions:
   contents: read
