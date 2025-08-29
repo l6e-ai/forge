@@ -76,8 +76,11 @@ jobs:
           source .venv_test/bin/activate
           python -m pip install --upgrade pip
           pip install dist/*.whl
-          python -m l6e_forge.cli.main --help | head -n 5 || true
+          python -m l6e_forge_cli.main --help | head -n 5 || true
 
       - name: Publish package distributions to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: packages/cli/dist/
+          verify-metadata: true
 
