@@ -1,0 +1,30 @@
+name: CI - Lint & Test
+
+on:
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'pyproject.toml'
+      - 'pyproject.lock'
+      - 'packages/**'
+      - 'tests/**'
+      - '.github/workflows/ci-lint.yml'
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  ruff-check-and-format:
+    name: Ruff Check & Format
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - uses: astral-sh/ruff-action@v3
+      - name: Check
+        run: ruff check
+      - name: Format
+        run: ruff format --check
