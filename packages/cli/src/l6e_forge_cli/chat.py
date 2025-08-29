@@ -393,6 +393,9 @@ def chat(
             "[green]Interactive chat. Press Ctrl+D to exit, Ctrl+C to clear line.[/green]"
         )
         conversation: list[Message] = []
+        # Track rapid Ctrl+C presses to provide an exit hint on double press
+        last_interrupt_time = 0.0
+        interrupt_count = 0
         # Seed conversation in streaming direct-model mode to avoid empty-history errors
         if use_direct_model and stream:
             conversation.append(
@@ -401,8 +404,18 @@ def chat(
         while True:
             try:
                 user_input = prompt_session.prompt()
+                # Successful input resets the interrupt counter
+                interrupt_count = 0
             except KeyboardInterrupt:
-                # Clear the current line
+                # Clear the current line; on rapid double Ctrl+C, gently hint about Ctrl+D
+                now = time.monotonic()
+                if now - last_interrupt_time < 1.5:
+                    interrupt_count += 1
+                else:
+                    interrupt_count = 1
+                last_interrupt_time = now
+                if interrupt_count >= 2:
+                    rprint("[yellow]Tip:[/yellow] Press Ctrl+D to exit the chat.")
                 continue
             except EOFError:
                 rprint("\n[yellow]Exiting chat.[/yellow]")
