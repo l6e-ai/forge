@@ -167,7 +167,7 @@ class LocalRuntime:
         conversation_id: ConversationID | None = None,
         session_id: str | None = None,
     ) -> AgentResponse:
-        agent: "IAgent" | None = None
+        agent: IAgent | None = None
         if target is not None:
             agent = self._id_to_agent.get(target)
         else:
@@ -261,7 +261,7 @@ class LocalRuntime:
             # Default to in-memory vector store and provider-backed embedding if available
             from l6e_forge.memory.backends.inmemory import InMemoryVectorStore
             from l6e_forge.memory.backends.qdrant import QdrantVectorStore
-            from l6e_forge.memory.managers.inmemory import InMemoryMemoryManager
+            from l6e_forge.memory.managers.inmemory import MemoryManager
             from l6e_forge.memory.embeddings.ollama import OllamaEmbeddingProvider
             from l6e_forge.memory.embeddings.lmstudio import LMStudioEmbeddingProvider
             from l6e_forge.memory.embeddings.mock import MockEmbeddingProvider
@@ -274,8 +274,7 @@ class LocalRuntime:
                     os.environ.get("QDRANT_URL")
                     or os.environ.get("AF_MEMORY_PROVIDER") == "qdrant"
                 ):
-                    collection = os.environ.get("AF_MEMORY_COLLECTION", "agent_memory")
-                    store = QdrantVectorStore(collection=collection)
+                    store = QdrantVectorStore()
             except Exception:
                 pass
             # Prefer Ollama embeddings if reachable, else LM Studio, else mock
@@ -318,7 +317,7 @@ class LocalRuntime:
                     conversation_store = PostgresConversationStore(db_url)
             except Exception:
                 conversation_store = None
-            self._memory_manager = InMemoryMemoryManager(
+            self._memory_manager = MemoryManager(
                 store, embedder, conversation_store
             )
         return self._memory_manager

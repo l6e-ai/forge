@@ -22,8 +22,8 @@ class IMemoryBackend(Protocol):
         """Disconnect from the storage backend"""
         ...
 
-    async def health_check(self) -> HealthStatus:
-        """Check backend health"""
+    async def health_check(self, collection: str) -> HealthStatus:
+        """Check backend health for a specific collection"""
         ...
 
     # Vector operations (required)
@@ -33,10 +33,10 @@ class IMemoryBackend(Protocol):
         key: str,
         embedding: List[float],
         content: str,
+        collection: str,
+        *,
         metadata: Dict[str, Any] | None = None,
         ttl_seconds: Optional[int] = None,
-        *,
-        collection: Optional[str] = None,
     ) -> None:
         """Insert or update a vector with associated content and metadata.
 
@@ -48,9 +48,9 @@ class IMemoryBackend(Protocol):
         self,
         namespace: str,
         query_embedding: List[float],
-        limit: int = 10,
+        collection: str,
         *,
-        collection: Optional[str] = None,
+        limit: int = 10,
     ) -> List[Tuple[str, float, Any]]:
         """Return list of (key, score, item) tuples sorted by score desc.
 

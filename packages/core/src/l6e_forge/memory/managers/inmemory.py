@@ -7,19 +7,17 @@ from l6e_forge.memory.embeddings.base import IEmbeddingProvider
 from l6e_forge.memory.embeddings.mock import MockEmbeddingProvider
 from l6e_forge.types.core import Message, ConversationID
 
-try:
-    from l6e_forge.memory.conversation.base import IConversationStore
-except Exception:
-    IConversationStore = None  # type: ignore
+
+from l6e_forge.memory.conversation.base import IConversationStore
 from l6e_forge.types.memory import MemoryResult
 
 
-class InMemoryMemoryManager(IMemoryManager):
+class MemoryManager(IMemoryManager):
     def __init__(
         self,
         vector_store,
         embedder: IEmbeddingProvider | None = None,
-        conversation_store: Optional["IConversationStore"] = None,
+        conversation_store: Optional[IConversationStore] = None,
     ) -> None:
         self._store = vector_store
         self._embedder = embedder or MockEmbeddingProvider()

@@ -45,8 +45,8 @@ class InMemoryVectorStore(IMemoryBackend):
     async def disconnect(self) -> None:
         self._namespaces.clear()
 
-    async def health_check(self) -> HealthStatus:
-        return HealthStatus(healthy=True, status="healthy")  # type: ignore[arg-type]
+    async def health_check(self, collection: str) -> HealthStatus:
+        return HealthStatus(healthy=True, status="healthy")
 
     def _split_collection_namespace(self, namespace: str) -> Tuple[str, str]:
         try:
@@ -63,10 +63,10 @@ class InMemoryVectorStore(IMemoryBackend):
         key: str,
         embedding: List[float],
         content: str,
+        collection: str = "default",
+        *,
         metadata: Dict[str, Any] | None = None,
         ttl_seconds: Optional[int] = None,
-        *,
-        collection: Optional[str] = None,
     ) -> None:
         # Prefer explicit collection if provided
         if collection and "::" not in namespace:
@@ -85,9 +85,9 @@ class InMemoryVectorStore(IMemoryBackend):
         self,
         namespace: str,
         query_embedding: List[float],
-        limit: int = 10,
+        collection: str = "default",
         *,
-        collection: Optional[str] = None,
+        limit: int = 10,
     ) -> List[Tuple[str, float, _VecItem]]:
         if collection and "::" not in namespace:
             namespace = f"{collection}::{namespace}"

@@ -58,9 +58,9 @@ def create_app(monitor: IMonitoringService) -> FastAPI:
             name = str(payload.get("name"))
             value = float(payload.get("value") or 0)
             tags = payload.get("tags") or {}
-            await monitor.record_metric(name, value, tags=tags)  # type: ignore[arg-type]
+            await monitor.record_metric(name, value, tags=tags)
             return JSONResponse({"ok": True})
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             return JSONResponse({"ok": False, "error": str(exc)}, status_code=400)
 
     @app.post("/ingest/event")
@@ -68,9 +68,9 @@ def create_app(monitor: IMonitoringService) -> FastAPI:
         try:
             name = str(payload.get("name"))
             data = payload.get("data") or {}
-            await monitor.record_event(name, data)  # type: ignore[arg-type]
+            await monitor.record_event(name, data)
             return JSONResponse({"ok": True})
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             return JSONResponse({"ok": False, "error": str(exc)}, status_code=400)
 
     @app.post("/ingest/trace/start")
@@ -79,7 +79,7 @@ def create_app(monitor: IMonitoringService) -> FastAPI:
             trace_name = str(payload.get("trace_name"))
             trace_id = await monitor.start_trace(trace_name)
             return JSONResponse({"ok": True, "trace_id": trace_id})
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             return JSONResponse({"ok": False, "error": str(exc)}, status_code=400)
 
     @app.post("/ingest/trace/end")
@@ -88,7 +88,7 @@ def create_app(monitor: IMonitoringService) -> FastAPI:
             trace_id = str(payload.get("trace_id"))
             await monitor.end_trace(trace_id)
             return JSONResponse({"ok": True})
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             return JSONResponse({"ok": False, "error": str(exc)}, status_code=400)
 
     @app.post("/ingest/agent/status")
@@ -99,29 +99,27 @@ def create_app(monitor: IMonitoringService) -> FastAPI:
             name = str(payload.get("name"))
             status = str(payload.get("status", "ready"))
             config = payload.get("config") or {}
-            # type: ignore[attr-defined]
-            monitor.set_agent_status(agent_id, name, status=status, config=config)  # noqa: SLF001
+            monitor.set_agent_status(agent_id, name, status=status, config=config)
             await monitor.record_event(
                 "agent.status", {"agent_id": agent_id, "status": status, "name": name}
-            )  # type: ignore[arg-type]
+            )
             # Trigger UI refresh by emitting agent.registered on ready state
             if status == "ready":
                 await monitor.record_event(
                     "agent.registered", {"agent_id": agent_id, "name": name}
-                )  # type: ignore[arg-type]
+                )
             return JSONResponse({"ok": True})
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             return JSONResponse({"ok": False, "error": str(exc)}, status_code=400)
 
     @app.post("/ingest/agent/remove")
     async def ingest_agent_remove(payload: dict[str, Any]) -> JSONResponse:
         try:
             agent_id = str(payload.get("agent_id"))
-            # type: ignore[attr-defined]
-            monitor.remove_agent(agent_id)  # noqa: SLF001
-            await monitor.record_event("agent.unregistered", {"agent_id": agent_id})  # type: ignore[arg-type]
+            monitor.remove_agent(agent_id)
+            await monitor.record_event("agent.unregistered", {"agent_id": agent_id})
             return JSONResponse({"ok": True})
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             return JSONResponse({"ok": False, "error": str(exc)}, status_code=400)
 
     @app.post("/ingest/chat")
@@ -131,19 +129,20 @@ def create_app(monitor: IMonitoringService) -> FastAPI:
             role = str(payload.get("role"))
             content = str(payload.get("content"))
             agent_id = payload.get("agent_id")
-            # type: ignore[attr-defined]
-            monitor.add_chat_log(conversation_id, role, content, agent_id=agent_id)  # noqa: SLF001
+            monitor.add_chat_log(conversation_id, role, content, agent_id=agent_id)
             await monitor.record_event(
                 "chat.message", {"direction": "ingest", "role": role}
-            )  # type: ignore[arg-type]
+            )
             return JSONResponse({"ok": True})
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             return JSONResponse({"ok": False, "error": str(exc)}, status_code=400)
 
     @app.websocket("/ws")
     async def websocket_endpoint(ws: WebSocket) -> None:
         await ws.accept()
-        q = await monitor.subscribe()  # type: ignore[attr-defined]
+        q = await monitor.subscribe()
+        if q is None:
+            raise RuntimeError("Failed to subscribe to monitor")
         try:
             # Send initial snapshot
             await ws.send_json(
@@ -160,12 +159,12 @@ def create_app(monitor: IMonitoringService) -> FastAPI:
                     # Keep connection alive
                     await ws.send_json({"type": "ping"})
                     continue
-                await ws.send_json(msg)  # type: ignore[arg-type]
+                await ws.send_json(msg)
         except WebSocketDisconnect:
             pass
         finally:
             try:
-                await monitor.unsubscribe(q)  # type: ignore[attr-defined]
+                await monitor.unsubscribe(q)
             except Exception:
                 pass
 

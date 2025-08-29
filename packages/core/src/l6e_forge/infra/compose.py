@@ -71,7 +71,6 @@ class ComposeTemplateService:
       - LMSTUDIO_HOST=http://host.docker.internal:1234/v1
       - AF_MEMORY_PROVIDER={{ memory_provider | default('memory') }}
       - QDRANT_URL=http://qdrant:6333
-      - AF_MEMORY_COLLECTION=agent_memory
       - AF_DB_URL={{ db_url | default('postgresql://forge:forge@postgres:5432/forge') }}
     volumes:
       - ./:/workspace
