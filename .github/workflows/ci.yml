@@ -8,7 +8,7 @@ on:
       - 'pyproject.lock'
       - 'packages/**'
       - 'tests/**'
-      - '.github/workflows/ci-test.yml'
+      - '.github/workflows/ci.yml'
 
 permissions:
   contents: read
