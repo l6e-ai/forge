@@ -1,14 +1,14 @@
-name: CI
+name: pytest
 
 on:
   pull_request:
     branches: [ main ]
     paths:
       - 'pyproject.toml'
-      - 'pyproject.lock'
+      - 'poetry.lock'
       - 'packages/**'
       - 'tests/**'
-      - '.github/workflows/ci.yml'
+      - '.github/workflows/pytest.yml'
 
 permissions:
   contents: read
@@ -16,7 +16,7 @@ permissions:
 
 jobs:
   ci-poetry:
-    name: Setup Poetry & Run Lint + Unit Tests
+    name: Run pytest
     strategy:
       fail-fast: false
       matrix:
@@ -49,12 +49,3 @@ jobs:
       - name: Run the automated tests
         run: |
           poetry run pytest -v
-      - name: Run Lint
-        run: |
-          poetry run ruff check
-      - name: Run Format
-        run: |
-          poetry run ruff format --check
-      - name: Run mypy
-        run: |
-          poetry run mypy .
